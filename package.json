@@ -1,0 +1,50 @@
+{
+  "name": "darwinia-claims",
+  "version": "0.1.0",
+  "private": false,
+  "dependencies": {
+    "@babel/core": "^7.6.0",
+    "@babel/node": "^7.6.1",
+    "@babel/preset-env": "^7.1.0",
+    "@polkadot/util-crypto": "^2.6.2",
+    "axios": "^0.19.0",
+    "body-scroll-lock": "^2.6.1",
+    "bootstrap": "^4.3.1",
+    "dayjs": "^1.8.23",
+    "gh-pages": "^2.1.1",
+    "history": "^4.9.0",
+    "i18next": "^15.0.9",
+    "i18next-browser-languagedetector": "^3.0.1",
+    "node-sass": "^4.11.0",
+    "react": "^16.8.6",
+    "react-bootstrap": "^1.0.0-beta.8",
+    "react-copy-to-clipboard": "^5.0.2",
+    "react-dom": "^16.8.6",
+    "react-i18next": "^10.8.1",
+    "react-router-dom": "^5.0.0",
+    "react-scripts": "2.1.8",
+    "react-toastify": "^5.5.0",
+    "react-zmage": "^0.7.5",
+    "rimraf": "^2.6.2",
+    "tronweb": "^2.10.1",
+    "web3": "^1.2.6"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "yarn && react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "render": "babel-node tools/run render",
+    "serve": "serve -s build",
+    "depoly": "babel-node tools/run depoly"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ]
+}

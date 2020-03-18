@@ -1,0 +1,64 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+    font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+    monospace;
+}
+
+.claims-network-box .form-label {
+    font-size: 14px;
+}
+
+.claims-network-box .form-control {
+    border-radius: 2px;
+    border-color: #302B3C;
+
+}
+
+.claims-network-box .form-control option {
+    font-weight: normal;
+}
+
+.btn {
+    border-radius: 2px;
+}
+.btn-gray {
+    background-color: #302B3C;
+    border-color: #302B3C;
+    color: #fff;
+    font-size: 14px;
+}
+
+.btn-gray:hover {
+    color: #fff;
+    text-decoration: none;
+}
+
+.btn-outline-gray {
+    border: 1px solid #302B3C;
+    font-size: 14px;
+}
+
+.btn-color {
+    background:linear-gradient(315deg,rgba(58,48,221,1) 0%,rgba(124,48,221,1) 29%,rgba(254,56,118,1) 100%);
+    border: 0;
+    color: #fff;
+    font-size: 14px;
+}
+
+.btn-color:hover {
+    color: #bcb5ba;
+}
+
+div.darwinia-toast {
+    background: #e1e1e1;
+    color: #2a2635;
+}

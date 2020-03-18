@@ -1,0 +1,301 @@
+@import "../../style/index";
+
+.faq {
+  text-align: left;
+  padding: 60px 0 100px 0;
+  min-height: calc(100vh - 132px);
+
+  .content {
+    padding: 0 25px 70px 35px;
+    box-sizing: border-box;
+  }
+}
+
+.header {
+  background: $claim-bg;
+  padding: 17px;
+  img {
+    width: 166px;
+  }
+  span {
+    color: #fff;
+    font-size: 14px;
+    margin-left: 14px;
+  }
+  a {
+    text-decoration: none;
+  }
+}
+
+.claim {
+  background: $claim-bg;
+  min-height: calc(100vh - 58px);
+  padding-bottom: 40px;
+  & > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: calc(100vh - 58px);
+  }
+}
+
+.claimBox {
+  background: #fff;
+  border-radius: 4px;
+  color: $claim-text-main;
+  padding: 70px 100px;
+  font-size: 14px;
+  align-self: stretch;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+
+  &>div:not(.powerBy){
+    flex: 1;
+  }
+
+  .powerBy {
+    color: #CECED0;
+    font-size: 14px;
+    align-self: center;
+    justify-content: flex-end;
+  }
+
+  .labelIcon {
+    width: 20px;
+    height: 20px;
+    margin: 0 8px;
+    cursor: pointer;
+  }
+
+  select {
+    -webkit-appearance: none;
+    -webkit-border-radius: 2px;
+    background: url('./img/select-bg.png') center right no-repeat;
+    background-size: 40px 40px;
+  }
+
+  .dotsOpen {
+    flex: 1;
+    background: url("./img/line-open.png") bottom center no-repeat;
+    background-size: 85px 4px;
+    margin: 0 20px;
+    height: 34px
+  }
+
+  .dotsClose {
+    flex: 1;
+    background: url("./img/line-close.png") bottom center no-repeat;
+    background-size: 85px 4px;
+    margin: 0 20px;
+    height: 34px
+  }
+
+  .stepBox {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid #ECECEE;
+    .stepBoxItem {
+      text-align: center;
+      img {
+        width: 60px;
+        height: 60px;
+      }
+      p {
+        margin-top: 10px;
+        margin-bottom: 30px;
+      }
+    }
+  }
+
+  .stepResultBox {
+    padding: 0 48px;
+  }
+
+  .formBox {
+    padding: 30px 0;
+  }
+
+  .buttonBox {
+    display: flex;
+    justify-content: space-between;
+    button {
+      flex: 1;
+    }
+
+    button + button {
+      margin-left: 20px;
+    }
+  }
+
+  .signatureBox {
+    textarea {
+      font-size: 14px;
+      min-height: 140px;
+    }
+
+  }
+
+  .connectInfoBox {
+    background: #F5F4F7;
+    padding: 20px;
+    h1 {
+      font-size: 14px;
+      font-weight: normal;
+      span {
+        position: relative;
+        top: 2px;
+      }
+
+      img {
+        width: 20px;
+        height: 20px;
+        margin-right: 6px;
+      }
+    }
+    p {
+      font-size: 15px;
+      letter-spacing: 1px;
+      color: $claim-color;
+      word-break: break-all;
+    }
+    p:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+
+.infoBox {
+  text-align: center;
+  padding-left: 100px;
+
+  .promoteLogo {
+    display: block;
+    width: 305px;
+    margin-bottom: 50px;
+  }
+  a {
+    padding: 0.375rem 1rem;
+  }
+}
+
+@media (max-width: 1200px) {
+  .claim {
+    .content {
+      padding: 0 25px 50px 35px;
+    }
+  }
+
+  .claimBox {
+    padding: 50px;
+  }
+}
+
+@media (max-width: 991px) {
+  .claimBox {
+    padding: 20px;
+    .stepBox {
+      .stepBoxItem {
+        text-align: center;
+        img {
+          width: 42px;
+          height: 42px;
+        }
+        p {
+          margin-top: 10px;
+          margin-bottom: 30px;
+          font-size: 12px;
+        }
+      }
+    }
+    .dotsOpen {
+      margin: 0 10px;
+      height: 25px
+    }
+
+    .dotsClose {
+      margin: 0 10px;
+      height: 25px
+    }
+  }
+
+  .infoBox {
+    text-align: center;
+    padding-left: 70px;
+    .promoteLogo {
+      width: 200px;
+      margin-bottom: 50px;
+    }
+  }
+}
+
+@media (max-width: 769px) {
+  .claim {
+    .content {
+      padding: 0 25px 50px 35px;
+    }
+    & > div {
+      flex-direction: column-reverse;
+    }
+  }
+
+  .claimBox {
+    padding: 20px;
+  }
+
+  .infoBox {
+    text-align: center;
+    padding-left: 0px;
+    background: url("./img/mobile-bg.png") top center no-repeat;
+    background-size: 90% auto;
+    width: 100%;
+    height: 375px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    margin-bottom: 28px;
+    .promoteLogo {
+      display: none;
+    }
+  }
+}
+
+@media (max-width: 575px) {
+  .header {
+    display: none;
+  }
+
+  .claim {
+    padding-bottom: 0;
+    .content {
+      padding: 0 25px 50px 35px;
+    }
+    & > div {
+      padding-left: 0;
+      padding-right: 0;
+      flex-direction: column-reverse;
+    }
+  }
+
+  .claimBox {
+    padding: 20px;
+    border-radius: 0;
+  }
+
+  .infoBox {
+    text-align: center;
+    padding-left: 0px;
+    background: url("./img/mobile-bg.png") top center no-repeat;
+    background-size: 105% auto;
+    width: 100%;
+    height: 375px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    margin-bottom: 28px;
+    .promoteLogo {
+
+      display: none;
+    }
+  }
+}

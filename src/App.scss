@@ -1,0 +1,137 @@
+@import "style/index";
+
+.App {
+  font-family: Rajdhani, -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+}
+
+body {
+  color: $text-main;
+}
+
+#basic-navbar-nav .nav-link {
+  color: $text-main;
+}
+
+.nav-link {
+  color: $text-fff;
+  font-weight: bold;
+  padding: $nav-link-padding-y $nav-link-padding-x;
+  cursor: pointer;
+  &:hover {
+    color: #dddddd;
+  }
+}
+
+@font-face {
+  font-family: Rajdhani;
+  //src: url('./style/font/pt-sans.regular.ttf') format('truetype');
+  src: url('./style/font/Rajdhani-Bold.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: Rajdhani;
+  src: url('./style/font/Rajdhani-SemiBold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+}
+
+.navbar-toggler {
+  border: none;
+
+}
+
+.navbar-light .navbar-toggler-icon {
+  color: #000
+}
+
+.cs-header .dropdown-toggle::after {
+  display: none;
+}
+
+.navbar-light .navbar-toggler-icon {
+  background: url("./style/img/navbar-toggler-icon.png") top center no-repeat;
+  background-size: 22px 19px;
+  width: 22px;
+  height: 19px;
+}
+
+.overlay--active {
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.overlay {
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+  position: fixed;
+  right: 0;
+  top: 0;
+  transition: .3s cubic-bezier(.25, .8, .5, 1);
+  z-index: 5;
+  color: rgba(0, 0, 0, .87);
+}
+
+.overlay:before {
+  background-color: #212121;
+  bottom: 0;
+  content: "";
+  height: 100%;
+  left: 0;
+  opacity: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  transition: inherit;
+  transition-delay: .15s;
+  width: 100%;
+}
+
+.overlay--active:before {
+  opacity: .7;
+}
+
+.spacer {
+  flex-grow: 1 !important;
+}
+
+.dropdown-menu {
+  padding: 1rem 0;
+  border: none;
+  box-shadow: 0px 2px 6px 0px rgba(0, 0, 0, 0.08);
+  text-align: center;
+  left: -30px;
+}
+
+.dropdown-item {
+  padding: 0.55rem 1.5rem;
+}
+
+.hidden-md {
+  display: none;
+}
+
+.btn-dark {
+  color: #fff;
+  background-color: #201550;
+  border-color: #201550;
+  padding-left: 60px;
+  padding-right: 60px;
+}
+
+@media (max-width: 767.98px) {
+  .navbar-brand {
+    visibility: hidden;
+  }
+  .hidden-xs {
+    display: none;
+  }
+
+  .hidden-md {
+    display: block;
+  }
+
+}
+
