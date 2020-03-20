@@ -1,4 +1,5 @@
 import {ToastContainer, toast} from "react-toastify";
+import axios from 'axios';
 import ConfigJson from './config';
 import Web3 from 'web3';
 import { checkAddress, decodeAddress } from '@polkadot/util-crypto';
@@ -125,7 +126,7 @@ export function getAirdropData(type, account) {
     if(!account) return Web3.utils.toBN(0);
 
     if (type === 'tron') {
-        return Web3.utils.toBN(genesisData.tron[account] || 0);
+        return Web3.utils.toBN(genesisData.tron[window.tronWeb.address.toHex(account)] || 0);
     }
 
     if (type === 'eth') {
@@ -141,3 +142,30 @@ export function formatBalance(bn = Web3.utils.toBN(0)) {
     return Web3.utils.fromWei(bn, 'gwei').toString();
 
 }
+
+export const wxRequest = async(params = {}, url) => {
+    formToast('正在查询');
+    let data = params.query || {}
+    return new Promise((resolve, reject) => {
+        axios({
+                url: url,
+                method: params.method.toUpperCase === 'FORM' ? 'POST' : params.method || 'GET',
+                data: data,
+                params: data,
+                headers: {
+                    'Content-Type': params.method === 'FORM' ? 'application/x-www-form-urlencoded' : 'application/json;charset=UTF-8;',
+                }
+            }).then(function(data) {
+                if (data && data.data) {
+                    console.log(`fetchData url: ${url}`, data.data);
+                }
+                resolve(data.data)
+            })
+            .catch(function(error) {
+                console.log(error);
+            })
+    })
+}
+
+export const getClaimsInfo = (params) => wxRequest(params, `${config.SUBSCAN_API}/api/other/claims`)
+

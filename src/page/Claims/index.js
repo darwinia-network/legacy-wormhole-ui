@@ -7,7 +7,7 @@ import dayjs from 'dayjs';
 import Web3 from 'web3';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 
-import { connect, sign, formToast, getAirdropData, config, formatBalance } from './utils'
+import { connect, sign, formToast, getAirdropData, config, formatBalance, getClaimsInfo } from './utils'
 import archorsComponent from '../../components/anchorsComponent'
 import { withTranslation } from "react-i18next";
 import styles from "./style.module.scss";
@@ -33,7 +33,10 @@ class Claims extends Component {
             },
             signature: '',
             darwiniaAddress: '',
-            airdropNumber: Web3.utils.toBN(0)
+            airdropNumber: Web3.utils.toBN(0),
+            claimAmount: Web3.utils.toBN(0),
+            claimTarget: '',
+            hasFetched: false
         }
     }
 
@@ -62,6 +65,7 @@ class Claims extends Component {
                         status: status
                     })
                     this.airdropData()
+                    this.queryClaims()
                 }
             })
         })
@@ -83,9 +87,45 @@ class Claims extends Component {
 
     toResult = () => {
         this.toClaims(4)
+
+    }
+
+    async queryClaims() {
+        const { networkType, account } = this.state;
+        const address = networkType === 'eth' ? account[networkType] : (window.tronWeb && window.tronWeb.address.toHex(account[networkType]))
+        let json = await getClaimsInfo({
+            query: { address: address },
+            method: "post"
+        });
+        if (json.code === 0) {
+            
+            if (json.data.info.length === 0) {
+                json = {
+                    data: {
+                        info: [{
+                            account: '',
+                            target: '',
+                            amount: '0'
+                        }]
+                    }
+                }
+            };
+            
+            this.setState({
+                claimAmount: Web3.utils.toBN(json.data.info[0].amount),
+                claimTarget: json.data.info[0].target,
+                hasFetched: true,
+            })
+        } else {
+        }
     }
 
     goBack = (status = 1) => {
+        if(status === 1) {
+            this.setState({
+                hasFetched: false
+            }) 
+        }
         this.setState({
             status: status
         })
@@ -254,7 +294,7 @@ class Claims extends Component {
 
     step4 = () => {
         const { t } = this.props
-        const { networkType, account, airdropNumber } = this.state
+        const { networkType, account, airdropNumber, claimTarget, claimAmount, hasFetched } = this.state
         return (
             <div>
                 {this.renderHeader()}
@@ -264,13 +304,13 @@ class Claims extends Component {
                         <p>{account[networkType]}</p>
 
                         <h1><img alt="" src={labelTitleLogo} /><span>快照数据：</span></h1>
-                        <p>{formatBalance(airdropNumber)} RING<br />({dayjs.unix(config.SNAPSHOT_TIMESTAMP).format('YYYY-MM-DD HH:mm:ss ZZ')})</p>
+                        <p>{claimAmount.eqn(0) ? formatBalance(airdropNumber) : formatBalance(claimAmount)} RING<br />({dayjs.unix(config.SNAPSHOT_TIMESTAMP).format('YYYY-MM-DD HH:mm:ss ZZ')})</p>
 
                         <h1><img alt="" src={labelTitleLogo} /><span>接收账号：</span></h1>
-                        <p>0xxxxxxxxxxxxxxxxxxxxxx</p>
+                        <p>{claimTarget || '----'}</p>
 
                         <h1><img alt="" src={labelTitleLogo} /><span>映射结果：</span></h1>
-                        <p>已领取</p>
+                        <p>{hasFetched ? (claimTarget ? '已领取' : '未领取') : '----'}</p>
                         <div className={styles.buttonBox}>
                             <Button variant="outline-gray" onClick={() => this.goBack(1)}>返回</Button>
                         </div>
