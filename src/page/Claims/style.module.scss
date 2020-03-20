@@ -25,6 +25,27 @@
   a {
     text-decoration: none;
   }
+  .headerInner{
+    display: flex;
+    justify-content: space-between;
+  }
+
+}
+
+.changeLng{
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 14px;
+  border: 1px solid white;
+}
+
+a.changeLng:hover, a.changeLng:active {
+  color: #fff;
+}
+
+.changeLngMobil {
+  display: none;
 }
 
 .claim {
@@ -222,6 +243,7 @@
   .infoBox {
     text-align: center;
     padding-left: 70px;
+    position: relative;
     .promoteLogo {
       width: 200px;
       margin-bottom: 50px;
@@ -265,6 +287,7 @@
     display: none;
   }
 
+
   .claim {
     padding-bottom: 0;
     .content {
@@ -274,6 +297,19 @@
       padding-left: 0;
       padding-right: 0;
       flex-direction: column-reverse;
+    }
+
+    .changeLngMobil {
+      padding: 2px 10px;
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: block;
+      text-decoration: none;
+    }
+
+    a.changeLngMobil:hover, a.changeLngMobil:active {
+      color: #fff;
     }
   }
 

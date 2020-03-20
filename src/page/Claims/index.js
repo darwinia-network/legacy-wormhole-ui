@@ -10,6 +10,8 @@ import { CopyToClipboard } from 'react-copy-to-clipboard';
 import { connect, sign, formToast, getAirdropData, config, formatBalance, getClaimsInfo } from './utils'
 import archorsComponent from '../../components/anchorsComponent'
 import { withTranslation } from "react-i18next";
+import i18n from '../../locales/i18n';
+
 import styles from "./style.module.scss";
 import darwiniaLogo from './img/darwinia-logo.png';
 import step1open from './img/step-1-open.png';
@@ -18,6 +20,7 @@ import step2close from './img/step-2-close.png';
 import step3open from './img/step-3-open.png';
 import step3close from './img/step-3-close.png';
 import promoteLogo from './img/promote-logo.png';
+import promoteLogoEn from './img/promote-logo-en.png';
 import helpLogo from './img/help-icon.png';
 import labelTitleLogo from './img/label-title-logo.png';
 
@@ -53,6 +56,7 @@ class Claims extends Component {
 
     toClaims = (status = 2) => {
         const { networkType, account } = this.state;
+        const { t } = this.props;
         connect(networkType, (_networkType, _account) => {
             this.setState({
                 account: {
@@ -68,26 +72,27 @@ class Claims extends Component {
                     this.queryClaims()
                 }
             })
-        })
+        }, t);
     }
 
     sign = () => {
         const { networkType, account, darwiniaAddress } = this.state;
+        const { t } = this.props;
         sign(networkType, account[networkType], darwiniaAddress, (signature) => {
             this.setState({
                 signature: signature,
                 status: 3
             })
-        })
+        }, t)
     }
 
     onCopied = () => {
-        formToast('复制成功')
+        const {t} = this.props
+        formToast(t('page:Copied'))
     }
 
     toResult = () => {
         this.toClaims(4)
-
     }
 
     async queryClaims() {
@@ -139,67 +144,74 @@ class Claims extends Component {
         })
     }
 
+    changeLng = lng => {
+        const {i18n} = this.props;
+        i18n.changeLanguage(i18n.language.indexOf('en') > -1 ? 'zh-cn' : 'en-us');
+        localStorage.setItem("lng", lng);
+    }
+
     renderHeader = () => {
         const { status } = this.state;
+        const {t} = this.props
         return (
             <>
                 {status === 1 ? <div className={styles.stepBox}>
                     <div className={styles.stepBoxItem}>
                         <img alt="" src={step1open} />
-                        <p>选择网络</p>
+                        <p>{t('page:step_1')}</p>
                     </div>
                     <div className={styles.dotsOpen}></div>
                     <div className={styles.stepBoxItem}>
                         <img alt="" src={step2close} />
-                        <p>输入接收地址</p>
+                        <p>{t('page:step_2')}</p>
                     </div>
                     <div className={styles.dotsClose}></div>
                     <div className={styles.stepBoxItem}>
                         <img alt="" src={step3close} />
-                        <p>成功</p>
+                        <p>{t('page:step_3')}</p>
                     </div>
                 </div> : null}
                 {status === 2 ? <div className={styles.stepBox}>
                     <div className={styles.stepBoxItem}>
                         <img alt="" src={step1open} />
-                        <p>选择网络</p>
+                        <p>{t('page:step_1')}</p>
                     </div>
                     <div className={styles.dotsOpen}></div>
                     <div className={styles.stepBoxItem}>
                         <img alt="" src={step2open} />
-                        <p>输入接收地址</p>
+                        <p>{t('page:step_2')}</p>
                     </div>
                     <div className={styles.dotsClose}></div>
                     <div className={styles.stepBoxItem}>
                         <img alt="" src={step3close} />
-                        <p>成功</p>
+                        <p>{t('page:step_3')}</p>
                     </div>
                 </div> : null}
                 {status === 3 ? <div className={styles.stepBox}>
                     <div className={styles.stepBoxItem}>
                         <img alt="" src={step1open} />
-                        <p>选择网络</p>
+                        <p>{t('page:step_1')}</p>
                     </div>
                     <div className={styles.dotsOpen}></div>
                     <div className={styles.stepBoxItem}>
                         <img alt="" src={step2open} />
-                        <p>输入接收地址</p>
+                        <p>{t('page:step_2')}</p>
                     </div>
                     <div className={styles.dotsOpen}></div>
                     <div className={styles.stepBoxItem}>
                         <img alt="" src={step3open} />
-                        <p>成功</p>
+                        <p>{t('page:step_3')}</p>
                     </div>
                 </div> : null}
                 {status === 4 ? <div className={`${styles.stepBox} ${styles.stepResultBox}`}>
                     <div className={styles.stepBoxItem}>
                         <img alt="" src={step1open} />
-                        <p>选择网络</p>
+                        <p>{t('page:step_1')}</p>
                     </div>
                     <div className={styles.dotsOpen}></div>
                     <div className={styles.stepBoxItem}>
                         <img alt="" src={step3open} />
-                        <p>查询结果</p>
+                        <p>{t('page:Result')}</p>
                     </div>
                 </div> : null}
             </>
@@ -215,7 +227,7 @@ class Claims extends Component {
                 <div className={styles.formBox}>
                     <div className={`${styles.networkBox} claims-network-box`}>
                         <Form.Group controlId="networkSelectGroup">
-                            <Form.Label>请选择网络</Form.Label>
+                            <Form.Label>{t('page:Select Chain')}</Form.Label>
                             <Form.Control as="select" value={networkType}
                                 onChange={(value) => this.setValue('networkType', value)}>
                                 <option value="eth">Ethereum</option>
@@ -224,8 +236,8 @@ class Claims extends Component {
 
                         </Form.Group>
                         <div className={styles.buttonBox}>
-                            <Button variant="gray" onClick={this.toResult}>查询</Button>
-                            <Button variant="gray" onClick={() => this.toClaims(2)}>领取</Button>
+                            <Button variant="gray" onClick={this.toResult}>{t('page:search')}</Button>
+                            <Button variant="gray" onClick={() => this.toClaims(2)}>{t('page:claim')}</Button>
                         </div>
                     </div>
                 </div>
@@ -241,15 +253,15 @@ class Claims extends Component {
                 {this.renderHeader()}
                 <div className={styles.formBox}>
                     <div className={`${styles.connectInfoBox} claims-network-box`}>
-                        <h1><img alt="" src={labelTitleLogo} /><span>已连接至：</span></h1>
+                        <h1><img alt="" src={labelTitleLogo} /><span>{t('page:Connected to')}：</span></h1>
                         <p>{account[networkType]}</p>
 
-                        <h1><img alt="" src={labelTitleLogo} /><span>快照数据：</span></h1>
+                        <h1><img alt="" src={labelTitleLogo} /><span>{t('page:Snapshot data')}：</span></h1>
                         <p>{formatBalance(airdropNumber)} RING<br />({dayjs.unix(config.SNAPSHOT_TIMESTAMP).format('YYYY-MM-DD HH:mm:ss ZZ')})
                         </p>
 
                         {status === 3 ? <>
-                            <h1><img alt="" src={labelTitleLogo} /><span>Darwinia Crab 网络账号：</span></h1>
+                            <h1><img alt="" src={labelTitleLogo} /><span>{t('Darwinia Crab Network account')}：</span></h1>
                             <p>{darwiniaAddress}</p>
                         </> : null}
                     </div>
@@ -258,16 +270,15 @@ class Claims extends Component {
                 {status === 2 ? <div className={styles.formBox}>
                     <div className={`${styles.networkBox} claims-network-box`}>
                         <Form.Group controlId="darwinaAddressGroup">
-                            <Form.Label>请输入接收 cRING 的 Darwinia Crab 网络账号 <a href="" target="_blank"
+                            <Form.Label>{t('Success! Please copy the signature below, and [claim] in Darwin wallet')} <a href="" target="_blank"
                                 rel="noopener noreferrer"><img alt=""
                                     className={styles.labelIcon} src={helpLogo} /></a> </Form.Label>
-                            <Form.Control type="text" placeholder="Darwinia Crab 网络账号" value={darwiniaAddress}
+                            <Form.Control type="text" placeholder={t('page:Darwinia Crab Network account')} value={darwiniaAddress}
                                 onChange={(value) => this.setValue('darwiniaAddress', value)} />
                         </Form.Group>
                         <div className={styles.buttonBox}>
-                            <Button variant="gray" onClick={this.sign}>提交</Button>
-                            <Button variant="outline-gray" onClick={() => this.goBack(1)}>返回</Button>
-
+                            <Button variant="gray" onClick={this.sign}>{t('page:Submit')}</Button>
+                            <Button variant="outline-gray" onClick={() => this.goBack(1)}>{t('page:Back')}</Button>
                         </div>
                     </div>
                 </div> : null}
@@ -275,16 +286,16 @@ class Claims extends Component {
                 {status === 3 ? <div className={styles.formBox}>
                     <div className={`${styles.networkBox} ${styles.signatureBox} claims-network-box`}>
                         <Form.Group controlId="signatureGroup">
-                            <Form.Label>提交成功！请复制下方签名，至达尔文钱包中【领取】页面进行领取操作</Form.Label>
+                        <Form.Label>{t('page:Success! Please copy the signature below, and [claim] in Darwin wallet')}</Form.Label>
                             <Form.Control as="textarea" value={JSON.stringify(JSON.parse(signature), undefined, 4)}
                                 rows="3" />
                         </Form.Group>
                         <div className={styles.buttonBox}>
                             <CopyToClipboard text={JSON.stringify(JSON.parse(signature), undefined, 4)}
                                 onCopy={() => this.onCopied()}>
-                                <Button variant="gray">复制签名</Button>
+                                <Button variant="gray">{t('page:Copy signature')}</Button>
                             </CopyToClipboard>
-                            <Button variant="outline-gray" onClick={() => this.goBack(1)}>返回</Button>
+                        <Button variant="outline-gray" onClick={() => this.goBack(1)}>{t('page:Back')}</Button>
                         </div>
                     </div>
                 </div> : null}
@@ -300,19 +311,19 @@ class Claims extends Component {
                 {this.renderHeader()}
                 <div className={styles.formBox}>
                     <div className={`${styles.connectInfoBox} claims-network-box`}>
-                        <h1><img alt="" src={labelTitleLogo} /><span>已连接至：</span></h1>
+                        <h1><img alt="" src={labelTitleLogo} /><span>{t('page:Connected to')}：</span></h1>
                         <p>{account[networkType]}</p>
 
-                        <h1><img alt="" src={labelTitleLogo} /><span>快照数据：</span></h1>
+                        <h1><img alt="" src={labelTitleLogo} /><span>{t('page:Snapshot data')}：</span></h1>
                         <p>{claimAmount.eqn(0) ? formatBalance(airdropNumber) : formatBalance(claimAmount)} RING<br />({dayjs.unix(config.SNAPSHOT_TIMESTAMP).format('YYYY-MM-DD HH:mm:ss ZZ')})</p>
 
-                        <h1><img alt="" src={labelTitleLogo} /><span>接收账号：</span></h1>
+                        <h1><img alt="" src={labelTitleLogo} /><span>{t('page:Destination')}：</span></h1>
                         <p>{claimTarget || '----'}</p>
 
-                        <h1><img alt="" src={labelTitleLogo} /><span>映射结果：</span></h1>
-                        <p>{hasFetched ? (claimTarget ? '已领取' : '未领取') : '----'}</p>
+                        <h1><img alt="" src={labelTitleLogo} /><span>{t('Claims Result')}：</span></h1>
+                        <p>{hasFetched ? (claimTarget ? t('Claims') : t('Not claimed')) : '----'}</p>
                         <div className={styles.buttonBox}>
-                            <Button variant="outline-gray" onClick={() => this.goBack(1)}>返回</Button>
+                        <Button variant="outline-gray" onClick={() => this.goBack(1)}>{t('page:Back')}</Button>
                         </div>
                     </div>
                 </div>
@@ -326,12 +337,19 @@ class Claims extends Component {
         return (
             <div>
                 <div className={`${styles.header}`}>
-                    <a href="/">
-                        <div className="container">
-                            <img alt="darwina network logo" src={darwiniaLogo} />
-                            <span>cRING 映射工具</span>
+                    <div className={`container ${styles.headerInner}`}>
+                        <div>
+                            <a href="/">
+                                <img alt="darwina network logo" src={darwiniaLogo} />
+                                <span>{t('page:title')}</span>
+                            </a>
                         </div>
-                    </a>
+                        <div>
+                            <a href="javascript:void(0)" onClick={this.changeLng} className={styles.changeLng}>
+                                {i18n.language.indexOf('en') > -1 ? '中文' : 'EN' }
+                            </a>
+                        </div>
+                    </div>
                 </div>
                 <div className={`${styles.claim}`}>
                     <Container>
@@ -345,8 +363,11 @@ class Claims extends Component {
                         </div>
                         <div className={styles.infoBox}>
                             <div>
-                                <img alt="" className={styles.promoteLogo} src={promoteLogo} />
-                                <Button variant="color" href="https://darwinia.network/">了解 Darwinia Crab</Button>
+                                {i18n.language.indexOf('en') > -1 ? <img alt="" className={styles.promoteLogo} src={promoteLogoEn} /> : <img alt="" className={styles.promoteLogo} src={promoteLogo} /> }
+                                <Button variant="color" target="_blank" href={t('page:darwinaPage')}>{t('page:About Darwinia Crab')}</Button>
+                                <a href="javascript:void(0)" onClick={this.changeLng} className={`${styles.changeLng} ${styles.changeLngMobil}`}>
+                                    {i18n.language.indexOf('en') > -1 ? '中文' : 'EN' }
+                                </a>
                             </div>
                         </div>
                     </Container>

@@ -3,6 +3,7 @@ import axios from 'axios';
 import ConfigJson from './config';
 import Web3 from 'web3';
 import { checkAddress, decodeAddress } from '@polkadot/util-crypto';
+
 import genesisData from './genesis';
 
 function buf2hex(buffer) { // buffer is an ArrayBuffer
@@ -11,7 +12,7 @@ function buf2hex(buffer) { // buffer is an ArrayBuffer
 
 export const config = ConfigJson[process.env.NODE_ENV === "production" ? 'production' : 'dev'];
 
-function connectEth(accountsChangedCallback) {
+function connectEth(accountsChangedCallback, t) {
     if (typeof window.ethereum !== 'undefined') {
         window.ethereum.enable()
             .then((account) => {
@@ -29,14 +30,14 @@ function connectEth(accountsChangedCallback) {
             })
             .catch(console.error)
     } else {
-        formToast('请先安装MetaMask');
+        formToast(t('Please install MetaMask first'));
     }
 }
 
-function connectTron(accountsChangedCallback) {
+function connectTron(accountsChangedCallback, t) {
     if(typeof window.tronWeb !== 'undefined') {
         if(!(window.tronWeb && window.tronWeb.ready)) {
-            formToast('请先解锁TronLink');
+            formToast(t('Please unlock TronLink first'));
             return
         }
         const wallet = window.tronWeb.defaultAddress;
@@ -48,7 +49,7 @@ function connectTron(accountsChangedCallback) {
         })
         accountsChangedCallback && accountsChangedCallback('tron', wallet.base58)
     } else {
-        formToast('请先安装TronLink');
+        formToast(t('Please install TronLink first'));
     }
 }
 
@@ -85,21 +86,25 @@ function signTron(account, text, signCallBack) {
     }
 }
 
-export function connect(type, callback) {
+export function connect(type, callback, t) {
     if (type === 'tron') {
-        connectTron(callback)
+        connectTron(callback, t)
     }
 
     if (type === 'eth') {
-        connectEth(callback)
+        connectEth(callback, t)
     }
 }
 
-export function sign(type, account, text, callback) {
+export function sign(type, account, text, callback, t) {
     const checkResult = checkAddress(text, config.S58_PREFIX);
 
     if (!checkResult[0]) {
-        formToast(`输入的 ${config.NETWORK_NAME} 网络账号有误`)
+        formToast(t(`The entered {{account}} account is incorrect`,{
+            replace: {
+              account: config.NETWORK_NAME,
+            }
+          }))
         return
     }
 
@@ -138,13 +143,11 @@ export function getAirdropData(type, account) {
 
 export function formatBalance(bn = Web3.utils.toBN(0)) {
     if(bn.eqn(0)) return '0';
-    console.log(Web3.utils.toWei(bn, 'gwei'))
     return Web3.utils.fromWei(bn, 'gwei').toString();
-
 }
 
 export const wxRequest = async(params = {}, url) => {
-    formToast('正在查询');
+    formToast('Fetching data');
     let data = params.query || {}
     return new Promise((resolve, reject) => {
         axios({

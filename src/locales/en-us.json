@@ -1,5 +1,28 @@
 {
-  "header": {
-
+  "page": {
+    "title": "cRING Claim Tool",
+    "step_1": "Select Chain",
+    "step_2": "Enter Destination",
+    "step_3": "Success",
+    "Select Chain": "Select Chain",
+    "search": "Search",
+    "claim": "Claim",
+    "Airdrop Is Coming": "Airdrop Is Coming",
+    "About Darwinia Crab ": "About Darwinia Crab",
+    "Connected to": "Connected to",
+    "Snapshot data": "Snapshot data",
+    "Please enter the account of Darwinia Crab Network to receive cRING": "Please enter the account of Darwinia Crab Network to receive cRING",
+    "Submit": "Submit",
+    "Back": "Back",
+    "Darwinia Crab Network account": "Darwinia Crab Network account",
+    "Success! Please copy the signature below, and [claim] in Darwin wallet ": "Success! Please copy the signature below, and [claim] in Darwin wallet ",
+    "Copy signature": "Copy signature",
+    "Result": "Result",
+    "Claims Result": "Result",
+    "Copied": "Copied",
+    "Destination": "Destination",
+    "darwinaPage": "http://darwinia.oss-cn-hangzhou.aliyuncs.com/claims/crab_en.pdf",
+    "Claims": "Claims",
+    "Not claimed": "Not claimed"
   }
 }
