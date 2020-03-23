@@ -10,7 +10,7 @@ function buf2hex(buffer) { // buffer is an ArrayBuffer
     return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('');
 }
 
-export const config = ConfigJson[process.env.NODE_ENV === "production" ? 'production' : 'dev'];
+export const config = ConfigJson[process.env.REACT_APP_CHAIN];
 
 function connectEth(accountsChangedCallback, t) {
     if (typeof window.ethereum !== 'undefined') {
