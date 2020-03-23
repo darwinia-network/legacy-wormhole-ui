@@ -78,9 +78,9 @@ function signEth(account, text, signCallBack) {
 
 function signTron(account, text, signCallBack) {
     const rawData = getRawData(text);
-
+    const sha3RawData = window.tronWeb.sha3(rawData);
     if(typeof window.tronWeb !== 'undefined') {
-        window.tronWeb.trx.sign(Web3.utils.stringToHex(rawData)).then((signature) => {
+        window.tronWeb.trx.sign(sha3RawData).then((signature) => {
             signCallBack && signCallBack(combineFormatSignature(window.tronWeb.address.toHex(account), rawData, signature));
         })
     }
