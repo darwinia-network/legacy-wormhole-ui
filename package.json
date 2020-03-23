@@ -30,7 +30,8 @@
     "web3": "^1.2.6"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start_crab": "REACT_APP_CHAIN=crab react-scripts start",
+    "start_darwinia": "REACT_APP_CHAIN=darwinia react-scripts start",
     "build_darwinia": "yarn && REACT_APP_CHAIN=darwinia react-scripts build",
     "build_crab": "yarn && REACT_APP_CHAIN=crab react-scripts build",
     "test": "react-scripts test",
