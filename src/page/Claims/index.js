@@ -261,7 +261,7 @@ class Claims extends Component {
                         </p>
 
                         {status === 3 ? <>
-                            <h1><img alt="" src={labelTitleLogo} /><span>{t('Darwinia Crab Network account')}：</span></h1>
+                            <h1><img alt="" src={labelTitleLogo} /><span>{t('page:Darwinia Crab Network account')}：</span></h1>
                             <p>{darwiniaAddress}</p>
                         </> : null}
                     </div>
@@ -270,7 +270,7 @@ class Claims extends Component {
                 {status === 2 ? <div className={styles.formBox}>
                     <div className={`${styles.networkBox} claims-network-box`}>
                         <Form.Group controlId="darwinaAddressGroup">
-                            <Form.Label>{t('Success! Please copy the signature below, and [claim] in Darwin wallet')} <a href="" target="_blank"
+                            <Form.Label>{t('page:Success! Please copy the signature below, and [claim] in Darwin wallet')} <a href="" target="_blank"
                                 rel="noopener noreferrer"><img alt=""
                                     className={styles.labelIcon} src={helpLogo} /></a> </Form.Label>
                             <Form.Control type="text" placeholder={t('page:Darwinia Crab Network account')} value={darwiniaAddress}
@@ -320,8 +320,8 @@ class Claims extends Component {
                         <h1><img alt="" src={labelTitleLogo} /><span>{t('page:Destination')}：</span></h1>
                         <p>{claimTarget || '----'}</p>
 
-                        <h1><img alt="" src={labelTitleLogo} /><span>{t('Claims Result')}：</span></h1>
-                        <p>{hasFetched ? (claimTarget ? t('Claims') : t('Not claimed')) : '----'}</p>
+                        <h1><img alt="" src={labelTitleLogo} /><span>{t('page:Claims Result')}：</span></h1>
+                        <p>{hasFetched ? (claimTarget ? t('page:Claims') : t('page:Not claimed')) : '----'}</p>
                         <div className={styles.buttonBox}>
                         <Button variant="outline-gray" onClick={() => this.goBack(1)}>{t('page:Back')}</Button>
                         </div>
