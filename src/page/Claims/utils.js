@@ -146,7 +146,6 @@ export function formatBalance(bn = Web3.utils.toBN(0)) {
 }
 
 export const wxRequest = async(params = {}, url) => {
-    formToast('Fetching data');
     let data = params.query || {}
     return new Promise((resolve, reject) => {
         axios({
