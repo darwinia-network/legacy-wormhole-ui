@@ -1,4 +1,4 @@
-import {ToastContainer, toast} from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 import axios from 'axios';
 import ConfigJson from './config';
 import Web3 from 'web3';
@@ -13,37 +13,47 @@ function buf2hex(buffer) { // buffer is an ArrayBuffer
 export const config = ConfigJson[process.env.REACT_APP_CHAIN];
 
 function connectEth(accountsChangedCallback, t) {
-    if (typeof window.ethereum !== 'undefined') {
-        window.ethereum.enable()
-            .then((account) => {
-                if (window.ethereum.on) {
-                    window.ethereum.on('accountsChanged', (accounts) => {
-                        if (accounts.length > 0) {
-                            accountsChangedCallback && accountsChangedCallback('eth', accounts[0].toLowerCase());
-                        }
-                    })
-                }
+    if (typeof window.ethereum !== 'undefined' || typeof window.web3 !== 'undefined') {
+        let web3js = new Web3(window.ethereum || window.web3.currentProvider);
 
-                if (account.length > 0) {
+        if (window.ethereum) {
+            window.ethereum.enable()
+                .then((account) => {
+                    if (window.ethereum.on) {
+                        window.ethereum.on('accountsChanged', (accounts) => {
+                            if (accounts.length > 0) {
+                                accountsChangedCallback && accountsChangedCallback('eth', accounts[0].toLowerCase());
+                            }
+                        })
+                    }
+
+                    if (account.length > 0) {
+                        accountsChangedCallback && accountsChangedCallback('eth', account[0].toLowerCase());
+                    }
+                })
+                .catch(console.error)
+        } else if (window.web3) {
+            web3js.eth.getAccounts().then(account => {
+                if (Array.isArray(account) && account.length) {
                     accountsChangedCallback && accountsChangedCallback('eth', account[0].toLowerCase());
                 }
-            })
-            .catch(console.error)
+            }).catch(console.error)
+        }
     } else {
         formToast(t('Please install MetaMask first'));
     }
 }
 
 function connectTron(accountsChangedCallback, t) {
-    if(typeof window.tronWeb !== 'undefined') {
-        if(!(window.tronWeb && window.tronWeb.ready)) {
+    if (typeof window.tronWeb !== 'undefined') {
+        if (!(window.tronWeb && window.tronWeb.ready)) {
             formToast(t('Please unlock TronLink first'));
             return
         }
         const wallet = window.tronWeb.defaultAddress;
 
         window.tronWeb.on("addressChanged", wallet => {
-            if(window.tronWeb) {
+            if (window.tronWeb) {
                 accountsChangedCallback && accountsChangedCallback('tron', wallet.base58)
             }
         })
@@ -78,7 +88,7 @@ function signEth(account, text, signCallBack) {
 
 function signTron(account, text, signCallBack) {
     const rawData = getRawData(text);
-    if(typeof window.tronWeb !== 'undefined') {
+    if (typeof window.tronWeb !== 'undefined') {
         window.tronWeb.trx.sign(Web3.utils.stringToHex(rawData)).then((signature) => {
             signCallBack && signCallBack(combineFormatSignature(window.tronWeb.address.toHex(account), rawData, signature));
         })
@@ -99,11 +109,11 @@ export function sign(type, account, text, callback, t) {
     const checkResult = checkAddress(text, config.S58_PREFIX);
 
     if (!checkResult[0]) {
-        formToast(t(`The entered {{account}} account is incorrect`,{
+        formToast(t(`The entered {{account}} account is incorrect`, {
             replace: {
-              account: config.NETWORK_NAME,
+                account: config.NETWORK_NAME,
             }
-          }))
+        }))
         return
     }
 
@@ -127,7 +137,7 @@ export const formToast = (text) => {
 
 
 export function getAirdropData(type, account) {
-    if(!account) return Web3.utils.toBN(0);
+    if (!account) return Web3.utils.toBN(0);
 
     if (type === 'tron') {
         return Web3.utils.toBN(genesisData.tron[window.tronWeb.address.toHex(account)] || 0);
@@ -141,28 +151,28 @@ export function getAirdropData(type, account) {
 }
 
 export function formatBalance(bn = Web3.utils.toBN(0)) {
-    if(bn.eqn(0)) return '0';
+    if (bn.eqn(0)) return '0';
     return Web3.utils.fromWei(bn, 'gwei').toString();
 }
 
-export const wxRequest = async(params = {}, url) => {
+export const wxRequest = async (params = {}, url) => {
     let data = params.query || {}
     return new Promise((resolve, reject) => {
         axios({
-                url: url,
-                method: params.method.toUpperCase === 'FORM' ? 'POST' : params.method || 'GET',
-                data: data,
-                params: data,
-                headers: {
-                    'Content-Type': params.method === 'FORM' ? 'application/x-www-form-urlencoded' : 'application/json;charset=UTF-8;',
-                }
-            }).then(function(data) {
-                if (data && data.data) {
-                    console.log(`fetchData url: ${url}`, data.data);
-                }
-                resolve(data.data)
-            })
-            .catch(function(error) {
+            url: url,
+            method: params.method.toUpperCase === 'FORM' ? 'POST' : params.method || 'GET',
+            data: data,
+            params: data,
+            headers: {
+                'Content-Type': params.method === 'FORM' ? 'application/x-www-form-urlencoded' : 'application/json;charset=UTF-8;',
+            }
+        }).then(function (data) {
+            if (data && data.data) {
+                console.log(`fetchData url: ${url}`, data.data);
+            }
+            resolve(data.data)
+        })
+            .catch(function (error) {
                 console.log(error);
             })
     })
