@@ -270,7 +270,7 @@ class Claims extends Component {
                 {status === 2 ? <div className={styles.formBox}>
                     <div className={`${styles.networkBox} claims-network-box`}>
                         <Form.Group controlId="darwinaAddressGroup">
-                            <Form.Label>{t('page:Success! Please copy the signature below, and [claim] in Darwin wallet')} <a href="" target="_blank"
+                            <Form.Label>{t('page:Success! Please copy the signature below, and [claim] in Darwinia Wallet')} <a href={this.renderHelpUrl()} target="_blank"
                                 rel="noopener noreferrer"><img alt=""
                                     className={styles.labelIcon} src={helpLogo} /></a> </Form.Label>
                             <Form.Control type="text" placeholder={t('page:Darwinia Crab Network account')} value={darwiniaAddress}
@@ -286,7 +286,7 @@ class Claims extends Component {
                 {status === 3 ? <div className={styles.formBox}>
                     <div className={`${styles.networkBox} ${styles.signatureBox} claims-network-box`}>
                         <Form.Group controlId="signatureGroup">
-                        <Form.Label>{t('page:Success! Please copy the signature below, and [claim] in Darwin wallet')}</Form.Label>
+                        <Form.Label>{t('page:Success! Please copy the signature below, and [claim] in Darwinia Wallet')}</Form.Label>
                             <Form.Control as="textarea" value={JSON.stringify(JSON.parse(signature), undefined, 4)}
                                 rows="3" />
                         </Form.Group>
@@ -329,6 +329,11 @@ class Claims extends Component {
                 </div>
             </div>
         )
+    }
+
+    renderHelpUrl = () => {
+        const lng = i18n.language.indexOf('en') > -1 ? 'en' : 'zh-CN'
+        return `https://docs.darwinia.network/docs/${lng}/crab-tut-claim-cring`
     }
 
     render() {
