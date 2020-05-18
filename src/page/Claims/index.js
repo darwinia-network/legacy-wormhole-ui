@@ -270,7 +270,7 @@ class Claims extends Component {
                 {status === 2 ? <div className={styles.formBox}>
                     <div className={`${styles.networkBox} claims-network-box`}>
                         <Form.Group controlId="darwinaAddressGroup">
-                            <Form.Label>{t('page:Success! Please copy the signature below, and [claim] in Darwinia Wallet')} <a href={this.renderHelpUrl()} target="_blank"
+                            <Form.Label>{t('page:Please enter the account of Darwinia Crab')} <a href={this.renderHelpUrl()} target="_blank"
                                 rel="noopener noreferrer"><img alt=""
                                     className={styles.labelIcon} src={helpLogo} /></a> </Form.Label>
                             <Form.Control type="text" placeholder={t('page:Darwinia Crab Network account')} value={darwiniaAddress}
