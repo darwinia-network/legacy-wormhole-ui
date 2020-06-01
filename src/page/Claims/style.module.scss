@@ -50,13 +50,13 @@ a.changeLng:hover, a.changeLng:active {
 
 .claim {
   background: $claim-bg;
-  min-height: calc(100vh - 58px);
+  min-height: calc(100vh - 48px);
   padding-bottom: 40px;
   & > div {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    min-height: calc(100vh - 58px);
+    min-height: calc(100vh - 98px);
   }
 }
 
