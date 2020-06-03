@@ -1,0 +1,16 @@
+.box{
+    text-align: center;
+}
+
+.gradientText{
+    display: inline-block;
+
+    font-size:40px;
+    font-weight:bold;
+    color:rgba(8,12,32,1);
+    line-height:51px;
+    letter-spacing:2px;
+    background:linear-gradient(315deg, rgba(254,56,118,1) 0%, rgba(124,48,221,1) 71%, rgba(58,48,221,1) 100%);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+}

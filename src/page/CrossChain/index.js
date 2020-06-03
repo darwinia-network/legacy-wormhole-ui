@@ -6,8 +6,9 @@ import 'react-toastify/dist/ReactToastify.css';
 import dayjs from 'dayjs';
 import Web3 from 'web3';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
+import _ from 'lodash';
 
-import { connect, sign, formToast, getAirdropData, config, formatBalance, getClaimsInfo, getClaimsInfo1 } from './utils'
+import { connect, sign, formToast, getAirdropData, config, formatBalance, getClaimsInfo } from './utils'
 import archorsComponent from '../../components/anchorsComponent'
 import { withTranslation } from "react-i18next";
 import i18n from '../../locales/i18n';
@@ -24,6 +25,8 @@ import promoteLogoEn from './img/promote-logo-en.png';
 import helpLogo from './img/help-icon.png';
 import labelTitleLogo from './img/label-title-logo.png';
 
+import chainMap from './chain';
+
 class Claims extends Component {
     constructor(props, context) {
         super(props, context);
@@ -39,7 +42,9 @@ class Claims extends Component {
             airdropNumber: Web3.utils.toBN(0),
             claimAmount: Web3.utils.toBN(0),
             claimTarget: '',
-            hasFetched: false
+            hasFetched: false,
+            checkedBall: '',
+            relatedBall: []
         }
     }
 
@@ -87,8 +92,8 @@ class Claims extends Component {
     }
 
     onCopied = () => {
-        const {t} = this.props
-        formToast(t('page:Copied'))
+        const { t } = this.props
+        formToast(t('crosschain:Copied'))
     }
 
     toResult = () => {
@@ -102,12 +107,8 @@ class Claims extends Component {
             query: { address: address },
             method: "post"
         });
-        let json1 = await getClaimsInfo1({
-            query: { address: address },
-            method: "get"
-        });
         if (json.code === 0) {
-            
+
             if (json.data.info.length === 0) {
                 json = {
                     data: {
@@ -119,7 +120,7 @@ class Claims extends Component {
                     }
                 }
             };
-            
+
             this.setState({
                 claimAmount: Web3.utils.toBN(json.data.info[0].amount),
                 claimTarget: json.data.info[0].target,
@@ -130,10 +131,10 @@ class Claims extends Component {
     }
 
     goBack = (status = 1) => {
-        if(status === 1) {
+        if (status === 1) {
             this.setState({
                 hasFetched: false
-            }) 
+            })
         }
         this.setState({
             status: status
@@ -149,77 +150,104 @@ class Claims extends Component {
     }
 
     changeLng = lng => {
-        const {i18n} = this.props;
+        const { i18n } = this.props;
         i18n.changeLanguage(i18n.language.indexOf('en') > -1 ? 'zh-cn' : 'en-us');
         localStorage.setItem("lng", lng);
     }
 
     renderHeader = () => {
         const { status } = this.state;
-        const {t} = this.props
+        const { t } = this.props
         return (
             <>
                 {status === 1 ? <div className={styles.stepBox}>
                     <div className={styles.stepBoxItem}>
                         <img alt="" src={step1open} />
-                        <p>{t('page:step_1')}</p>
+                        <p>{t('crosschain:step_1')}</p>
                     </div>
                     <div className={styles.dotsOpen}></div>
                     <div className={styles.stepBoxItem}>
                         <img alt="" src={step2close} />
-                        <p>{t('page:step_2')}</p>
+                        <p>{t('crosschain:step_2')}</p>
                     </div>
                     <div className={styles.dotsClose}></div>
                     <div className={styles.stepBoxItem}>
                         <img alt="" src={step3close} />
-                        <p>{t('page:step_3')}</p>
+                        <p>{t('crosschain:step_3')}</p>
                     </div>
                 </div> : null}
                 {status === 2 ? <div className={styles.stepBox}>
                     <div className={styles.stepBoxItem}>
                         <img alt="" src={step1open} />
-                        <p>{t('page:step_1')}</p>
+                        <p>{t('crosschain:step_1')}</p>
                     </div>
                     <div className={styles.dotsOpen}></div>
                     <div className={styles.stepBoxItem}>
                         <img alt="" src={step2open} />
-                        <p>{t('page:step_2')}</p>
+                        <p>{t('crosschain:step_2')}</p>
                     </div>
                     <div className={styles.dotsClose}></div>
                     <div className={styles.stepBoxItem}>
                         <img alt="" src={step3close} />
-                        <p>{t('page:step_3')}</p>
+                        <p>{t('crosschain:step_3')}</p>
                     </div>
                 </div> : null}
                 {status === 3 ? <div className={styles.stepBox}>
                     <div className={styles.stepBoxItem}>
                         <img alt="" src={step1open} />
-                        <p>{t('page:step_1')}</p>
+                        <p>{t('crosschain:step_1')}</p>
                     </div>
                     <div className={styles.dotsOpen}></div>
                     <div className={styles.stepBoxItem}>
                         <img alt="" src={step2open} />
-                        <p>{t('page:step_2')}</p>
+                        <p>{t('crosschain:step_2')}</p>
                     </div>
                     <div className={styles.dotsOpen}></div>
                     <div className={styles.stepBoxItem}>
                         <img alt="" src={step3open} />
-                        <p>{t('page:step_3')}</p>
+                        <p>{t('crosschain:step_3')}</p>
                     </div>
                 </div> : null}
                 {status === 4 ? <div className={`${styles.stepBox} ${styles.stepResultBox}`}>
                     <div className={styles.stepBoxItem}>
                         <img alt="" src={step1open} />
-                        <p>{t('page:step_1')}</p>
+                        <p>{t('crosschain:step_1')}</p>
                     </div>
                     <div className={styles.dotsOpen}></div>
                     <div className={styles.stepBoxItem}>
                         <img alt="" src={step3open} />
-                        <p>{t('page:Result')}</p>
+                        <p>{t('crosschain:Result')}</p>
                     </div>
                 </div> : null}
             </>
         )
+    }
+
+    checkedBall = (id, e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.setState({
+            checkedBall: id,
+            relatedBall: chainMap[id] || []
+        })
+    }
+
+    step0 = () => {
+        return <div className={`${styles.ballBox}`} onClick={(e) => this.checkedBall('', e)}>
+            <div>
+                <div className={`container`}>
+                    <div className={styles.nebula1}></div>
+                    <div className={styles.nebula2}></div>
+                    {this.renderBall('ethereum', 1)}
+                    {this.renderBall('crab', 2)}
+                    {this.renderBall('darwinia', 3)}
+                    {this.renderBall('tron', 4)}
+                    {this.renderBall('polkadot', 5)}
+                    {this.renderBall('kusama', 6)}
+                    {this.renderBall('acala', 7)}
+                </div>
+            </div>
+        </div>
     }
 
     step1 = () => {
@@ -231,7 +259,7 @@ class Claims extends Component {
                 <div className={styles.formBox}>
                     <div className={`${styles.networkBox} claims-network-box`}>
                         <Form.Group controlId="networkSelectGroup">
-                            <Form.Label>{t('page:Select Chain')}</Form.Label>
+                            <Form.Label>{t('crosschain:Select Chain')}</Form.Label>
                             <Form.Control as="select" value={networkType}
                                 onChange={(value) => this.setValue('networkType', value)}>
                                 <option value="eth">Ethereum</option>
@@ -240,10 +268,38 @@ class Claims extends Component {
 
                         </Form.Group>
                         <div className={styles.buttonBox}>
-                            <Button variant="gray" onClick={this.toResult}>{t('page:search')}</Button>
-                            <Button variant="gray" onClick={() => this.toClaims(2)}>{t('page:claim')}</Button>
+                            <Button variant="gray" onClick={this.toResult}>{t('crosschain:search')}</Button>
+                            <Button variant="gray" onClick={() => this.toClaims(2)}>{t('crosschain:claim')}</Button>
                         </div>
                     </div>
+                </div>
+                <div className={styles.formBox}>
+                    <div className={styles.stepRoadMap}>
+                    <h3>{t('跨链转账路线图：')}</h3>
+                    <div className={styles.stepRoadMapItem}>
+                        <div>
+                            <p>阶段1: 创世跨链</p>
+                            <p>2020.05.30 - 2020.06.30</p>
+                        </div>
+                        <p>此阶段的跨链转账，将在 Darwinia 主网上线后到账，通过 Genesis Block 发至指定账号</p>
+                    </div>
+                    <div className={styles.stepRoadMapItem}>
+                        <div>
+                            <p>阶段2: 单向跨链</p>
+                            <p>2020 Q3</p>
+                        </div>
+                        <p>此阶段的跨链转账，立即到账（可能存在一定的网络延迟），但仅支持发至Darwinia 主网的单项转账</p>
+                    </div>
+                    <div className={styles.stepRoadMapItem}>
+                        <div>
+                            <p>阶段3: 多向跨链</p>
+                            <p>2020 Q3 - Q4</p>
+                        </div>
+                        <p>此阶段的跨链转账，立即到账（可能存在一定的网络延迟），且支持双向或多向转账</p>
+                    </div>
+                    </div>
+                    
+
                 </div>
             </div>
         )
@@ -257,15 +313,15 @@ class Claims extends Component {
                 {this.renderHeader()}
                 <div className={styles.formBox}>
                     <div className={`${styles.connectInfoBox} claims-network-box`}>
-                        <h1><img alt="" src={labelTitleLogo} /><span>{t('page:Connected to')}：</span></h1>
+                        <h1><img alt="" src={labelTitleLogo} /><span>{t('crosschain:Connected to')}：</span></h1>
                         <p>{account[networkType]}</p>
 
-                        <h1><img alt="" src={labelTitleLogo} /><span>{t('page:Snapshot data')}：</span></h1>
+                        <h1><img alt="" src={labelTitleLogo} /><span>{t('crosschain:Snapshot data')}：</span></h1>
                         <p>{formatBalance(airdropNumber)} RING<br />({dayjs.unix(config.SNAPSHOT_TIMESTAMP).format('YYYY-MM-DD HH:mm:ss ZZ')})
                         </p>
 
                         {status === 3 ? <>
-                            <h1><img alt="" src={labelTitleLogo} /><span>{t('page:Darwinia Crab Network account')}：</span></h1>
+                            <h1><img alt="" src={labelTitleLogo} /><span>{t('crosschain:Darwinia Crab Network account')}：</span></h1>
                             <p>{darwiniaAddress}</p>
                         </> : null}
                     </div>
@@ -274,15 +330,15 @@ class Claims extends Component {
                 {status === 2 ? <div className={styles.formBox}>
                     <div className={`${styles.networkBox} claims-network-box`}>
                         <Form.Group controlId="darwinaAddressGroup">
-                            <Form.Label>{t('page:Please enter the account of Darwinia Crab')} <a href={this.renderHelpUrl()} target="_blank"
+                            <Form.Label>{t('crosschain:Please enter the account of Darwinia Crab')} <a href={this.renderHelpUrl()} target="_blank"
                                 rel="noopener noreferrer"><img alt=""
                                     className={styles.labelIcon} src={helpLogo} /></a> </Form.Label>
-                            <Form.Control type="text" placeholder={t('page:Darwinia Crab Network account')} value={darwiniaAddress}
+                            <Form.Control type="text" placeholder={t('crosschain:Darwinia Crab Network account')} value={darwiniaAddress}
                                 onChange={(value) => this.setValue('darwiniaAddress', value)} />
                         </Form.Group>
                         <div className={styles.buttonBox}>
-                            <Button variant="gray" onClick={this.sign}>{t('page:Submit')}</Button>
-                            <Button variant="outline-gray" onClick={() => this.goBack(1)}>{t('page:Back')}</Button>
+                            <Button variant="gray" onClick={this.sign}>{t('crosschain:Submit')}</Button>
+                            <Button variant="outline-gray" onClick={() => this.goBack(1)}>{t('crosschain:Back')}</Button>
                         </div>
                     </div>
                 </div> : null}
@@ -290,16 +346,16 @@ class Claims extends Component {
                 {status === 3 ? <div className={styles.formBox}>
                     <div className={`${styles.networkBox} ${styles.signatureBox} claims-network-box`}>
                         <Form.Group controlId="signatureGroup">
-                        <Form.Label>{t('page:Success! Please copy the signature below, and [claim] in Darwinia Wallet')}</Form.Label>
+                            <Form.Label>{t('crosschain:Success! Please copy the signature below, and [claim] in Darwinia Wallet')}</Form.Label>
                             <Form.Control as="textarea" value={JSON.stringify(JSON.parse(signature), undefined, 4)}
                                 rows="3" />
                         </Form.Group>
                         <div className={styles.buttonBox}>
                             <CopyToClipboard text={JSON.stringify(JSON.parse(signature), undefined, 4)}
                                 onCopy={() => this.onCopied()}>
-                                <Button variant="gray">{t('page:Copy signature')}</Button>
+                                <Button variant="gray">{t('crosschain:Copy signature')}</Button>
                             </CopyToClipboard>
-                        <Button variant="outline-gray" onClick={() => this.goBack(1)}>{t('page:Back')}</Button>
+                            <Button variant="outline-gray" onClick={() => this.goBack(1)}>{t('crosschain:Back')}</Button>
                         </div>
                     </div>
                 </div> : null}
@@ -315,23 +371,63 @@ class Claims extends Component {
                 {this.renderHeader()}
                 <div className={styles.formBox}>
                     <div className={`${styles.connectInfoBox} claims-network-box`}>
-                        <h1><img alt="" src={labelTitleLogo} /><span>{t('page:Connected to')}：</span></h1>
+                        <h1><img alt="" src={labelTitleLogo} /><span>{t('crosschain:Connected to')}：</span></h1>
                         <p>{account[networkType]}</p>
 
-                        <h1><img alt="" src={labelTitleLogo} /><span>{t('page:Snapshot data')}：</span></h1>
+                        <h1><img alt="" src={labelTitleLogo} /><span>{t('crosschain:Snapshot data')}：</span></h1>
                         <p>{claimAmount.eqn(0) ? formatBalance(airdropNumber) : formatBalance(claimAmount)} RING<br />({dayjs.unix(config.SNAPSHOT_TIMESTAMP).format('YYYY-MM-DD HH:mm:ss ZZ')})</p>
 
-                        <h1><img alt="" src={labelTitleLogo} /><span>{t('page:Destination')}：</span></h1>
+                        <h1><img alt="" src={labelTitleLogo} /><span>{t('crosschain:Destination')}：</span></h1>
                         <p>{claimTarget || '----'}</p>
 
-                        <h1><img alt="" src={labelTitleLogo} /><span>{t('page:Claims Result')}：</span></h1>
-                        <p>{hasFetched ? (claimTarget ? t('page:Claims') : t('page:Not claimed')) : '----'}</p>
+                        <h1><img alt="" src={labelTitleLogo} /><span>{t('crosschain:Claims Result')}：</span></h1>
+                        <p>{hasFetched ? (claimTarget ? t('crosschain:Claims') : t('crosschain:Not claimed')) : '----'}</p>
                         <div className={styles.buttonBox}>
-                        <Button variant="outline-gray" onClick={() => this.goBack(1)}>{t('page:Back')}</Button>
+                            <Button variant="outline-gray" onClick={() => this.goBack(1)}>{t('crosschain:Back')}</Button>
                         </div>
                     </div>
                 </div>
             </div>
+        )
+    }
+
+    isBallActive = (id) => {
+        const { relatedBall, checkedBall } = this.state;
+        if (!checkedBall || checkedBall === id) {
+            return [true, checkedBall === id ? 1 : 0]
+        }
+        const isRelatedBall = relatedBall.includes(id)
+        return [isRelatedBall, isRelatedBall ? 2 : -1]
+    }
+
+    fn_airdrop = () => {
+        this.setState({
+            status: 1
+        })
+    }
+
+    fn_wrapper = (e, fnname) => {
+        e.stopPropagation()
+        this[`fn_${fnname}`] && this[`fn_${fnname}`]()
+    }
+
+    renderBall = (id, styleId) => {
+        const { checkedBall } = this.state
+        const isBallActive = this.isBallActive(id)
+        const isDisableBallClass = isBallActive[0] ? '' : styles.disableBall
+        const isDisableBallShadowClass = isBallActive[0] ? '' : styles.disableBallShadow
+        return (
+            <>
+                <div className={`${styles['ball' + styleId]} ${isDisableBallClass}`} onClick={(e) => this.checkedBall(id, e)}>
+                    <p>{id}</p>
+                </div>
+                <div className={`${styles[`ball${styleId}Shadow`]} ${isDisableBallShadowClass}`}></div>
+                {isBallActive[1] === 2 && chainMap[`${checkedBall}_${id}`] && chainMap[`${checkedBall}_${id}`].length ?
+                    chainMap[`${checkedBall}_${id}`].map((item) => {
+                        return <div className={`${styles[`ball${styleId}Btn`]}`} onClick={(e) => this.fn_wrapper(e, item)}>{item}</div>
+                    })
+                    : ''}
+            </>
         )
     }
 
@@ -350,19 +446,21 @@ class Claims extends Component {
                         <div>
                             <a href="/">
                                 <img alt="darwina network logo" src={darwiniaLogo} />
-                                <span>{t('page:title')}</span>
+                                <span>{t('crosschain:title')}</span>
                             </a>
                         </div>
                         <div>
                             <a href="javascript:void(0)" onClick={this.changeLng} className={styles.changeLng}>
-                                {i18n.language.indexOf('en') > -1 ? '中文' : 'EN' }
+                                {i18n.language.indexOf('en') > -1 ? '中文' : 'EN'}
                             </a>
                         </div>
                     </div>
                 </div>
-                <div className={`${styles.claim}`}>
+                {status === 0 ? this.step0() : null}
+                {status !== 0 ? <div className={`${styles.claim}`}>
                     <Container>
                         <div className={styles.claimBox}>
+
                             {status === 1 ? this.step1() : null}
                             {status === 2 || status === 3 ? this.step2() : null}
                             {status === 4 ? this.step4() : null}
@@ -372,15 +470,15 @@ class Claims extends Component {
                         </div>
                         <div className={styles.infoBox}>
                             <div>
-                                {i18n.language.indexOf('en') > -1 ? <img alt="" className={styles.promoteLogo} src={promoteLogoEn} /> : <img alt="" className={styles.promoteLogo} src={promoteLogo} /> }
-                                <Button variant="color" target="_blank" href={t('page:darwinaPage')}>{t('page:About Darwinia Crab')}</Button>
+                                {i18n.language.indexOf('en') > -1 ? <img alt="" className={styles.promoteLogo} src={promoteLogoEn} /> : <img alt="" className={styles.promoteLogo} src={promoteLogo} />}
+                                <Button variant="color" target="_blank" href={t('crosschain:darwinaPage')}>{t('crosschain:About Darwinia Crab')}</Button>
                                 <a href="javascript:void(0)" onClick={this.changeLng} className={`${styles.changeLng} ${styles.changeLngMobil}`}>
-                                    {i18n.language.indexOf('en') > -1 ? '中文' : 'EN' }
+                                    {i18n.language.indexOf('en') > -1 ? '中文' : 'EN'}
                                 </a>
                             </div>
                         </div>
                     </Container>
-                </div>
+                </div> : null}
                 <ToastContainer autoClose={2000} />
             </div>
         );

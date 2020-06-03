@@ -24,5 +24,31 @@
     "darwinaPage": "http://darwinia.oss-cn-hangzhou.aliyuncs.com/claims/crab_cn.pdf",
     "Claims": "已领取",
     "Not claimed": "未领取"
+  },
+  "crosschain": {
+    "title": "cRING 跨链转账",
+    "step_1": "选择网络",
+    "step_2": "输入接收地址",
+    "step_3": "成功",
+    "Select Chain": "请确认网络，并连接至钱包：",
+    "search": "跨链记录",
+    "claim": "跨链转账",
+    "Airdrop Is Coming": "空投来袭",
+    "About Darwinia Crab": "了解 Darwinia Crab",
+    "Connected to": "已连接至",
+    "Snapshot data": "快照数据",
+    "Please enter the account of Darwinia Crab Network to receive cRING": "请输入接收 cRING 的 Darwinia Crab 网络账号",
+    "Submit": "提交",
+    "Back": "返回",
+    "Darwinia Crab Network account": "Darwinia Crab 网络账号",
+    "Success! Please copy the signature below, and [claim] in Darwinia Wallet": "提交成功！请复制下方签名，至达尔文钱包中【领取】",
+    "Copy signature": "复制签名",
+    "Result": "查询结果",
+    "Claims Result": "领取结果",
+    "Copied": "复制成功",
+    "Destination": "接收地址",
+    "darwinaPage": "http://darwinia.oss-cn-hangzhou.aliyuncs.com/claims/crab_cn.pdf",
+    "Claims": "已领取",
+    "Not claimed": "未领取"
   }
 }

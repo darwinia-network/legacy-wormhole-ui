@@ -1,0 +1,18 @@
+{
+  "darwinia": {
+    "ETHEREUM_NETWORK": 1,
+    "SIGN_PREFIX": "Pay RINGs to the Crab account:",
+    "S58_PREFIX": 18,
+    "NETWORK_NAME": "Darwinia Main",
+    "SNAPSHOT_TIMESTAMP": 1584683400,
+    "SUBSCAN_API": "https://subscan.io"
+  },
+  "crab": {
+    "ETHEREUM_NETWORK": 3,
+    "SIGN_PREFIX": "Pay RINGs to the Crab account:",
+    "S58_PREFIX": 42,
+    "NETWORK_NAME": "Darwinia Crab",
+    "SNAPSHOT_TIMESTAMP": 1584683400,
+    "SUBSCAN_API": "https://crab.subscan.io"
+  }
+}

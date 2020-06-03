@@ -1,0 +1,548 @@
+@import "../../style/index";
+
+.faq {
+  text-align: left;
+  padding: 60px 0 100px 0;
+  min-height: calc(100vh - 132px);
+
+  .content {
+    padding: 0 25px 70px 35px;
+    box-sizing: border-box;
+  }
+}
+
+.header {
+  background: $claim-bg;
+  padding: 17px;
+  img {
+    width: 166px;
+  }
+  span {
+    color: #fff;
+    font-size: 14px;
+    margin-left: 14px;
+  }
+  a {
+    text-decoration: none;
+  }
+  .headerInner{
+    display: flex;
+    justify-content: space-between;
+  }
+
+}
+
+.changeLng{
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 14px;
+  border: 1px solid white;
+}
+
+a.changeLng:hover, a.changeLng:active {
+  color: #fff;
+}
+
+.changeLngMobil {
+  display: none;
+}
+
+.claim {
+  background: $claim-bg;
+  min-height: calc(100vh - 48px);
+  padding-bottom: 40px;
+  & > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: calc(100vh - 98px);
+  }
+}
+
+.claimBox {
+  background: #fff;
+  border-radius: 4px;
+  color: $claim-text-main;
+  padding: 70px 100px 20px 100px;
+  font-size: 14px;
+  align-self: stretch;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+
+  &>div:not(.powerBy){
+    flex: 1;
+  }
+
+  .powerBy {
+    color: #CECED0;
+    font-size: 14px;
+    align-self: center;
+    justify-content: flex-end;
+  }
+
+  .labelIcon {
+    width: 20px;
+    height: 20px;
+    margin: 0 8px;
+    cursor: pointer;
+  }
+
+  select {
+    -webkit-appearance: none;
+    -webkit-border-radius: 2px;
+    background: url('./img/select-bg.png') center right no-repeat;
+    background-size: 40px 40px;
+  }
+
+  .dotsOpen {
+    flex: 1;
+    background: url("./img/line-open.png") bottom center no-repeat;
+    background-size: 85px 4px;
+    margin: 0 20px;
+    height: 34px
+  }
+
+  .dotsClose {
+    flex: 1;
+    background: url("./img/line-close.png") bottom center no-repeat;
+    background-size: 85px 4px;
+    margin: 0 20px;
+    height: 34px
+  }
+
+  .stepBox {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid #ECECEE;
+    .stepBoxItem {
+      text-align: center;
+      img {
+        width: 60px;
+        height: 60px;
+      }
+      p {
+        margin-top: 10px;
+        margin-bottom: 30px;
+      }
+    }
+  }
+
+  .stepResultBox {
+    padding: 0 48px;
+  }
+
+  .formBox {
+    padding: 30px 0;
+  }
+
+  .buttonBox {
+    display: flex;
+    justify-content: space-between;
+    button {
+      flex: 1;
+    }
+
+    button + button {
+      margin-left: 20px;
+    }
+  }
+
+  .signatureBox {
+    textarea {
+      font-size: 14px;
+      min-height: 140px;
+    }
+
+  }
+
+  .connectInfoBox {
+    background: #F5F4F7;
+    padding: 20px;
+    h1 {
+      font-size: 14px;
+      font-weight: normal;
+      span {
+        position: relative;
+        top: 2px;
+      }
+
+      img {
+        width: 20px;
+        height: 20px;
+        margin-right: 6px;
+      }
+    }
+    p {
+      font-size: 15px;
+      letter-spacing: 1px;
+      color: $claim-color;
+      word-break: break-all;
+    }
+    p:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+
+.infoBox {
+  text-align: center;
+  padding-left: 100px;
+
+  .promoteLogo {
+    display: block;
+    width: 305px;
+    margin-bottom: 50px;
+  }
+  a {
+    padding: 0.375rem 1rem;
+  }
+}
+
+$marginX: 0.1;
+$ball1Bg: linear-gradient(320deg,rgba(254,56,118,1) 0%,rgba(124,48,221,1) 71%,rgba(58,48,221,1) 100%);
+$ballBtnBg: linear-gradient(270deg,rgba(254,56,118,1) 0%,rgba(124,48,221,1) 71%,rgba(58,48,221,1) 100%);
+$ballBtnWidth: 170px;
+
+@mixin ball($width, $top, $left, $bg) {
+  width: $width;
+  height: $width;
+  border-radius: $width / 2;
+  top: $top;
+  left: $left;
+  z-index: 10;
+  cursor: pointer;
+  position: absolute;
+  background: $bg;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+@mixin ballShadow($width, $top, $left, $bg) {
+  width: $width * (1 + $marginX);
+  height: $width * (1 + $marginX);
+  border-radius: $width * (1 + $marginX) / 2;
+  top: calc(#{$top} - #{$width * $marginX / 2});
+  left: calc(#{$left} - #{$width * $marginX / 2});
+  z-index: 1;
+  position: absolute;
+  opacity: 0.2;
+  background: $bg;
+}
+
+@mixin ballBtn($width, $top, $left) {
+  top: calc(#{$top} + #{$width} + #{$width * $marginX / 2} + 20px);
+  left: calc(#{$left} + #{$width  / 2} - #{$ballBtnWidth / 2});
+  position: absolute;
+  width: $ballBtnWidth;
+  color: #fff;
+  text-align: center;
+  border-radius:2px;
+  background: $ballBtnBg;
+  font-size: 14px;
+  padding-top: 8px;
+  padding-bottom: 7px;
+  cursor: pointer;
+  z-index: 20;
+}
+
+.ballBox {
+  min-height: calc(100vh - 58px);
+  background-color: #201B36;
+  position: relative;
+
+  .disableBall {
+    opacity: 0.2;
+  }
+  .disableBallShadow {
+    opacity: 0.04;
+  }
+
+  .ball1{
+    @include ball(26vmin, 10vh, 12.5vw, $ball1Bg);
+  }
+  .ball1Shadow{
+    @include ballShadow(26vmin, 10vh, 12.5vw, $ball1Bg);
+  }
+  .ball1Btn{
+    @include ballBtn(26vmin, 10vh, 12.5vw);
+  }
+
+
+  .ball2Btn{
+    @include ballBtn(20vmin,50vh, 15.6vw)
+  }
+
+  .ball2{
+    @include ball(20vmin, 50vh, 15.6vw, $ball1Bg);
+  }
+  .ball2Shadow{
+    @include ballShadow(20vmin, 50vh, 15.6vw, $ball1Bg);
+  }
+
+  .ball3Btn{
+    @include ballBtn(30vmin,15.5vh, 35vw)
+  }
+  .ball3{
+    @include ball(30vmin, 15.5vh, 35vw, $ball1Bg);
+  }
+  .ball3Shadow{
+    @include ballShadow(30vmin, 15.5vh, 35vw, $ball1Bg);
+  }
+
+  .ball4{
+    @include ball(20vmin, 64vh, 40vw, $ball1Bg);
+  }
+  .ball4Shadow{
+    @include ballShadow(20vmin, 64vh, 40vw, $ball1Bg);
+  }
+  .ball4Btn{
+    @include ballBtn(20vmin, 64vh, 40vw)
+  }
+
+  .ball5{
+    @include ball(24vmin, 11vh, 60vw, $ball1Bg);
+  }
+  .ball5Shadow{
+    @include ballShadow(24vmin, 11vh, 60vw, $ball1Bg);
+  }
+  .ball5Btn{
+    @include ballBtn(24vmin, 11vh, 60vw)
+  }
+
+
+  .ball6{
+    @include ball(20vmin, 52vh, 64vw, $ball1Bg);
+  }
+  .ball6Shadow{
+    @include ballShadow(20vmin, 52vh, 64vw, $ball1Bg);
+  }
+  .ball6Btn{
+    @include ballBtn(20vmin, 52vh, 64vw)
+  }
+
+
+  .ball7{
+    @include ball(18vmin, 31vh, 80vw, $ball1Bg);
+  }
+  .ball7Shadow{
+    @include ballShadow(18vmin, 31vh, 80vw, $ball1Bg);
+  }
+  .ball7Btn{
+    @include ballBtn(18vmin, 31vh, 80vw)
+  }
+}
+
+@keyframes nebula-float-1 {
+  0%, 100% {
+    filter:blur(39px);
+
+
+  }
+  50% {
+    filter:blur(30px);
+
+  }
+}
+
+@keyframes nebula-float-2 {
+  0%, 100% {
+    filter:blur(39px);
+    background:linear-gradient(270deg,rgba(254,56,118,1) 0%,rgba(124,48,221,1) 71%,rgba(58,48,221,1) 100%);
+
+  }
+  50% {
+    filter:blur(25px);
+    background:linear-gradient(270deg,rgba(254,56,118,1) 0%,rgba(124,48,221,1) 50%,rgba(58,48,221,1) 100%);
+  }
+}
+
+.nebula1 {
+  width:25vw;
+  height:25vh;
+  background:linear-gradient(270deg,rgba(254,56,118,1) 0%,rgba(124,48,221,1) 71%,rgba(58,48,221,1) 100%);
+  opacity:0.5;
+  filter:blur(39px);
+  left: 0vw;
+  bottom: 0;
+  position: absolute;
+  animation: nebula-float-1 8s ease-out infinite;
+}
+
+.nebula2 {
+  width:18vw;
+  height:18vh;
+  background:linear-gradient(270deg,rgba(254,56,118,1) 0%,rgba(124,48,221,1) 71%,rgba(58,48,221,1) 100%);
+  opacity:0.5;
+  top: 0;
+  right: 0vw;
+  position: absolute;
+  animation: nebula-float-2 8s ease-out infinite;
+}
+
+.stepRoadMap {
+  h3{
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 10px;
+  }
+  .stepRoadMapItem {
+    div{
+      display: flex;
+      justify-content: space-between;
+      
+      p{
+        color: $crosschain-text-main;
+        font-size: 16px;
+        margin-bottom: 0;
+      }
+      p:first-child{
+        font-weight: bold;
+      }
+    }
+    p{
+      color: $crosschain-text-normal;
+      font-size: 14px;
+    }
+  }
+}
+
+
+@media (max-width: 1200px) {
+  .claim {
+    .content {
+      padding: 0 25px 50px 35px;
+    }
+  }
+
+  .claimBox {
+    padding: 50px;
+  }
+}
+
+@media (max-width: 991px) {
+  .claimBox {
+    padding: 20px;
+    .stepBox {
+      .stepBoxItem {
+        text-align: center;
+        img {
+          width: 42px;
+          height: 42px;
+        }
+        p {
+          margin-top: 10px;
+          margin-bottom: 30px;
+          font-size: 12px;
+        }
+      }
+    }
+    .dotsOpen {
+      margin: 0 10px;
+      height: 25px
+    }
+
+    .dotsClose {
+      margin: 0 10px;
+      height: 25px
+    }
+  }
+
+  .infoBox {
+    text-align: center;
+    padding-left: 70px;
+    position: relative;
+    .promoteLogo {
+      width: 200px;
+      margin-bottom: 50px;
+    }
+  }
+}
+
+@media (max-width: 769px) {
+  .claim {
+    .content {
+      padding: 0 25px 50px 35px;
+    }
+    & > div {
+      flex-direction: column-reverse;
+    }
+  }
+
+  .claimBox {
+    padding: 20px;
+  }
+
+  .infoBox {
+    text-align: center;
+    padding-left: 0px;
+    background: url("./img/mobile-bg.png") top center no-repeat;
+    background-size: 90% auto;
+    width: 100%;
+    height: 375px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    margin-bottom: 28px;
+    .promoteLogo {
+      display: none;
+    }
+  }
+}
+
+@media (max-width: 575px) {
+  .header {
+    display: none;
+  }
+
+
+  .claim {
+    padding-bottom: 0;
+    .content {
+      padding: 0 25px 50px 35px;
+    }
+    & > div {
+      padding-left: 0;
+      padding-right: 0;
+      flex-direction: column-reverse;
+    }
+
+    .changeLngMobil {
+      padding: 2px 10px;
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: block;
+      text-decoration: none;
+    }
+
+    a.changeLngMobil:hover, a.changeLngMobil:active {
+      color: #fff;
+    }
+  }
+
+  .claimBox {
+    padding: 20px;
+    border-radius: 0;
+  }
+
+  .infoBox {
+    text-align: center;
+    padding-left: 0px;
+    background: url("./img/mobile-bg.png") top center no-repeat;
+    background-size: 105% auto;
+    width: 100%;
+    height: 375px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    margin-bottom: 28px;
+    .promoteLogo {
+
+      display: none;
+    }
+  }
+}

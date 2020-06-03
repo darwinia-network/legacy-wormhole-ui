@@ -1,0 +1,7 @@
+{
+  "darwinia": ["crab"],
+  "crab": ["ethereum", "tron"],
+  "ethereum": ["crab", "darwinia"],
+  "ethereum_crab": ["airdrop"],
+  "ethereum_darwinia": ["crosschain"]
+}
