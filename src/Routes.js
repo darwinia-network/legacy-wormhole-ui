@@ -5,6 +5,7 @@ import { createBrowserHistory} from "history";
 const AsyncNotFound = asyncComponent(import("./page/NotFound"));
 const AsyncClaims = asyncComponent(import("./page/Claims"));
 const AsyncCrossChain = asyncComponent(import("./page/CrossChain"));
+const WrapperChain = asyncComponent(import("./page/Wrapper"));
 
 const history = createBrowserHistory();
 
@@ -15,12 +16,17 @@ export default () =>
             <Route
                 exact
                 component={AsyncClaims}
-                path='/'
+                path='/airdrop'
             />
             <Route
                 exact
                 component={AsyncCrossChain}
                 path='/crosschain'
+            />
+            <Route
+                exact
+                component={WrapperChain}
+                path='/'
             />
             <Route component={AsyncNotFound}/>
         </Switch>

@@ -344,44 +344,11 @@ class Claims extends Component {
         const { t } = this.props
         const { status } = this.state
         return (
-            <div>
-                <div className={`${styles.header}`}>
-                    <div className={`container ${styles.headerInner}`}>
-                        <div>
-                            <a href="/">
-                                <img alt="darwina network logo" src={darwiniaLogo} />
-                                <span>{t('page:title')}</span>
-                            </a>
-                        </div>
-                        <div>
-                            <a href="javascript:void(0)" onClick={this.changeLng} className={styles.changeLng}>
-                                {i18n.language.indexOf('en') > -1 ? '中文' : 'EN' }
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                <div className={`${styles.claim}`}>
-                    <Container>
-                        <div className={styles.claimBox}>
-                            {status === 1 ? this.step1() : null}
-                            {status === 2 || status === 3 ? this.step2() : null}
-                            {status === 4 ? this.step4() : null}
-                            <div className={styles.powerBy}>
-                                Powered By Darwinia Network
-                            </div>
-                        </div>
-                        <div className={styles.infoBox}>
-                            <div>
-                                {i18n.language.indexOf('en') > -1 ? <img alt="" className={styles.promoteLogo} src={promoteLogoEn} /> : <img alt="" className={styles.promoteLogo} src={promoteLogo} /> }
-                                <Button variant="color" target="_blank" href={t('page:darwinaPage')}>{t('page:About Darwinia Crab')}</Button>
-                                <a href="javascript:void(0)" onClick={this.changeLng} className={`${styles.changeLng} ${styles.changeLngMobil}`}>
-                                    {i18n.language.indexOf('en') > -1 ? '中文' : 'EN' }
-                                </a>
-                            </div>
-                        </div>
-                    </Container>
-                </div>
-                <ToastContainer autoClose={2000} />
+            <div className={styles.claimBox}>
+                {status === 1 ? this.step1() : null}
+                {status === 2 || status === 3 ? this.step2() : null}
+                {status === 4 ? this.step4() : null}
+                
             </div>
         );
     }

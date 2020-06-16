@@ -15,6 +15,7 @@
     "history": "^4.9.0",
     "i18next": "^15.0.9",
     "i18next-browser-languagedetector": "^3.0.1",
+    "lodash": "^4.17.15",
     "node-sass": "^4.14.1",
     "react": "^16.8.6",
     "react-bootstrap": "^1.0.0-beta.8",
@@ -26,13 +27,14 @@
     "react-toastify": "^5.5.0",
     "rimraf": "^2.6.2",
     "tronweb": "^2.10.1",
-    "web3": "^1.2.6"
+    "web3": "^1.2.6",
+    "animejs": "3.2.0"
   },
   "scripts": {
-    "start_crab": "REACT_APP_CHAIN=crab react-scripts start",
-    "start_darwinia": "REACT_APP_CHAIN=darwinia react-scripts start",
-    "build_darwinia": "yarn && REACT_APP_CHAIN=darwinia react-scripts build",
-    "build_crab": "yarn && REACT_APP_CHAIN=crab react-scripts build",
+    "start_dev": "REACT_APP_CHAIN=development react-scripts start",
+    "start_production": "REACT_APP_CHAIN=production react-scripts start",
+    "build_dev": "yarn && REACT_APP_CHAIN=development react-scripts build",
+    "build_production": "yarn && REACT_APP_CHAIN=production react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "serve": "serve -s build"

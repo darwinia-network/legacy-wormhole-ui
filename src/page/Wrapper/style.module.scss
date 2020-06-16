@@ -11,9 +11,17 @@
   }
 }
 
+.wrapperBox {
+  background-color: #201B36;
+}
+
 .header {
-  background: $claim-bg;
-  padding: 17px;
+  background: transparent;
+  padding: 14px;
+  // position: absolute;
+  // z-index: 10;
+  // width: 100%;
+  border-bottom: 1px solid #4C485E;
   img {
     width: 166px;
   }
@@ -52,6 +60,7 @@ a.changeLng:hover, a.changeLng:active {
   background: $claim-bg;
   min-height: calc(100vh - 48px);
   padding-bottom: 40px;
+  padding-top: 20px;
   & > div {
     display: flex;
     justify-content: space-between;
@@ -64,13 +73,13 @@ a.changeLng:hover, a.changeLng:active {
   background: #fff;
   border-radius: 4px;
   color: $claim-text-main;
-  padding: 70px 100px 20px 100px;
+  padding-bottom: 20px;
   font-size: 14px;
   align-self: stretch;
   flex: 1;
   display: flex;
   flex-direction: column;
-
+  
   &>div:not(.powerBy){
     flex: 1;
   }
@@ -134,7 +143,7 @@ a.changeLng:hover, a.changeLng:active {
   }
 
   .formBox {
-    padding-top: 30px;
+    padding: 30px 0;
   }
 
   .buttonBox {
@@ -149,8 +158,12 @@ a.changeLng:hover, a.changeLng:active {
     }
   }
 
-  .hashBox {
-    word-break: break-word;
+  .signatureBox {
+    textarea {
+      font-size: 14px;
+      min-height: 140px;
+    }
+
   }
 
   .connectInfoBox {
@@ -185,7 +198,7 @@ a.changeLng:hover, a.changeLng:active {
 .infoBox {
   text-align: center;
   padding-left: 100px;
-
+  display: none;
   .promoteLogo {
     display: block;
     width: 305px;
@@ -201,6 +214,26 @@ $ball1Bg: linear-gradient(320deg,rgba(254,56,118,1) 0%,rgba(124,48,221,1) 71%,rg
 $ballBtnBg: linear-gradient(270deg,rgba(254,56,118,1) 0%,rgba(124,48,221,1) 71%,rgba(58,48,221,1) 100%);
 $ballBtnWidth: 170px;
 
+@keyframes shandowScale {
+  0% {
+      transform: translate3d(0,0,0) scale(1.02);
+  }
+  100% {
+      transform: translate3d(0,0,0) scale(1);
+  }
+}
+
+@mixin subBall($width, $top, $left, $bg) {
+  width: $width;
+  height: $width;
+  border-radius: $width / 2;
+  top: $top;
+  left: $left;
+  z-index: 10;
+  position: absolute;
+  background: $bg;
+}
+
 @mixin ball($width, $top, $left, $bg) {
   width: $width;
   height: $width;
@@ -212,6 +245,7 @@ $ballBtnWidth: 170px;
   position: absolute;
   background: $bg;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   color: #fff;
@@ -246,9 +280,17 @@ $ballBtnWidth: 170px;
 }
 
 .ballBox {
-  min-height: calc(100vh - 58px);
+  min-height: calc(100vh - 53px);
+  // min-height: 100vh;
+  // box-sizing: content-box;
+  // padding-top: 58px;
   background-color: #201B36;
   position: relative;
+
+  .scaleBox:hover {
+    // position: absolute;
+    // animation: shandowScale 1.5s infinite ease-in;
+  }
 
   .disableBall {
     opacity: 0.2;
@@ -257,12 +299,56 @@ $ballBtnWidth: 170px;
     opacity: 0.04;
   }
 
+  .ballIcon {
+    width: 30%;
+  }
+
+  p{
+    margin-bottom: 0;
+  }
+
+  .subBall1 {
+    @include subBall(7vmin, 4vh, 4vw, $ball1Bg);
+  }
+
+  .subBall2 {
+    @include subBall(6vmin, 75vh, 7vw, $ball1Bg);
+  }
+
+  .subBall3 {
+    @include subBall(2vmin, 74vh, 12vw, $ball1Bg);
+  }
+
+  .subBall4 {
+    @include subBall(5vmin, 82vh, 62vw, $ball1Bg);
+  }
+
+  .subBall5Box {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 25vmin;
+    height: 25vmin;
+    overflow: hidden;
+  }
+
+  .subBall5 {
+    @include subBall(25vmin, 10vmin, 10vmin, $ball1Bg);
+  }
+
   .ball1{
     @include ball(26vmin, 10vh, 12.5vw, $ball1Bg);
   }
+
   .ball1Shadow{
     @include ballShadow(26vmin, 10vh, 12.5vw, $ball1Bg);
   }
+  // .ball1:hover{
+  //   animation: shandowScale 0.5s;
+  // }
+  // .ball1Shadow:hover{
+  //   animation: shandowScale 0.5s;
+  // }
   .ball1Btn{
     @include ballBtn(26vmin, 10vh, 12.5vw);
   }
@@ -320,17 +406,33 @@ $ballBtnWidth: 170px;
     @include ballBtn(20vmin, 52vh, 64vw)
   }
 
-
   .ball7{
     @include ball(18vmin, 31vh, 80vw, $ball1Bg);
   }
+
   .ball7Shadow{
     @include ballShadow(18vmin, 31vh, 80vw, $ball1Bg);
   }
+
   .ball7Btn{
     @include ballBtn(18vmin, 31vh, 80vw)
   }
 
+  .disableBtn {
+    background: none;
+    margin-top: -12px;
+  }
+
+  .powerLine {
+    font-size: 14px;
+    color: #fff;
+    opacity: 0.3;
+    text-align: center;
+    position: absolute;
+    bottom: 10px;
+    left: 0;
+    width: 100%;
+  }
 }
 
 .guideBox{
@@ -338,8 +440,15 @@ $ballBtnWidth: 170px;
   width: 230px;
   height: 600px;
   margin-left: 170px;
+  .ballIcon {
+    width: 30%;
+  }
+  p{
+    margin-bottom: 0;
+    font-size: 18px;
+    margin-top: 8px;
+  }
 }
-
 
 .ballFrom{
   @include ball(190px, 50px, 10px, $ball1Bg);
@@ -408,12 +517,7 @@ $ballBtnWidth: 170px;
   h3{
     font-size: 16px;
     color: #333;
-    margin-bottom: 20px;
-  }
-  img{
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
+    margin-bottom: 10px;
   }
   .stepRoadMapItem {
     div{
@@ -445,13 +549,13 @@ $ballBtnWidth: 170px;
   }
 
   .claimBox {
-    padding: 50px;
+    padding-bottom: 20px;
   }
 }
 
 @media (max-width: 991px) {
   .claimBox {
-    padding: 20px;
+    padding-bottom: 20px;
     .stepBox {
       .stepBoxItem {
         text-align: center;
@@ -486,6 +590,27 @@ $ballBtnWidth: 170px;
       margin-bottom: 50px;
     }
   }
+
+  .guideBox{
+    position: relative;
+    width: 163px;
+    height: 600px;
+    margin-left: 70px;
+  }
+
+  .ballFrom{
+    @include ball(140px, 50px, 10px, $ball1Bg);
+  }
+  .ballFromShadow{
+    @include ballShadow(140px, 50px, 10px, $ball1Bg);
+  }
+  
+  .ballTo{
+    @include ball(140px, 400px, 10px, $ball1Bg);
+  }
+  .ballToShadow{
+    @include ballShadow(140px, 400px, 10px, $ball1Bg);
+  }
 }
 
 @media (max-width: 769px) {
@@ -497,22 +622,23 @@ $ballBtnWidth: 170px;
       flex-direction: column-reverse;
     }
   }
-
+  .guideBox{
+    display: none;
+  }
   .claimBox {
-    padding: 20px;
+    padding-bottom: 20px;
   }
 
   .infoBox {
     text-align: center;
     padding-left: 0px;
     background: url("./img/mobile-bg.png") top center no-repeat;
-    background-size: 90% auto;
+    background-size: 100% auto;
     width: 100%;
     height: 375px;
     display: flex;
     justify-content: center;
     align-items: flex-end;
-    margin-bottom: 28px;
     .promoteLogo {
       display: none;
     }
@@ -551,7 +677,7 @@ $ballBtnWidth: 170px;
   }
 
   .claimBox {
-    padding: 20px;
+    padding-bottom: 20px;
     border-radius: 0;
   }
 
@@ -559,13 +685,13 @@ $ballBtnWidth: 170px;
     text-align: center;
     padding-left: 0px;
     background: url("./img/mobile-bg.png") top center no-repeat;
-    background-size: 105% auto;
+    background-size: auto 100%;
     width: 100%;
     height: 375px;
     display: flex;
     justify-content: center;
     align-items: flex-end;
-    margin-bottom: 28px;
+    padding-bottom: 28px;
     .promoteLogo {
 
       display: none;

@@ -1,18 +1,40 @@
 {
-  "darwinia": {
+  "development": {
     "ETHEREUM_NETWORK": 1,
-    "SIGN_PREFIX": "Pay RINGs to the Crab account:",
-    "S58_PREFIX": 18,
-    "NETWORK_NAME": "Darwinia Main",
-    "SNAPSHOT_TIMESTAMP": 1584683400,
-    "SUBSCAN_API": "https://subscan.io"
-  },
-  "crab": {
-    "ETHEREUM_NETWORK": 3,
-    "SIGN_PREFIX": "Pay RINGs to the Crab account:",
+    "SIGN_PREFIX": "Pay RINGs to the Darwinia account:",
     "S58_PREFIX": 42,
     "NETWORK_NAME": "Darwinia Crab",
     "SNAPSHOT_TIMESTAMP": 1584683400,
-    "SUBSCAN_API": "https://crab.subscan.io"
+    "SUBSCAN_API": "https://crab.subscan.io",
+    "ETHERSCAN_DOMAIN": {
+      "en": "https://ropsten.etherscan.io",
+      "zh": "https://ropsten.etherscan.io"
+    },
+    "TRONSCAN_DOMAIN": "https://shasta.tronscan.io",
+    "RING_ETH_ADDRESS": "0xb52FBE2B925ab79a821b261C82c5Ba0814AAA5e0",
+    "KTON_ETH_ADDRESS": "0x1994100c58753793D52c6f457f189aa3ce9cEe94",
+    "RING_TRON_ADDRESS": "415e465875334b3960e6fc3f6e018ef70d66dedf15",
+    "KTON_TRON_ADDRESS": "41fe4170545a81503a0a328a368f9e0d7c1f6a204c",
+    "ETHEREUM_DARWINIA_CROSSCHAIN": "0xb88141E0B8702f9bcFd8063c2Ac8852771525c4e",
+    "TRON_DARWINIA_CROSSCHAIN": "4128DC76871AEBDCDFB6E7A6A6E805BBA304B0D433"
+  },
+  "production": {
+    "ETHEREUM_NETWORK": 3,
+    "SIGN_PREFIX": "Pay RINGs to the Crab account:",
+    "S58_PREFIX": 18,
+    "NETWORK_NAME": "Darwinia MainNet",
+    "SNAPSHOT_TIMESTAMP": 1584683400,
+    "SUBSCAN_API": "https://crab.subscan.io",
+    "ETHERSCAN_DOMAIN": {
+      "en": "https://etherscan.io",
+      "zh": "https://cn.etherscan.com"
+    },
+    "TRONSCAN_DOMAIN": "https://tronscan.io",
+    "RING_ETH_ADDRESS": "0xb52FBE2B925ab79a821b261C82c5Ba0814AAA5e0",
+    "KTON_ETH_ADDRESS": "0x1994100c58753793D52c6f457f189aa3ce9cEe94",
+    "RING_TRON_ADDRESS": "415e465875334b3960e6fc3f6e018ef70d66dedf15",
+    "KTON_TRON_ADDRESS": "41fe4170545a81503a0a328a368f9e0d7c1f6a204c",
+    "ETHEREUM_DARWINIA_CROSSCHAIN": "0xb88141E0B8702f9bcFd8063c2Ac8852771525c4e",
+    "TRON_DARWINIA_CROSSCHAIN": "4128DC76871AEBDCDFB6E7A6A6E805BBA304B0D433"
   }
 }

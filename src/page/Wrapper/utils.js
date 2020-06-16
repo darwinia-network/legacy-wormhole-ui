@@ -52,13 +52,10 @@ function connectTron(accountsChangedCallback, t) {
             return
         }
         const wallet = window.tronWeb.defaultAddress;
-        const preAddress = wallet.base58;
+
         window.tronWeb.on("addressChanged", wallet => {
             if (window.tronWeb) {
-                console.log('addressChanged', preAddress, wallet.base58)
-                if(preAddress !== wallet.base58) {
-                    accountsChangedCallback && accountsChangedCallback('tron', wallet.base58)
-                }
+                accountsChangedCallback && accountsChangedCallback('tron', wallet.base58)
             }
         })
         accountsChangedCallback && accountsChangedCallback('tron', wallet.base58)
@@ -104,7 +101,7 @@ function buildInGenesisEth(account, params, callback) {
     let web3js = new Web3(window.ethereum || window.web3.currentProvider);
     const contract = new web3js.eth.Contract(TokenABI, config[`${params.tokenType.toUpperCase()}_ETH_ADDRESS`]);
 
-    contract.methods.transferFrom(account, config['ETHEREUM_DARWINIA_CROSSCHAIN'], params.value, params.toHex).send({ from: account }).on('transactionHash', (hash) => {
+    contract.methods.transferFrom(account, config['ETHEREUM_DARWINIA_CROSSCHAIN'], params.value, params.toHex).send( { from: account }).on('transactionHash', (hash) => {
         callback && callback(hash)
     }).on('confirmation', () => {
 
@@ -113,20 +110,6 @@ function buildInGenesisEth(account, params, callback) {
     })
 }
 
-async function buildInGenesisTron(account, params, callback) {
-    const tronwebjs = window.tronWeb
-    let contract = await tronwebjs.contract().at(config[`${params.tokenType.toUpperCase()}_TRON_ADDRESS`])
-    const res = contract.methods.transferAndFallback(config['TRON_DARWINIA_CROSSCHAIN'], params.value.toString(), params.toHex).send({  
-        feeLimit: tronwebjs.toSun(100),
-        callValue: 0,
-        shouldPollResponse: false,
-     })
-     res.then((hash) => {
-        callback && callback(hash);
-     }).catch((e) => {
-        console.log(e)
-     })
-}
 
 export function connect(type, callback, t) {
     if (type === 'tron') {
@@ -161,7 +144,7 @@ export function sign(type, account, text, callback, t) {
     }
 }
 
-export function buildInGenesis(type, account, params, callback, t) {
+export function buildInGenesis(type, account, params,  callback, t) {
     const checkResult = checkAddress(params.to, config.S58_PREFIX);
 
     if (!checkResult[0]) {
@@ -173,7 +156,7 @@ export function buildInGenesis(type, account, params, callback, t) {
         return
     }
 
-    if (params.value.eq(new BN(0))) {
+    if(params.value.eq(new BN(0))) {
         formToast(t(`The transfer amount cannot be 0`))
         return
     }
@@ -182,7 +165,7 @@ export function buildInGenesis(type, account, params, callback, t) {
     params.toHex = '0x' + decodedAddress
 
     if (type === 'tron') {
-        buildInGenesisTron(account, params, callback)
+        signTron(account, decodedAddress, callback)
     }
 
     if (type === 'eth') {
@@ -242,84 +225,26 @@ export const wxRequest = async (params = {}, url) => {
 
 export const getClaimsInfo = (params) => wxRequest(params, `${config.SUBSCAN_API}/api/other/claims`)
 
-export function getTokenBalanceEth(account = '') {
-    try {
+export function getTokenBalance(account = '') {
+    let web3js = new Web3(window.ethereum || window.web3.currentProvider);
+    const ringContract = new web3js.eth.Contract(TokenABI, config.RING_ETH_ADDRESS);
+    const ktonContract = new web3js.eth.Contract(TokenABI, config.KTON_ETH_ADDRESS);
 
-        let web3js = new Web3(window.ethereum || window.web3.currentProvider);
-        const ringContract = new web3js.eth.Contract(TokenABI, config.RING_ETH_ADDRESS);
-        const ktonContract = new web3js.eth.Contract(TokenABI, config.KTON_ETH_ADDRESS);
-
-        const ringBalance = new Promise((resolve, reject) => {
-            try {
-                ringContract.methods.balanceOf(account).call().then((result) => {
-                    console.log('ring:', result);
-                    resolve(result);
-                })
-            } catch (error) {
-                reject('0');
-            }
+    const ringBalance = new Promise((resolve, reject) => {
+        ringContract.methods.balanceOf(account).call().then((result) => {
+            console.log('ring:', result);
+            resolve(result);
         })
+    })
 
-        const ktonBalance = new Promise((resolve, reject) => {
-            try {
-                ktonContract.methods.balanceOf(account).call().then((result) => {
-                    console.log('kton:', result);
-                    resolve(result);
-                })
-            } catch (error) {
-                reject('0');
-            }
+    const ktonBalance = new Promise((resolve, reject) => {
+        ktonContract.methods.balanceOf(account).call().then((result) => {
+            console.log('kton:', result);
+            resolve(result);
         })
+    })
 
-        return Promise.all([ringBalance, ktonBalance]).then((values) => {
-            return values
-        })
-    } catch (error) {
-        console.log(error);
-    }
-}
-
-export async function getTokenBalanceTron(account = '') {
-    try {
-        const tronwebjs = window.tronWeb
-
-        const ringContract = await tronwebjs.contract().at(config.RING_TRON_ADDRESS);
-        const ktonContract = await tronwebjs.contract().at(config.KTON_TRON_ADDRESS);
-
-        const ringBalance = new Promise((resolve, reject) => {
-            try {
-                ringContract.methods.balanceOf(account).call().then((result) => {
-                    console.log('ring:', result);
-                    resolve(result);
-                })
-            } catch (error) {
-                reject('0');
-            }
-        })
-
-        const ktonBalance = new Promise((resolve, reject) => {
-            try {
-                ktonContract.methods.balanceOf(account).call().then((result) => {
-                    console.log('kton:', result);
-                    resolve(result);
-                })
-            } catch (error) {
-                reject('0');
-            }
-        })
-
-        return Promise.all([ringBalance, ktonBalance]).then((values) => {
-            return values
-        })
-    } catch (error) {
-        console.log(error);
-    }
-}
-
-export function getTokenBalance(networkType, account) {
-    if(networkType === 'eth') {
-        return getTokenBalanceEth(account)
-    } else {
-        return getTokenBalanceTron(account)
-    }
+    return Promise.all([ringBalance, ktonBalance]).then((values) => {
+        return values
+    })
 }
