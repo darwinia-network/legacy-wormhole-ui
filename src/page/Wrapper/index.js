@@ -31,13 +31,127 @@ import ethereumIcon from './img/chain-logo/ethereum.png';
 import kusamaIcon from './img/chain-logo/kusama.png';
 import polkadotIcon from './img/chain-logo/polkadot.png';
 import tronIcon from './img/chain-logo/tron.png';
+import arrowIcon from './img/arrow.svg';
 
 import chainMap from './chain';
 import check from "@polkadot/util-crypto/address/check";
 import CrossChain from '../CrossChain';
 import Claim from '../Claims';
 
-import anime from 'animejs';
+// import anime from 'animejs';
+
+const THREE = window.THREE;
+var camera1, camera2, scene1, scene2, renderer1, renderer2;
+var isUserInteracting = false,
+    lon = 0,
+    lat = 0,
+    phi = 0,
+    theta = 0;
+
+
+
+function init() {
+
+    var container1, mesh1;
+    var container2, mesh2;
+
+    container1 = document.getElementById('space-container');
+    container2 = document.getElementById('space-container-top');
+
+    camera1 = new THREE.PerspectiveCamera(155, window.innerWidth / window.innerHeight, 1, 1500);
+    camera1.target = new THREE.Vector3(0, 0, 0);
+
+    camera2 = new THREE.PerspectiveCamera(100, window.innerWidth / window.innerHeight, 1, 1500);
+    camera2.target = new THREE.Vector3(0, 0, 0);
+
+    scene1 = new THREE.Scene();
+    scene2 = new THREE.Scene();
+
+    var geometry1 = new THREE.SphereGeometry(1500, 160, 40);
+    geometry1.scale(-1, 1, 1);
+
+    var geometry2 = new THREE.SphereGeometry(500, 160, 40);
+    geometry2.scale(-1, 1, 1);
+
+    THREE.TextureLoader.prototype.crossOrigin = '';
+
+    var material1 = new THREE.MeshBasicMaterial({
+        map: new THREE.TextureLoader().load('https://s3-us-west-2.amazonaws.com/s.cdpn.io/1037366/space-blue.jpg')
+    });
+
+    var material2 = new THREE.MeshBasicMaterial({
+        map: new THREE.TextureLoader().load('https://s3-us-west-2.amazonaws.com/s.cdpn.io/1037366/space2.svg')
+    });
+
+    mesh1 = new THREE.Mesh(geometry1, material1);
+    mesh2 = new THREE.Mesh(geometry2, material2);
+
+    scene1.add(mesh1);
+    scene2.add(mesh2);
+
+
+    renderer1 = new THREE.WebGLRenderer({ alpha: true });
+    renderer1.setPixelRatio(window.devicePixelRatio);
+    renderer1.setSize(window.innerWidth, window.innerHeight);
+    container1.appendChild(renderer1.domElement);
+
+    renderer2 = new THREE.WebGLRenderer({ alpha: true });
+    renderer2.setPixelRatio(window.devicePixelRatio);
+    renderer2.setSize(window.innerWidth, window.innerHeight);
+    container2.appendChild(renderer2.domElement);
+
+    renderer1.domElement.id = 'canvas-bottom';
+    renderer2.domElement.id = 'canvas-top';
+    window.addEventListener('resize', onWindowResize, false);
+}
+
+function onWindowResize() {
+    camera1.aspect = window.innerWidth / window.innerHeight;
+    camera1.updateProjectionMatrix();
+    renderer1.setSize(window.innerWidth, window.innerHeight);
+
+    camera2.aspect = window.innerWidth / window.innerHeight;
+    camera2.updateProjectionMatrix();
+    renderer2.setSize(window.innerWidth, window.innerHeight);
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    update();
+}
+
+function update() {
+
+    if (isUserInteracting === false) {
+
+        lon += 0.1;
+
+    }
+
+    lat = Math.max(-200, Math.min(100, lat));
+    phi = THREE.Math.degToRad(300 - lat);
+    theta = THREE.Math.degToRad(lon);
+
+    camera1.target.x = 3000 * Math.sin(phi) * Math.cos(theta);
+    camera1.target.y = 3000 * Math.cos(phi);
+    camera1.target.z = 500 * Math.sin(phi) * Math.sin(theta);
+
+    camera2.target.x = 1500 * Math.sin(phi) * Math.cos(theta);
+    camera2.target.y = 500 * Math.cos(phi);
+    camera2.target.z = 500 * Math.sin(phi) * Math.sin(theta);
+
+    camera1.lookAt(camera1.target);
+    camera2.lookAt(camera2.target);
+
+    /*
+    // distortion
+    camera.position.copy( camera.target ).negate();
+    */
+
+    renderer1.render(scene1, camera1);
+    renderer2.render(scene2, camera2);
+
+}
 
 const chainIcons = {
     acala: acalaIcon,
@@ -52,8 +166,9 @@ const chainIcons = {
 class Claims extends Component {
     constructor(props, context) {
         super(props, context);
+        this.debounceLineFn = null;
         this.state = {
-            status: 0,
+            status: 1,
             networkType: 'eth',
             tokenType: 'ring',
             account: {
@@ -73,11 +188,13 @@ class Claims extends Component {
             ringBalance: Web3.utils.toBN(0),
             ktonBalance: Web3.utils.toBN(0),
             crossChainBalance: Web3.utils.toBN(0),
-            renderPage: 'crosschain'
+            renderPage: 'crosschain',
+            lines: []
         }
     }
 
     componentDidMount() {
+        const { status } = this.state
         archorsComponent()
         // anime({
         //     targets: '.animeBg',
@@ -86,19 +203,125 @@ class Claims extends Component {
         //     direction: 'alternate',
         //     loop: true,
         // })
+
+        // const rectBall1 = document.getElementById('ball1').getBoundingClientRect()
+        // const rectBall2 = document.getElementById('ball2').getBoundingClientRect()
+        // console.log(rectBall1, rectBall2);
+
+        this.debounceLineFn = _.debounce(() => {
+            const lines = this.getRectInfo([
+                [1, 2, true, false],
+                [1, 3, true, false],
+                [3, 2, false, false],
+                [3, 4, true, false],
+                [2, 4, false, true],
+                [5, 6, false, true],
+                [3, 6, false, false],
+            ])
+            this.setState({
+                lines: lines
+            })
+        }, 300, {
+            'leading': true,
+            'trailing': true
+        })
+        
+
+        if (status === 0) {
+            const lines = this.getRectInfo([
+                [1, 2, true, false],
+                [3, 1, true, false],
+                [3, 2, false, false],
+                [3, 4, true, false],
+                [2, 4, false, true],
+                [5, 6, false, true],
+                [3, 6, false, false],
+            ])
+            this.setState({
+                lines: lines
+            })
+
+            init();
+            animate();
+            window.addEventListener('resize', this.debounceLineFn);
+        }
+    }
+
+    componentWillUnmount() {
+        this.removeListener()
+    }
+
+    removeListener = () => {
+        window.removeEventListener('resize', this.debounceLineFn);
+        window.removeEventListener('resize', onWindowResize, false);
+    }
+
+    getLineColor = (valid) => {
+        return valid ? '#D63697' : '#43455A'
+    }
+
+    getDashArray = (valid) => {
+        return valid ? '' : '5,5'
+    }
+
+    getRectInfo = (relates) => {
+        let lines = []
+        relates.forEach(element => {
+            const rectBall1 = document.getElementById(`ball${element[0]}`).getBoundingClientRect()
+            const rectBall2 = document.getElementById(`ball${element[1]}`).getBoundingClientRect()
+            const rectSVG = document.getElementById('svgBox').getBoundingClientRect()
+
+
+            const marginRadio = 0.45
+            const center1 = [rectBall1.x + (rectBall1.width / 2), rectBall1.y + (rectBall1.height / 2)]
+            const center2 = [rectBall2.x + (rectBall2.width / 2), rectBall2.y + (rectBall2.height / 2)]
+            const distance12 = Math.sqrt(Math.pow(center1[0] - center2[0], 2) + Math.pow(center1[1] - center2[1], 2))
+            const center12 = [(center1[0] + center2[0]) / 2, (center1[1] + center2[1]) / 2]
+
+            let halfLine = (distance12 - (rectBall1.width / 2) - (rectBall2.width / 2)) / 2 * marginRadio
+            const p1 = [parseInt((center12[0] - halfLine - rectSVG.x).toFixed(1)), parseInt((center12[1] - rectSVG.y + (rectBall1.width - rectBall2.width) / 4).toFixed(1))]
+            const p2 = [parseInt((center12[0] + halfLine - rectSVG.x).toFixed(1)), parseInt((center12[1] - rectSVG.y + (rectBall1.width - rectBall2.width) / 4).toFixed(1))]
+            const pCenter = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2]
+
+            const theta = Math.atan2((center2[1] - center1[1]), (center2[0] - center1[0])) * (180 / Math.PI)
+
+            const translateY = -8
+            const translateX = (30 * Math.sin(2 * Math.PI / 360 * theta)) / 2
+
+
+            const lineColor = [this.getLineColor(element[2]), this.getLineColor(element[3])]
+            const dashArray = [this.getDashArray(element[2]), this.getDashArray(element[3])]
+            // translate(${translateX},${translateY})
+            // lines.push(<g id="arrow" style ={{transform: [translate(8px, 8px) rotate(${theta}, ${pCenter[0]} ${pCenter[1]}) `}}>
+            lines.push(<g id="arrow" transform={`rotate(${theta}, ${pCenter[0] + 3} ${pCenter[1]})`}>
+                <line x1={p1[0]} y1={p1[1] + translateY} x2={p2[0]} y2={p2[1] + translateY} style={{ stroke: lineColor[1], strokeWidth: "2", fillOpacity: 'null', strokeLinejoin: 'null', fill: 'null', strokeDasharray: dashArray[1], strokeLinecap: "round" }} />
+                {/* <line  x1={p1[0]} y1={p1[1]} x2={p2[0]} y2={p2[1]} style={{ stroke: "url(#svg_8)", strokeWidth: "3"}} /> */}
+                {/* <rect x={p1[0]} y={p1[1]-1.5} width={halfLine*2} height={3} style={{ fill: "url(#orange_red)", strokeWidth: "3"}} /> */}
+                {/* <rect x={p1[0]} y={p1[1]-1.5} width={halfLine*2} height={3} style={{ fill: "url(#orange_red)", strokeWidth: "3", strokeDasharray:"2 2"}} /> */}
+                {/* <line fill="none" stroke="url(#svg_8)" strokeWidth="4.5" x1="133" y1="252.45313" x2="384" y2="85.45313" id="svg_7"  strokeDasharray="5,5"/> */}
+                <polygon points={`${p2[0] + 10} ${p2[1] + translateY},${p2[0]} ${p2[1] - 6 + translateY}, ${p2[0]} ${p2[1] + 6 + translateY}`} style={{ strokeWidth: 0, fill: lineColor[1] }} />
+            </g>)
+
+            lines.push(<g id="arrow1" transform={`rotate(${theta + 180}, ${pCenter[0] + 3} ${pCenter[1]})`}>
+                <line x1={p1[0]} y1={p1[1] + translateY} x2={p2[0]} y2={p2[1] + translateY} style={{ stroke: lineColor[0], strokeWidth: "2", fillOpacity: 'null', strokeLinejoin: 'null', fill: 'null', strokeDasharray: dashArray[0], strokeLinecap: "round" }} />
+                <polygon points={`${p2[0] + 10} ${p2[1] + translateY},${p2[0]} ${p2[1] - 6 + translateY}, ${p2[0]} ${p2[1] + 6 + translateY}`} style={{ strokeWidth: 0, fill: lineColor[0] }} />
+            </g>)
+        });
+        // lines.push(<use id="one" x="150" y="110" xlinkHref="#arrow"/>)
+        return lines
     }
 
     setValue = (key, event, fn) => {
-        const encoded = fn(event.target.value);
+        // const encoded = fn(event.target.value);
         this.setState({
             [key]: fn ? fn(event.target.value) : event.target.value
         })
         event.persist()
     }
 
-    toWeiBNMiddleware = (num = 0, unit='ether') => {
+    toWeiBNMiddleware = (num = 0, unit = 'ether') => {
         try {
-            if(num) {
+            if (num) {
                 return Web3.utils.toBN(Web3.utils.toWei(num, unit))
             }
         } catch (error) {
@@ -122,10 +345,10 @@ class Claims extends Component {
                         status: status
                     })
                     this.airdropData()
-                    if(status === 4) {
+                    if (status === 4) {
                         this.queryClaims()
                     }
-                    
+
                     const balances = await getTokenBalance(this.state.account[networkType]);
                     this.setState({
                         ringBalance: Web3.utils.toBN(balances[0]),
@@ -306,31 +529,63 @@ class Claims extends Component {
 
     step0 = () => {
         return (
-        <div className={`${styles.ballBox}`} onClick={(e) => this.checkedBall('', e)}>
-            <div>
-                <div className={`container`}>
-                    <div className={styles.nebula1}></div>
-                    <div className={styles.nebula2}></div>
-                    {this.renderBall('ethereum', 1)}
-                    {this.renderBall('crab', 2)}
-                    {this.renderBall('darwinia', 3)}
-                    {this.renderBall('tron', 4)}
-                    {this.renderBall('polkadot', 5)}
-                    {this.renderBall('kusama', 6)}
-                    {this.renderBall('acala', 7)}
+            <div className={`${styles.ballBox}`} onClick={(e) => this.checkedBall('', e)}>
+                <div>
+                    <div className={`container ${styles.container}`}>
+                        <div className={styles.nebula1}></div>
+                        <div className={styles.nebula2}></div>
+                        {this.renderBall('ethereum', 1)}
+                        {this.renderBall('crab', 2)}
+                        {this.renderBall('darwinia', 3)}
+                        {this.renderBall('tron', 4)}
+                        {this.renderBall('polkadot', 5)}
+                        {this.renderBall('kusama', 6)}
+                        {this.renderBall('acala', 7)}
 
-                    {this.renderSubBall(1)}
-                    {this.renderSubBall(2)}
-                    {this.renderSubBall(3)}
-                    {this.renderSubBall(4)}
-                    <div className={styles.subBall5Box}>
-                        {this.renderSubBall(5)}
+                        {this.renderSubBall(1)}
+                        {this.renderSubBall(2)}
+                        {this.renderSubBall(3)}
+                        {this.renderSubBall(4)}
+                        {/* <div className={styles.subBall5Box}>
+                            {this.renderSubBall(5)}
+                        </div> */}
+                        <p className={styles.powerLine}>Powered By Darwinia</p>
+                        <div id="space-container"></div>
+                        <div id="space-container-top"></div>
+                        <svg width="100%" height="90vh" version="1.1"
+                            id="svgBox"
+                            xmlnsXlink="http://www.w3.org/1999/xlink"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                {/* <linearGradient id="orange_red" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" style={{stopColor:'#155EDF',
+                                stopOpacity:1}}/>
+                                <stop offset="100%" style={{stopColor:'#BE29A4',
+                                stopOpacity:1}}/>
+                                </linearGradient> */}
+                                <linearGradient id="svg_8" x1="0" y1="0" x2="1" y2="0">
+                                    <stop stopColor="#000" offset="0" />
+                                    <stop stopColor="#ffffff" offset="1" />
+                                </linearGradient>
+                                {/* <linearGradient id='orange_red' x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset='0%' stop-color='red' />
+      <stop offset='100%' stop-color='blue' />
+    </linearGradient> */}
+                            </defs>
+
+                            {/* <g id="arrow" style={{stroke: 'black'}} transform="rotate(90, 75, 50)">
+                                <line x1="60" y1="50" x2="90" y2="50"/>
+                                <polygon points="90 50, 85 45, 85 55"/>
+                            </g> */}
+                            {/* <use xlinkHref="#arrow" transform="rotate(90, 75, 50)"/> */}
+
+                            {/* <line x1="0" y1="0" x2="300" y2="300" style={{ stroke: '#D63697', 'strokeWidth': 5 }} /> */}
+                            {this.state.lines}
+                            {/* <path style={{stroke:'#D63697','strokeWidth':2, fill:"#D63697"}} d="M155.88 166L248.35 311.62L238.68 317.85L258.35 324.03L261.98 305.09L254.59 308.95L162.79 161.22L155.88 166Z" id="c2ROIfcfpV"></path> */}
+                        </svg>
                     </div>
-                    <p className={styles.powerLine}>Powered By Darwinia</p>
                 </div>
             </div>
-        
-        </div>
         )
     }
 
@@ -424,7 +679,7 @@ class Claims extends Component {
                             </Form.Control>
 
                             <Form.Label>映射数量</Form.Label>
-                            <Form.Control type="number" placeholder={t('crosschain:Darwinia Crab Network account')} value={formatBalance(crossChainBalance, 'ether') === '0' ? '' : formatBalance(crossChainBalance, 'ether')} 
+                            <Form.Control type="number" placeholder={t('crosschain:Darwinia Crab Network account')} value={formatBalance(crossChainBalance, 'ether') === '0' ? '' : formatBalance(crossChainBalance, 'ether')}
                                 onChange={(value) => this.setValue('crossChainBalance', value, this.toWeiBNMiddleware)} />
                         </Form.Group>
                         <div className={styles.buttonBox}>
@@ -515,10 +770,10 @@ class Claims extends Component {
     }
 
     renderContent = () => {
-        const {renderPage} = this.state;
+        const { renderPage } = this.state;
         return (<>
-            {renderPage === 'crosschain' ? <CrossChain/> : null}
-            {renderPage === 'airdrop' ? <Claim/> : null}
+            {renderPage === 'crosschain' ? <CrossChain /> : null}
+            {renderPage === 'airdrop' ? <Claim /> : null}
         </>)
     }
 
@@ -534,18 +789,18 @@ class Claims extends Component {
         return (
             <>
                 <div className={styles.scaleBox}>
-                    <div className={`${styles['ball' + styleId]} ${isDisableBallClass}`} onClick={(e) => this.checkedBall(id, e)}>
+                    <div id={`ball${styleId}`} className={`${styles['ball' + styleId]} ${styles[`ballbg-${id}`]} ${isDisableBallClass}`} onClick={(e) => this.checkedBall(id, e)}>
                         <img className={styles.ballIcon} src={chainIcons[id]} alt="chain logo" />
                         <p>{id}</p>
                     </div>
-                    <div className={`animeBg ${styles[`ball${styleId}Shadow`]}  ${isDisableBallShadowClass}`}></div>
+                    {/* <div className={`animeBg ${styles[`ball${styleId}Shadow`]}  ${isDisableBallShadowClass}`}></div> */}
                 </div>
                 {isBallActive[1] === 2 && chainMap[`${checkedBall}_${id}`] && chainMap[`${checkedBall}_${id}`].length ?
                     chainMap[`${checkedBall}_${id}`].map((item) => {
                         return <div className={`${styles[`ball${styleId}Btn`]}`} onClick={(e) => this.fn_wrapper(e, item, checkedBall, id)}>{item}</div>
                     })
                     : ''}
-                {isBallActive[1] === 1 && !(chainMap[`${checkedBall}_${id}`] && chainMap[`${checkedBall}_${id}`].length) && (!chainMap[checkedBall] || !chainMap[checkedBall].length)?
+                {isBallActive[1] === 1 && !(chainMap[`${checkedBall}_${id}`] && chainMap[`${checkedBall}_${id}`].length) && (!chainMap[checkedBall] || !chainMap[checkedBall].length) ?
                     <div className={`${styles[`ball${styleId}Btn`]} ${styles.disableBtn}`}>敬请期待</div>
                     : ''}
             </>
@@ -578,22 +833,26 @@ class Claims extends Component {
         const isDisableBallClass = '', isDisableBallShadowClass = '';
 
         return (<div>
-            <div className={`${styles['ball' + fromStyleId]} ${isDisableBallClass}`}>
+            <div className={`${styles['ball' + fromStyleId]} ${styles[`ballbg-${from}`]} ${isDisableBallClass}`}>
                 <img className={styles.ballIcon} src={chainIcons[from]} alt="chain logo" />
                 <p>{from}</p>
             </div>
-            <div className={`${styles[`ball${fromStyleId}Shadow`]} ${isDisableBallShadowClass}`}></div>
-            <div className={`${styles['ball' + toStyleId]} ${isDisableBallClass}`}>
+            <img className={styles.arrow} src={arrowIcon} alt=""/>
+            {/* <div className={`${styles[`ball${fromStyleId}Shadow`]} ${isDisableBallShadowClass}`}></div> */}
+            <div className={`${styles['ball' + toStyleId]} ${styles[`ballbg-${to}`]} ${isDisableBallClass}`}>
                 <img className={styles.ballIcon} src={chainIcons[to]} alt="chain logo" />
                 <p>{to}</p>
             </div>
-            <div className={`${styles[`ball${toStyleId}Shadow`]} ${isDisableBallShadowClass}`}></div>
+            {/* <div className={`${styles[`ball${toStyleId}Shadow`]} ${isDisableBallShadowClass}`}></div> */}
         </div>)
     }
 
     render() {
         const { t } = this.props
         const { status, from, to } = this.state
+        if (status !== 0) {
+            this.removeListener()
+        }
         return (
             <div className={styles.wrapperBox}>
                 <div className={`${styles.header}`}>
@@ -637,9 +896,9 @@ class Claims extends Component {
                             <div>
                                 <img alt="" className={styles.promoteLogo} src={promoteLogo} />
                                 <Button variant="color" target="_blank" href={t('page:darwinaPage')}>{t('page:About Darwinia Crab')}</Button>
-                                <a href="javascript:void(0)" onClick={this.changeLng} className={`${styles.changeLng} ${styles.changeLngMobil}`}>
-                                    {i18n.language.indexOf('en') > -1 ? '中文' : 'EN' }
-                                </a>
+                                {/* <a href="javascript:void(0)" onClick={this.changeLng} className={`${styles.changeLng} ${styles.changeLngMobil}`}>
+                                    {i18n.language.indexOf('en') > -1 ? '中文' : 'EN'}
+                                </a> */}
                             </div>
                         </div>
                     </Container>

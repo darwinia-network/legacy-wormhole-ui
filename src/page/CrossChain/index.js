@@ -1,14 +1,13 @@
 import React, { Component } from "react";
 import { Container, Button, Form } from 'react-bootstrap'
 
-import { ToastContainer, toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import dayjs from 'dayjs';
 import Web3 from 'web3';
-import { CopyToClipboard } from 'react-copy-to-clipboard';
+import { encodeAddress } from '@polkadot/util-crypto';
 import _ from 'lodash';
 
-import { connect, sign, formToast, getAirdropData, config, formatBalance, getClaimsInfo, getTokenBalance, buildInGenesis } from './utils'
+import { connect, sign, formToast, getAirdropData, config, formatBalance, getBuildInGenesisInfo, getTokenBalance, buildInGenesis } from './utils'
 import archorsComponent from '../../components/anchorsComponent'
 import { withTranslation } from "react-i18next";
 import i18n from '../../locales/i18n';
@@ -20,8 +19,6 @@ import step2open from './img/step-2-open.png';
 import step2close from './img/step-2-close.png';
 import step3open from './img/step-3-open.png';
 import step3close from './img/step-3-close.png';
-import promoteLogo from './img/promote-logo.png';
-import promoteLogoEn from './img/promote-logo-en.png';
 import helpLogo from './img/help-icon.png';
 import labelTitleLogo from './img/label-title-logo.png';
 import helpSmall from './img/help-s.png';
@@ -54,7 +51,8 @@ class Claims extends Component {
             ktonBalance: Web3.utils.toBN(0),
             crossChainBalanceText: '',
             crossChainBalance: Web3.utils.toBN(0),
-            hash: ''
+            hash: '',
+            history: []
         }
     }
 
@@ -101,7 +99,7 @@ class Claims extends Component {
                     this.setState({
                         status: status
                     })
-                    this.airdropData()
+                    // this.airdropData()
                     if (status === 4) {
                         this.queryClaims()
                     }
@@ -131,7 +129,7 @@ class Claims extends Component {
         const { networkType, account, darwiniaAddress, crossChainBalance, tokenType } = this.state;
         const { t } = this.props;
 
-        if(!this.checkForm()) return;
+        if (!this.checkForm()) return;
         buildInGenesis(networkType, account[networkType], {
             to: darwiniaAddress,
             value: crossChainBalance,
@@ -159,7 +157,7 @@ class Claims extends Component {
             return false
         }
 
-        if(crossChainBalance.gt(balance[`${tokenType}Balance`])) {
+        if (crossChainBalance.gt(balance[`${tokenType}Balance`])) {
             formToast(t(`The amount exceeds the account available balance`))
             return false
         }
@@ -179,28 +177,19 @@ class Claims extends Component {
     async queryClaims() {
         const { networkType, account } = this.state;
         const address = networkType === 'eth' ? account[networkType] : (window.tronWeb && window.tronWeb.address.toHex(account[networkType]))
-        let json = await getClaimsInfo({
+        let json = await getBuildInGenesisInfo({
             query: { address: address },
-            method: "post"
+            method: "get"
         });
         if (json.code === 0) {
-
-            if (json.data.info.length === 0) {
+            if (json.data.length === 0) {
                 json = {
-                    data: {
-                        info: [{
-                            account: '',
-                            target: '',
-                            amount: '0'
-                        }]
-                    }
+                    data: []
                 }
             };
 
             this.setState({
-                claimAmount: Web3.utils.toBN(json.data.info[0].amount),
-                claimTarget: json.data.info[0].target,
-                hasFetched: true,
+                history: json.data
             })
         } else {
         }
@@ -327,7 +316,7 @@ class Claims extends Component {
                 <div className={styles.formBox}>
                     <div className={styles.stepRoadMap}>
                         <h3>{t('跨链转账路线图：')}<a target="_blank" rel="noopener noreferrer" href="https://darwinia.network">
-                            <img src={helpSmall} alt="help"/>
+                            <img src={helpSmall} alt="help" />
                         </a></h3>
                         <div className={styles.stepRoadMapItem}>
                             <div>
@@ -351,8 +340,6 @@ class Claims extends Component {
                             <p>此阶段的跨链转账，立即到账（可能存在一定的网络延迟），且支持双向或多向转账</p>
                         </div>
                     </div>
-
-
                 </div>
             </div>
         )
@@ -416,7 +403,7 @@ class Claims extends Component {
                             <a href={explorerUrl} target="_blank" rel="noopener noreferrer">{explorerUrl}</a>
                         </Form.Group>
                         <div className={styles.buttonBox}>
-                             <Button variant="color" onClick={this.toResult}>{t('crosschain:search')}</Button>
+                            <Button variant="color" onClick={this.toResult}>{t('crosschain:search')}</Button>
                             <Button variant="outline-purple" onClick={() => this.goBack(1)}>{t('crosschain:Back')}</Button>
                         </div>
                     </div>
@@ -427,27 +414,42 @@ class Claims extends Component {
 
     step4 = () => {
         const { t } = this.props
-        const { networkType, account, airdropNumber, claimTarget, claimAmount, hasFetched } = this.state
+        const { networkType, account, airdropNumber, claimTarget, claimAmount, hasFetched, history } = this.state
         return (
             <div>
                 {this.renderHeader()}
                 <div className={styles.formBox}>
-                    <div className={`${styles.connectInfoBox} claims-network-box`}>
+                    <div className={`${styles.connectAccountBox} claims-network-box`}>
                         <h1><img alt="" src={labelTitleLogo} /><span>{t('crosschain:Connected to')}：</span></h1>
                         <p>{account[networkType]}</p>
-
-                        <h1><img alt="" src={labelTitleLogo} /><span>{t('crosschain:Snapshot data')}：</span></h1>
-                        <p>{claimAmount.eqn(0) ? formatBalance(airdropNumber) : formatBalance(claimAmount)} RING<br />({dayjs.unix(config.SNAPSHOT_TIMESTAMP).format('YYYY-MM-DD HH:mm:ss ZZ')})</p>
-
-                        <h1><img alt="" src={labelTitleLogo} /><span>{t('crosschain:Destination')}：</span></h1>
-                        <p>{claimTarget || '----'}</p>
-
-                        <h1><img alt="" src={labelTitleLogo} /><span>{t('crosschain:Claims Result')}：</span></h1>
-                        <p>{hasFetched ? (claimTarget ? t('crosschain:Claims') : t('crosschain:Not claimed')) : '----'}</p>
-                        <div className={styles.buttonBox}>
-                            <Button variant="outline-gray" onClick={() => this.goBack(1)}>{t('crosschain:Back')}</Button>
-                        </div>
                     </div>
+
+                    {history.map((item) => {
+
+                        return (<div className={styles.historyItem}>
+                            <div>
+                                <h3>时间</h3>
+                                <p>{dayjs.unix(item.block_timestamp).format('YYYY-MM-DD HH:mm:ss ZZ')}</p>
+                            </div>
+                            <div>
+                                <h3>跨链流向</h3>
+                                <p>{item.chain} -> Darwinia MainNet</p>
+                            </div>
+                            <div>
+                                <h3>数量</h3>
+                                <p>{formatBalance(Web3.utils.toBN(item.amount), 'ether')} {item.currency.toUpperCase()}</p>
+                            </div>
+                            <div>
+                                <h3>接收账号</h3>
+                                <p>{encodeAddress('0x' + item.target, 18)}</p>
+                            </div>
+                            <Button variant="outline-purple" block href={this.renderExplorerUrl(item.tx, item.chain)}>{t('crosschain:Txhash')}</Button>
+                        </div>)
+                    })}
+                    <div className={styles.buttonBox}>
+                        <Button variant="outline-gray" onClick={() => this.goBack(1)}>{t('crosschain:Back')}</Button>
+                    </div>
+
                 </div>
             </div>
         )
@@ -501,14 +503,15 @@ class Claims extends Component {
         return `https://docs.darwinia.network/docs/${lng}/crab-tut-claim-cring`
     }
 
-    renderExplorerUrl = () => {
+    renderExplorerUrl = (_hash, _networkType) => {
         const lng = i18n.language.indexOf('en') > -1 ? 'en' : 'zh'
         const { hash, networkType } = this.state
         const domain = {
             eth: `${config.ETHERSCAN_DOMAIN[lng]}/tx/`,
             tron: `${config.TRONSCAN_DOMAIN}/#transaction/`
         }
-        return `${domain[networkType]}${hash}`
+
+        return `${domain[_networkType || networkType]}${_hash || hash}`
     }
 
     render() {

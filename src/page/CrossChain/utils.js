@@ -242,6 +242,8 @@ export const wxRequest = async (params = {}, url) => {
 
 export const getClaimsInfo = (params) => wxRequest(params, `${config.SUBSCAN_API}/api/other/claims`)
 
+export const getBuildInGenesisInfo = (params) => wxRequest(params, `${config.DAPP_API}/api/ringBurn`)
+
 export function getTokenBalanceEth(account = '') {
     try {
 

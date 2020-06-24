@@ -32,17 +32,17 @@
 
 }
 
-.changeLng{
-  color: #fff;
-  padding: 2px 10px;
-  border-radius: 12px;
-  font-size: 14px;
-  border: 1px solid white;
-}
+// .changeLng{
+//   color: #fff;
+//   padding: 2px 10px;
+//   border-radius: 12px;
+//   font-size: 14px;
+//   border: 1px solid white;
+// }
 
-a.changeLng:hover, a.changeLng:active {
-  color: #fff;
-}
+// a.changeLng:hover, a.changeLng:active {
+//   color: #fff;
+// }
 
 .changeLngMobil {
   display: none;
@@ -299,18 +299,18 @@ a.changeLng:hover, a.changeLng:active {
       flex-direction: column-reverse;
     }
 
-    .changeLngMobil {
-      padding: 2px 10px;
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      display: block;
-      text-decoration: none;
-    }
+    // .changeLngMobil {
+    //   padding: 2px 10px;
+    //   position: absolute;
+    //   top: 20px;
+    //   right: 20px;
+    //   display: block;
+    //   text-decoration: none;
+    // }
 
-    a.changeLngMobil:hover, a.changeLngMobil:active {
-      color: #fff;
-    }
+    // a.changeLngMobil:hover, a.changeLngMobil:active {
+    //   color: #fff;
+    // }
   }
 
   .claimBox {
