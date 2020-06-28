@@ -102,6 +102,7 @@ class Claims extends Component {
                     // this.airdropData()
                     if (status === 4) {
                         this.queryClaims()
+                        return;
                     }
 
                     const balances = await getTokenBalance(networkType, this.state.account[networkType]);

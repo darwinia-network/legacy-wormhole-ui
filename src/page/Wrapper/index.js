@@ -76,11 +76,11 @@ function init() {
     THREE.TextureLoader.prototype.crossOrigin = '';
 
     var material1 = new THREE.MeshBasicMaterial({
-        map: new THREE.TextureLoader().load('https://s3-us-west-2.amazonaws.com/s.cdpn.io/1037366/space-blue.jpg')
+        map: new THREE.TextureLoader().load('https://imgland.oss-cn-hangzhou.aliyuncs.com/photo/2020/882f6f03-0d0a-484d-98b7-44627cfefa22.jpg')
     });
 
     var material2 = new THREE.MeshBasicMaterial({
-        map: new THREE.TextureLoader().load('https://s3-us-west-2.amazonaws.com/s.cdpn.io/1037366/space2.svg')
+        map: new THREE.TextureLoader().load('https://imgland.oss-cn-hangzhou.aliyuncs.com/photo/2020/957c76cb-2115-48b0-a525-57b4000a48a2.svg')
     });
 
     mesh1 = new THREE.Mesh(geometry1, material1);
@@ -163,12 +163,27 @@ const chainIcons = {
     tron: tronIcon
 }
 
+const lineConfig = [ 
+    [1, 2, true, false],
+    [3, 1, true, false],
+    [3, 2, false, false],
+    [3, 4, true, false],
+    [2, 4, false, true],
+    [5, 6, false, true],
+    [3, 6, false, false]
+]
+
+const PathConfig = [
+    [3, 5, true, false],
+    [5, 7, true, false]
+]
+
 class Claims extends Component {
     constructor(props, context) {
         super(props, context);
         this.debounceLineFn = null;
         this.state = {
-            status: 1,
+            status: 0,
             networkType: 'eth',
             tokenType: 'ring',
             account: {
@@ -189,7 +204,9 @@ class Claims extends Component {
             ktonBalance: Web3.utils.toBN(0),
             crossChainBalance: Web3.utils.toBN(0),
             renderPage: 'crosschain',
-            lines: []
+            lines: [],
+            path: [],
+            slot: []
         }
     }
 
@@ -209,17 +226,16 @@ class Claims extends Component {
         // console.log(rectBall1, rectBall2);
 
         this.debounceLineFn = _.debounce(() => {
-            const lines = this.getRectInfo([
-                [1, 2, true, false],
-                [1, 3, true, false],
-                [3, 2, false, false],
-                [3, 4, true, false],
-                [2, 4, false, true],
-                [5, 6, false, true],
-                [3, 6, false, false],
-            ])
+            const lines = this.getLineInfo(lineConfig)
+            const path = this.getPathInfo(PathConfig)
             this.setState({
-                lines: lines
+                lines: lines,
+                path
+            },() => {
+               const slot = this.getSlotInfo(PathConfig)
+               this.setState({
+                slot
+               })
             })
         }, 300, {
             'leading': true,
@@ -228,17 +244,16 @@ class Claims extends Component {
         
 
         if (status === 0) {
-            const lines = this.getRectInfo([
-                [1, 2, true, false],
-                [3, 1, true, false],
-                [3, 2, false, false],
-                [3, 4, true, false],
-                [2, 4, false, true],
-                [5, 6, false, true],
-                [3, 6, false, false],
-            ])
+            const lines = this.getLineInfo(lineConfig)
+            const path = this.getPathInfo(PathConfig)
             this.setState({
-                lines: lines
+                lines: lines,
+                path
+            },() => {
+               const slot = this.getSlotInfo(PathConfig)
+               this.setState({
+                slot
+               })
             })
 
             init();
@@ -264,13 +279,12 @@ class Claims extends Component {
         return valid ? '' : '5,5'
     }
 
-    getRectInfo = (relates) => {
+    getLineInfo = (relates) => {
         let lines = []
         relates.forEach(element => {
             const rectBall1 = document.getElementById(`ball${element[0]}`).getBoundingClientRect()
             const rectBall2 = document.getElementById(`ball${element[1]}`).getBoundingClientRect()
             const rectSVG = document.getElementById('svgBox').getBoundingClientRect()
-
 
             const marginRadio = 0.45
             const center1 = [rectBall1.x + (rectBall1.width / 2), rectBall1.y + (rectBall1.height / 2)]
@@ -308,6 +322,48 @@ class Claims extends Component {
             </g>)
         });
         // lines.push(<use id="one" x="150" y="110" xlinkHref="#arrow"/>)
+        return lines
+    }
+
+    getSlotInfo = (relates) => {
+        const slotPath = []
+        relates.map((element) => {
+            const line35 = document.getElementById(`path-${element[0]}-${element[1]}`)
+            const line35Length = line35.getTotalLength()
+            const p0 = line35.getPointAtLength(line35Length/2)
+            const p1 = line35.getPointAtLength(line35Length/2 - 2)
+            const p2 = line35.getPointAtLength(line35Length/2 + 2)
+            const theta = Math.atan2(p2.y - p1.y,p2.x - p1.x) * (180 / Math.PI)
+            
+            slotPath.push(<use xlinkHref="#slot" id={`path-${element[0]}-${element[1]}-instant`} x={p0.x-8.5} y={p0.y-17} transform={`rotate(${theta+90}, ${p0.x} ${p0.y})`}>
+            </use>)
+        })
+        return slotPath;
+    }
+
+    getPathInfo = (relates) => {
+        let lines = []
+        relates.forEach(element => {
+            const rectBall1 = document.getElementById(`ball${element[0]}`).getBoundingClientRect()
+            const rectBall2 = document.getElementById(`ball${element[1]}`).getBoundingClientRect()
+            const rectSVG = document.getElementById('svgBox').getBoundingClientRect()
+
+            // const marginRadio = 0.45
+            const center1 = [rectBall1.x + (rectBall1.width / 2), rectBall1.y + (rectBall1.height / 2)]
+            const center2 = [rectBall2.x + (rectBall2.width / 2), rectBall2.y + (rectBall2.height / 2)]
+            const distance12 = Math.sqrt(Math.pow(center1[0] - center2[0], 2) + Math.pow(center1[1] - center2[1], 2))
+            // const center12 = [(center1[0] + center2[0]) / 2, (center1[1] + center2[1]) / 2]
+
+            // let halfLine = (distance12 - (rectBall1.width / 2) - (rectBall2.width / 2)) / 2 * marginRadio
+            // const p1 = [parseInt((center12[0] - (center12[0] - center1[0])*0.8 - rectSVG.x).toFixed(1)), parseInt((center12[1] - rectSVG.y + (rectBall1.width - rectBall2.width) / 3).toFixed(1))]
+            // const p2 = [parseInt((center12[0] + (center2[0] - center12[0])*0.8 - rectSVG.x).toFixed(1)), parseInt((center12[1] - rectSVG.y + (rectBall1.width - rectBall2.width) / 4).toFixed(1))]
+            const curvetoPath = distance12/1.3;
+            lines.push(<g transform={`rotate(${0}, ${parseInt(center1[0])} ${parseInt(center1[1])})`}>
+                <path id={`path-${element[0]}-${element[1]}`} d={`m${center1[0]-rectSVG.x},${parseInt(center1[1]-rectSVG.y)}C${parseInt(center1[0]-rectSVG.x + curvetoPath)},${parseInt(center1[1]-rectSVG.y - curvetoPath)} ${parseInt(center1[0] -rectSVG.x+ distance12 - curvetoPath)},${parseInt(center2[1]-rectSVG.y + curvetoPath)} ${parseInt(center2[0]-rectSVG.x)},${parseInt(center2[1]-rectSVG.y)}`} style={{strokeWidth: "2"}} stroke="#43455a" fill="none"/>
+            </g>
+            )
+
+        });
         return lines
     }
 
@@ -537,6 +593,7 @@ class Claims extends Component {
                         {this.renderBall('ethereum', 1)}
                         {this.renderBall('crab', 2)}
                         {this.renderBall('darwinia', 3)}
+                        {this.renderBall('darwinia-bg', 3)}
                         {this.renderBall('tron', 4)}
                         {this.renderBall('polkadot', 5)}
                         {this.renderBall('kusama', 6)}
@@ -572,7 +629,9 @@ class Claims extends Component {
       <stop offset='100%' stop-color='blue' />
     </linearGradient> */}
                             </defs>
-
+                            <defs> 
+                                <path stroke="null" d="m7.51084,18.3341l0.00057,2.86487l4.13369,0l-0.00057,-2.86487l3.21509,0l0.00057,2.86487l3.4434,0.00011l0.00077,4.35207c-0.00181,4.38449 -3.27441,8.08257 -7.63603,8.62874l-2.18129,0c-4.36161,-0.5462 -7.63422,-4.24427 -7.63603,-8.62876l0,-4.35205l3.44531,-0.00011l-0.00057,-2.86487l3.21509,0zm3.08558,-17.61409c4.36161,0.5462 7.63422,4.24426 7.63603,8.62875l0,4.35205l-17.45257,0l-0.00077,-4.35207c0.00181,-4.38449 3.27441,-8.08256 7.63603,-8.62874l2.18129,0z" id="slot" fill="#43455a" stroke-width="2"/>
+                            </defs>
                             {/* <g id="arrow" style={{stroke: 'black'}} transform="rotate(90, 75, 50)">
                                 <line x1="60" y1="50" x2="90" y2="50"/>
                                 <polygon points="90 50, 85 45, 85 55"/>
@@ -581,6 +640,8 @@ class Claims extends Component {
 
                             {/* <line x1="0" y1="0" x2="300" y2="300" style={{ stroke: '#D63697', 'strokeWidth': 5 }} /> */}
                             {this.state.lines}
+                            {this.state.path}
+                            {this.state.slot}
                             {/* <path style={{stroke:'#D63697','strokeWidth':2, fill:"#D63697"}} d="M155.88 166L248.35 311.62L238.68 317.85L258.35 324.03L261.98 305.09L254.59 308.95L162.79 161.22L155.88 166Z" id="c2ROIfcfpV"></path> */}
                         </svg>
                     </div>
