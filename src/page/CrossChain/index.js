@@ -5,7 +5,6 @@ import 'react-toastify/dist/ReactToastify.css';
 import dayjs from 'dayjs';
 import Web3 from 'web3';
 import { encodeAddress } from '@polkadot/util-crypto';
-import _ from 'lodash';
 
 import { connect, sign, formToast, getAirdropData, config, formatBalance, getBuildInGenesisInfo, getTokenBalance, buildInGenesis } from './utils'
 import archorsComponent from '../../components/anchorsComponent'
@@ -13,7 +12,6 @@ import { withTranslation } from "react-i18next";
 import i18n from '../../locales/i18n';
 
 import styles from "./style.module.scss";
-import darwiniaLogo from './img/darwinia-logo.png';
 import step1open from './img/step-1-open.png';
 import step2open from './img/step-2-open.png';
 import step2close from './img/step-2-close.png';
@@ -315,29 +313,29 @@ class Claims extends Component {
                 </div>
                 <div className={styles.formBox}>
                     <div className={styles.stepRoadMap}>
-                        <h3>{t('跨链转账路线图：')}<a target="_blank" rel="noopener noreferrer" href="https://darwinia.network">
+                        <h3>{t('crosschain:Roadmap for cross-chain transfers')}<a target="_blank" rel="noopener noreferrer" href="https://darwinia.network">
                             <img src={helpSmall} alt="help" />
                         </a></h3>
                         <div className={styles.stepRoadMapItem}>
                             <div>
-                                <p>阶段1: 创世跨链</p>
+                                <p>{t('crosschain:Phase 1')}</p>
                                 <p>2020.05.30 - 2020.06.30</p>
                             </div>
-                            <p>此阶段的跨链转账，将在 Darwinia 主网上线后到账，通过 Genesis Block 发至指定账号</p>
+        <p>{t('crosschain:The cross-chain transfers at this stage will arrive after launching the Darwinia mainnet and will be sent to the destination account by Genesis Block')}</p>
                         </div>
                         <div className={styles.stepRoadMapItem}>
                             <div>
-                                <p>阶段2: 单向跨链</p>
+        <p>{t('crosschain:Phase 2')}</p>
                                 <p>2020 Q3</p>
                             </div>
-                            <p>此阶段的跨链转账，立即到账（可能存在一定的网络延迟），但仅支持发至Darwinia 主网的单项转账</p>
+        <p>{t('crosschain:Cross-chain transfers at this stage will arrive immediately (network delays may occur),but only support One-way transfers to the Darwinia main network')}</p>
                         </div>
                         <div className={styles.stepRoadMapItem}>
                             <div>
-                                <p>阶段3: 多向跨链</p>
+        <p>{t('crosschain:Phase 3')}</p>
                                 <p>2020 Q3 - Q4</p>
                             </div>
-                            <p>此阶段的跨链转账，立即到账（可能存在一定的网络延迟），且支持双向或多向转账</p>
+        <p>{t('crosschain:Cross-chain transfers at this stage will arrive immediately (network delays may occur), and support two-way or multi-way transfers')}</p>
                         </div>
                     </div>
                 </div>
@@ -369,23 +367,23 @@ class Claims extends Component {
                 {status === 2 ? <div className={styles.formBox}>
                     <div className={`${styles.networkBox} claims-network-box`}>
                         <Form.Group controlId="darwinaAddressGroup">
-                            <Form.Label>{t('crosschain:Please enter the account of Darwinia Network')} <a href={this.renderHelpUrl()} target="_blank"
+                            <Form.Label>{t('crosschain:Please enter the destination account of Darwinia mainnet')} <a href={this.renderHelpUrl()} target="_blank"
                                 rel="noopener noreferrer"><img alt=""
                                     className={styles.labelIcon} src={helpLogo} /></a> </Form.Label>
                             <Form.Control type="text" placeholder={t('crosschain:Darwinia Network account')} value={darwiniaAddress}
                                 onChange={(value) => this.setValue('darwiniaAddress', value)} />
                             <Form.Text className="text-muted">
-                                请务必填写真实的 Darwinia 主网账号，并妥善保管助记词等账号恢复文件。
+                                {t('crosschain:Please be sure to fill in the real Darwinia mainnet account, and keep the account recovery files such as mnemonic properly.')}
                             </Form.Text>
 
-                            <Form.Label>映射通证</Form.Label>
+                        <Form.Label>{t('crosschain:Cross-chain transfer token')}</Form.Label>
                             <Form.Control as="select" value={tokenType}
                                 onChange={(value) => this.setValue('tokenType', value)}>
-                                <option value="ring">RING(MAX {formatBalance(ringBalance, 'ether')})</option>
-                                <option value="kton">KTON(MAX {formatBalance(ktonBalance, 'ether')})</option>
+                                <option value="ring">RING({t('crosschain:MAX')} {formatBalance(ringBalance, 'ether')})</option>
+                                <option value="kton">KTON({t('crosschain:MAX')} {formatBalance(ktonBalance, 'ether')})</option>
                             </Form.Control>
 
-                            <Form.Label>映射数量</Form.Label>
+                        <Form.Label>{t('crosschain:Amount')}</Form.Label>
                             <Form.Control type="number" placeholder={t('crosschain:Amount')} value={crossChainBalanceText}
                                 onChange={(value) => this.setValue('crossChainBalance', value, this.toWeiBNMiddleware, this.setBNValue)} />
                         </Form.Group>
@@ -399,7 +397,7 @@ class Claims extends Component {
                 {status === 3 ? <div className={styles.formBox}>
                     <div className={`${styles.networkBox} ${styles.hashBox} claims-network-box`}>
                         <Form.Group controlId="signatureGroup">
-                            <Form.Label>{t('crosschain:The transaction was successfully sent! After the Darwinia mainnet is launched, the successfully mapped RING at this stage will be sent to the designated account.')}</Form.Label>
+                            <Form.Label>{t('crosschain:Confirmed！After Darwinia mainnet launched, you will receive this cross-chain transfer.')}</Form.Label>
                             <a href={explorerUrl} target="_blank" rel="noopener noreferrer">{explorerUrl}</a>
                         </Form.Group>
                         <div className={styles.buttonBox}>
@@ -430,25 +428,25 @@ class Claims extends Component {
                      : null}
                      { history && history.length === 0 ?
                      <div className={styles.historyEmpty}>
-                         <p>暂无映射记录</p>
+                         <p>{t('No Cross-chain transfer history')}</p>
                      </div>
                      :null}
                     {history ? history.map((item) => {
                         return (<div className={styles.historyItem}>
                             <div>
-                                <h3>时间</h3>
+                        <h3>{t('crosschain:Time')}</h3>
                                 <p>{dayjs.unix(item.block_timestamp).format('YYYY-MM-DD HH:mm:ss ZZ')}</p>
                             </div>
                             <div>
-                                <h3>跨链流向</h3>
+                        <h3>{t('crosschain:Cross-chain direction')}</h3>
                                 <p>{item.chain} -> Darwinia MainNet</p>
                             </div>
                             <div>
-                                <h3>数量</h3>
+                        <h3>{t('crosschain:Amount')}</h3>
                                 <p>{formatBalance(Web3.utils.toBN(item.amount), 'ether')} {item.currency.toUpperCase()}</p>
                             </div>
                             <div>
-                                <h3>接收账号</h3>
+                        <h3>{t('crosschain:Destination account')}</h3>
                                 <p>{encodeAddress('0x' + item.target, 18)}</p>
                             </div>
                             <Button variant="outline-purple" block href={this.renderExplorerUrl(item.tx, item.chain)}>{t('crosschain:Txhash')}</Button>

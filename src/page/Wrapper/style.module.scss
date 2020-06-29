@@ -92,7 +92,7 @@ a.changeLng:hover, a.changeLng:active {
   flex: 1;
   display: flex;
   flex-direction: column;
-  
+  position: relative;
   &>div:not(.powerBy){
     flex: 1;
   }
@@ -206,6 +206,16 @@ a.changeLng:hover, a.changeLng:active {
       margin-bottom: 0;
     }
   }
+
+  .helpBall {
+    img {
+      width: 54px;
+      height: 54px;
+      position: absolute;
+      bottom: 0;
+      right: -85px;  
+    }
+  }
 }
 
 .infoBox {
@@ -223,6 +233,8 @@ a.changeLng:hover, a.changeLng:active {
     // margin-bottom: 15px;
   }
 }
+
+
 
 $marginX: 0.1;
 $ball1Bg: linear-gradient(320deg,rgba(254,56,118,1) 0%,rgba(124,48,221,1) 71%,rgba(58,48,221,1) 100%);
@@ -335,7 +347,7 @@ $chains: ethereum, crab, tron, darwinia, kusama, polkadot, acala;
     // animation: shandowScale 1.5s infinite ease-in;
     transform:scale(1.05);
   }
-  
+
   .scaleBox {
     p{
       font-size: 20px;
@@ -683,20 +695,6 @@ $chains: ethereum, crab, tron, darwinia, kusama, polkadot, acala;
     height: 600px;
     margin-left: 70px;
   }
-
-  // .ballFrom{
-  //   @include ball(140px, 50px, 10px, $ball1Bg, 'ethereum');
-  // }
-  // .ballFromShadow{
-  //   @include ballShadow(140px, 50px, 10px, $ball1Bg);
-  // }
-  
-  // .ballTo{
-  //   @include ball(140px, 400px, 10px, $ball1Bg, 'ethereum');
-  // }
-  // .ballToShadow{
-  //   @include ballShadow(140px, 400px, 10px, $ball1Bg);
-  // }
 }
 
 @media (max-width: 769px) {
@@ -714,6 +712,14 @@ $chains: ethereum, crab, tron, darwinia, kusama, polkadot, acala;
     .claimBox {
       padding-bottom: 20px;
       margin-top: 0;
+      .helpBall {
+        img {
+          right: 15px;
+          bottom: 15px;
+          width: 30px;
+          height: 30px;
+        }
+      }
     }
 
   }

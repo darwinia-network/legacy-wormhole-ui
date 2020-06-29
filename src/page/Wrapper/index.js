@@ -1,28 +1,18 @@
 import React, { Component } from "react";
-import { Container, Button, Form } from 'react-bootstrap'
+import { Container, Button } from 'react-bootstrap'
 
-import { ToastContainer, toast } from "react-toastify";
+import { ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import dayjs from 'dayjs';
 import Web3 from 'web3';
-import { CopyToClipboard } from 'react-copy-to-clipboard';
 import _ from 'lodash';
-
-import { connect, sign, formToast, getAirdropData, config, formatBalance, getClaimsInfo, getTokenBalance, buildInGenesis } from './utils'
 import archorsComponent from '../../components/anchorsComponent'
 import { withTranslation } from "react-i18next";
 import i18n from '../../locales/i18n';
 
 import styles from "./style.module.scss";
 import darwiniaLogo from './img/darwinia-logo.png';
-import step1open from './img/step-1-open.png';
-import step2open from './img/step-2-open.png';
-import step2close from './img/step-2-close.png';
-import step3open from './img/step-3-open.png';
-import step3close from './img/step-3-close.png';
 import promoteLogo from './img/promote-logo.png';
-import helpLogo from './img/help-icon.png';
-import labelTitleLogo from './img/label-title-logo.png';
 
 import acalaIcon from './img/chain-logo/acala.png';
 import crabIcon from './img/chain-logo/crab.png';
@@ -32,9 +22,9 @@ import kusamaIcon from './img/chain-logo/kusama.png';
 import polkadotIcon from './img/chain-logo/polkadot.png';
 import tronIcon from './img/chain-logo/tron.png';
 import arrowIcon from './img/arrow.svg';
+import helpBallIcon from './img/help-ball-icon.png';
 
 import chainMap from './chain';
-import check from "@polkadot/util-crypto/address/check";
 import CrossChain from '../CrossChain';
 import Claim from '../Claims';
 
@@ -47,8 +37,6 @@ var isUserInteracting = false,
     lat = 0,
     phi = 0,
     theta = 0;
-
-
 
 function init() {
 
@@ -221,10 +209,6 @@ class Claims extends Component {
         //     loop: true,
         // })
 
-        // const rectBall1 = document.getElementById('ball1').getBoundingClientRect()
-        // const rectBall2 = document.getElementById('ball2').getBoundingClientRect()
-        // console.log(rectBall1, rectBall2);
-
         this.debounceLineFn = _.debounce(() => {
             const lines = this.getLineInfo(lineConfig)
             const path = this.getPathInfo(PathConfig)
@@ -386,100 +370,6 @@ class Claims extends Component {
         }
     }
 
-    toClaims = (status = 2) => {
-        const { networkType, account } = this.state;
-        const { t } = this.props;
-        connect(networkType, (_networkType, _account) => {
-            this.setState({
-                account: {
-                    ...account,
-                    [_networkType]: _account
-                }
-            }, async () => {
-                if (this.state.account[_networkType]) {
-                    this.setState({
-                        status: status
-                    })
-                    this.airdropData()
-                    if (status === 4) {
-                        this.queryClaims()
-                    }
-
-                    const balances = await getTokenBalance(this.state.account[networkType]);
-                    this.setState({
-                        ringBalance: Web3.utils.toBN(balances[0]),
-                        ktonBalance: Web3.utils.toBN(balances[1]),
-
-                    })
-                }
-            })
-        }, t);
-    }
-
-    sign = async () => {
-        const { networkType, account, darwiniaAddress } = this.state;
-        const { t } = this.props;
-        sign(networkType, account[networkType], darwiniaAddress, (signature) => {
-            this.setState({
-                signature: signature,
-                status: 3
-            })
-        }, t)
-    }
-
-    buildInGenesis = () => {
-        const { networkType, account, darwiniaAddress, crossChainBalance, tokenType } = this.state;
-        const { t } = this.props;
-        buildInGenesis(networkType, account[networkType], {
-            to: darwiniaAddress,
-            value: crossChainBalance,
-            tokenType
-        }, (signature) => {
-            // this.setState({
-            //     signature: signature,
-            //     status: 3
-            // })
-        }, t)
-    }
-
-    onCopied = () => {
-        const { t } = this.props
-        formToast(t('crosschain:Copied'))
-    }
-
-    toResult = () => {
-        this.toClaims(4)
-    }
-
-    async queryClaims() {
-        const { networkType, account } = this.state;
-        const address = networkType === 'eth' ? account[networkType] : (window.tronWeb && window.tronWeb.address.toHex(account[networkType]))
-        let json = await getClaimsInfo({
-            query: { address: address },
-            method: "post"
-        });
-        if (json.code === 0) {
-
-            if (json.data.info.length === 0) {
-                json = {
-                    data: {
-                        info: [{
-                            account: '',
-                            target: '',
-                            amount: '0'
-                        }]
-                    }
-                }
-            };
-
-            this.setState({
-                claimAmount: Web3.utils.toBN(json.data.info[0].amount),
-                claimTarget: json.data.info[0].target,
-                hasFetched: true,
-            })
-        } else {
-        }
-    }
 
     goBack = (status = 1) => {
         if (status === 1) {
@@ -492,86 +382,10 @@ class Claims extends Component {
         })
     }
 
-    airdropData = () => {
-        const { networkType, account } = this.state;
-        const airdropNumber = getAirdropData(networkType, account[networkType]);
-        this.setState({
-            airdropNumber: airdropNumber
-        })
-    }
-
     changeLng = lng => {
         const { i18n } = this.props;
         i18n.changeLanguage(i18n.language.indexOf('en') > -1 ? 'zh-cn' : 'en-us');
         localStorage.setItem("lng", lng);
-    }
-
-    renderHeader = () => {
-        const { status } = this.state;
-        const { t } = this.props
-        return (
-            <>
-                {status === 1 ? <div className={styles.stepBox}>
-                    <div className={styles.stepBoxItem}>
-                        <img alt="" src={step1open} />
-                        <p>{t('crosschain:step_1')}</p>
-                    </div>
-                    <div className={styles.dotsOpen}></div>
-                    <div className={styles.stepBoxItem}>
-                        <img alt="" src={step2close} />
-                        <p>{t('crosschain:step_2')}</p>
-                    </div>
-                    <div className={styles.dotsClose}></div>
-                    <div className={styles.stepBoxItem}>
-                        <img alt="" src={step3close} />
-                        <p>{t('crosschain:step_3')}</p>
-                    </div>
-                </div> : null}
-                {status === 2 ? <div className={styles.stepBox}>
-                    <div className={styles.stepBoxItem}>
-                        <img alt="" src={step1open} />
-                        <p>{t('crosschain:step_1')}</p>
-                    </div>
-                    <div className={styles.dotsOpen}></div>
-                    <div className={styles.stepBoxItem}>
-                        <img alt="" src={step2open} />
-                        <p>{t('crosschain:step_2')}</p>
-                    </div>
-                    <div className={styles.dotsClose}></div>
-                    <div className={styles.stepBoxItem}>
-                        <img alt="" src={step3close} />
-                        <p>{t('crosschain:step_3')}</p>
-                    </div>
-                </div> : null}
-                {status === 3 ? <div className={styles.stepBox}>
-                    <div className={styles.stepBoxItem}>
-                        <img alt="" src={step1open} />
-                        <p>{t('crosschain:step_1')}</p>
-                    </div>
-                    <div className={styles.dotsOpen}></div>
-                    <div className={styles.stepBoxItem}>
-                        <img alt="" src={step2open} />
-                        <p>{t('crosschain:step_2')}</p>
-                    </div>
-                    <div className={styles.dotsOpen}></div>
-                    <div className={styles.stepBoxItem}>
-                        <img alt="" src={step3open} />
-                        <p>{t('crosschain:step_3')}</p>
-                    </div>
-                </div> : null}
-                {status === 4 ? <div className={`${styles.stepBox} ${styles.stepResultBox}`}>
-                    <div className={styles.stepBoxItem}>
-                        <img alt="" src={step1open} />
-                        <p>{t('crosschain:step_1')}</p>
-                    </div>
-                    <div className={styles.dotsOpen}></div>
-                    <div className={styles.stepBoxItem}>
-                        <img alt="" src={step3open} />
-                        <p>{t('crosschain:Result')}</p>
-                    </div>
-                </div> : null}
-            </>
-        )
     }
 
     checkedBall = (id, e) => {
@@ -617,184 +431,18 @@ class Claims extends Component {
                             xmlnsXlink="http://www.w3.org/1999/xlink"
                             xmlns="http://www.w3.org/2000/svg">
                             <defs>
-                                {/* <linearGradient id="orange_red" x1="0" y1="0" x2="1" y2="0">
-                                <stop offset="0%" style={{stopColor:'#155EDF',
-                                stopOpacity:1}}/>
-                                <stop offset="100%" style={{stopColor:'#BE29A4',
-                                stopOpacity:1}}/>
-                                </linearGradient> */}
                                 <linearGradient id="svg_8" x1="0" y1="0" x2="1" y2="0">
                                     <stop stopColor="#000" offset="0" />
                                     <stop stopColor="#ffffff" offset="1" />
                                 </linearGradient>
-                                {/* <linearGradient id='orange_red' x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset='0%' stop-color='red' />
-      <stop offset='100%' stop-color='blue' />
-    </linearGradient> */}
                             </defs>
                             <defs> 
-                                <path stroke="null" d="m7.51084,18.3341l0.00057,2.86487l4.13369,0l-0.00057,-2.86487l3.21509,0l0.00057,2.86487l3.4434,0.00011l0.00077,4.35207c-0.00181,4.38449 -3.27441,8.08257 -7.63603,8.62874l-2.18129,0c-4.36161,-0.5462 -7.63422,-4.24427 -7.63603,-8.62876l0,-4.35205l3.44531,-0.00011l-0.00057,-2.86487l3.21509,0zm3.08558,-17.61409c4.36161,0.5462 7.63422,4.24426 7.63603,8.62875l0,4.35205l-17.45257,0l-0.00077,-4.35207c0.00181,-4.38449 3.27441,-8.08256 7.63603,-8.62874l2.18129,0z" id="slot" fill="#43455a" stroke-width="2"/>
+                                <path stroke="null" d="m7.51084,18.3341l0.00057,2.86487l4.13369,0l-0.00057,-2.86487l3.21509,0l0.00057,2.86487l3.4434,0.00011l0.00077,4.35207c-0.00181,4.38449 -3.27441,8.08257 -7.63603,8.62874l-2.18129,0c-4.36161,-0.5462 -7.63422,-4.24427 -7.63603,-8.62876l0,-4.35205l3.44531,-0.00011l-0.00057,-2.86487l3.21509,0zm3.08558,-17.61409c4.36161,0.5462 7.63422,4.24426 7.63603,8.62875l0,4.35205l-17.45257,0l-0.00077,-4.35207c0.00181,-4.38449 3.27441,-8.08256 7.63603,-8.62874l2.18129,0z" id="slot" fill="#43455a" strokeWidth="2"/>
                             </defs>
-                            {/* <g id="arrow" style={{stroke: 'black'}} transform="rotate(90, 75, 50)">
-                                <line x1="60" y1="50" x2="90" y2="50"/>
-                                <polygon points="90 50, 85 45, 85 55"/>
-                            </g> */}
-                            {/* <use xlinkHref="#arrow" transform="rotate(90, 75, 50)"/> */}
-
-                            {/* <line x1="0" y1="0" x2="300" y2="300" style={{ stroke: '#D63697', 'strokeWidth': 5 }} /> */}
                             {this.state.lines}
                             {this.state.path}
                             {this.state.slot}
-                            {/* <path style={{stroke:'#D63697','strokeWidth':2, fill:"#D63697"}} d="M155.88 166L248.35 311.62L238.68 317.85L258.35 324.03L261.98 305.09L254.59 308.95L162.79 161.22L155.88 166Z" id="c2ROIfcfpV"></path> */}
                         </svg>
-                    </div>
-                </div>
-            </div>
-        )
-    }
-
-    step1 = () => {
-        const { t } = this.props
-        const { networkType } = this.state
-        return (
-            <div>
-                {this.renderHeader()}
-                <div className={styles.formBox}>
-                    <div className={`${styles.networkBox} claims-network-box`}>
-                        <Form.Group controlId="networkSelectGroup">
-                            <Form.Label>{t('crosschain:Select Chain')}</Form.Label>
-                            <Form.Control as="select" value={networkType}
-                                onChange={(value) => this.setValue('networkType', value)}>
-                                <option value="eth">Ethereum -> Darwinia MainNet</option>
-                                <option value="tron">Tron -> Darwinia MainNet</option>
-                            </Form.Control>
-                        </Form.Group>
-                        <div className={styles.buttonBox}>
-                            <Button variant="gray" onClick={this.toResult}>{t('crosschain:search')}</Button>
-                            <Button variant="gray" onClick={() => this.toClaims(2)}>{t('crosschain:claim')}</Button>
-                        </div>
-                    </div>
-                </div>
-                <div className={styles.formBox}>
-                    <div className={styles.stepRoadMap}>
-                        <h3>{t('跨链转账路线图：')}</h3>
-                        <div className={styles.stepRoadMapItem}>
-                            <div>
-                                <p>阶段1: 创世跨链</p>
-                                <p>2020.05.30 - 2020.06.30</p>
-                            </div>
-                            <p>此阶段的跨链转账，将在 Darwinia 主网上线后到账，通过 Genesis Block 发至指定账号</p>
-                        </div>
-                        <div className={styles.stepRoadMapItem}>
-                            <div>
-                                <p>阶段2: 单向跨链</p>
-                                <p>2020 Q3</p>
-                            </div>
-                            <p>此阶段的跨链转账，立即到账（可能存在一定的网络延迟），但仅支持发至Darwinia 主网的单项转账</p>
-                        </div>
-                        <div className={styles.stepRoadMapItem}>
-                            <div>
-                                <p>阶段3: 多向跨链</p>
-                                <p>2020 Q3 - Q4</p>
-                            </div>
-                            <p>此阶段的跨链转账，立即到账（可能存在一定的网络延迟），且支持双向或多向转账</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        )
-    }
-
-    step2 = () => {
-        const { t } = this.props
-        const { networkType, account, status, signature, darwiniaAddress, ringBalance, ktonBalance, tokenType, crossChainBalance } = this.state
-        return (
-            <div>
-                {this.renderHeader()}
-                <div className={styles.formBox}>
-                    <div className={`${styles.connectInfoBox} claims-network-box`}>
-                        <h1><img alt="" src={labelTitleLogo} /><span>{t('crosschain:Connected to')}：</span></h1>
-                        <p>{account[networkType]}</p>
-
-                        {status === 3 ? <>
-                            <h1><img alt="" src={labelTitleLogo} /><span>{t('crosschain:Darwinia Crab Network account')}：</span></h1>
-                            <p>{darwiniaAddress}</p>
-                        </> : null}
-                    </div>
-                </div>
-
-                {status === 2 ? <div className={styles.formBox}>
-                    <div className={`${styles.networkBox} claims-network-box`}>
-                        <Form.Group controlId="darwinaAddressGroup">
-                            <Form.Label>{t('crosschain:Please enter the account of Darwinia Crab')} <a href={this.renderHelpUrl()} target="_blank"
-                                rel="noopener noreferrer"><img alt=""
-                                    className={styles.labelIcon} src={helpLogo} /></a> </Form.Label>
-                            <Form.Control type="text" placeholder={t('crosschain:Darwinia Crab Network account')} value={darwiniaAddress}
-                                onChange={(value) => this.setValue('darwiniaAddress', value)} />
-                            <Form.Text className="text-muted">
-                                请务必填写真实的 Darwinia 主网账号，并妥善保管助记词等账号恢复文件。
-                            </Form.Text>
-
-                            <Form.Label>映射通证</Form.Label>
-                            <Form.Control as="select" value={tokenType}
-                                onChange={(value) => this.setValue('tokenType', value)}>
-                                <option value="ring">RING(MAX {formatBalance(ringBalance, 'ether')})</option>
-                                <option value="kton">KTON(MAX {formatBalance(ktonBalance, 'ether')})</option>
-                            </Form.Control>
-
-                            <Form.Label>映射数量</Form.Label>
-                            <Form.Control type="number" placeholder={t('crosschain:Darwinia Crab Network account')} value={formatBalance(crossChainBalance, 'ether') === '0' ? '' : formatBalance(crossChainBalance, 'ether')}
-                                onChange={(value) => this.setValue('crossChainBalance', value, this.toWeiBNMiddleware)} />
-                        </Form.Group>
-                        <div className={styles.buttonBox}>
-                            <Button variant="gray" onClick={this.buildInGenesis}>{t('crosschain:Submit')}</Button>
-                            <Button variant="outline-gray" onClick={() => this.goBack(1)}>{t('crosschain:Back')}</Button>
-                        </div>
-                    </div>
-                </div> : null}
-
-                {status === 3 ? <div className={styles.formBox}>
-                    <div className={`${styles.networkBox} ${styles.signatureBox} claims-network-box`}>
-                        <Form.Group controlId="signatureGroup">
-                            <Form.Label>{t('crosschain:Success! Please copy the signature below, and [claim] in Darwinia Wallet')}</Form.Label>
-                            <Form.Control as="textarea" value={JSON.stringify(JSON.parse(signature), undefined, 4)}
-                                rows="3" />
-                        </Form.Group>
-                        <div className={styles.buttonBox}>
-                            <CopyToClipboard text={JSON.stringify(JSON.parse(signature), undefined, 4)}
-                                onCopy={() => this.onCopied()}>
-                                <Button variant="gray">{t('crosschain:Copy signature')}</Button>
-                            </CopyToClipboard>
-                            <Button variant="outline-gray" onClick={() => this.goBack(1)}>{t('crosschain:Back')}</Button>
-                        </div>
-                    </div>
-                </div> : null}
-            </div>
-        )
-    }
-
-    step4 = () => {
-        const { t } = this.props
-        const { networkType, account, airdropNumber, claimTarget, claimAmount, hasFetched } = this.state
-        return (
-            <div>
-                {this.renderHeader()}
-                <div className={styles.formBox}>
-                    <div className={`${styles.connectInfoBox} claims-network-box`}>
-                        <h1><img alt="" src={labelTitleLogo} /><span>{t('crosschain:Connected to')}：</span></h1>
-                        <p>{account[networkType]}</p>
-
-                        <h1><img alt="" src={labelTitleLogo} /><span>{t('crosschain:Snapshot data')}：</span></h1>
-                        <p>{claimAmount.eqn(0) ? formatBalance(airdropNumber) : formatBalance(claimAmount)} RING<br />({dayjs.unix(config.SNAPSHOT_TIMESTAMP).format('YYYY-MM-DD HH:mm:ss ZZ')})</p>
-
-                        <h1><img alt="" src={labelTitleLogo} /><span>{t('crosschain:Destination')}：</span></h1>
-                        <p>{claimTarget || '----'}</p>
-
-                        <h1><img alt="" src={labelTitleLogo} /><span>{t('crosschain:Claims Result')}：</span></h1>
-                        <p>{hasFetched ? (claimTarget ? t('crosschain:Claims') : t('crosschain:Not claimed')) : '----'}</p>
-                        <div className={styles.buttonBox}>
-                            <Button variant="outline-gray" onClick={() => this.goBack(1)}>{t('crosschain:Back')}</Button>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -874,8 +522,8 @@ class Claims extends Component {
 
     renderSubBall = (styleId) => {
         const { checkedBall } = this.state
-        // const isBallActive = this.isBallActive(id)
-        const isBallActive = [true]
+        const isBallActive = this.isBallActive('subball')
+        // const isBallActive = [true]
         const isDisableBallClass = isBallActive[0] ? '' : styles.disableBall
         return (
             <>
@@ -885,11 +533,6 @@ class Claims extends Component {
                 </div>
             </>
         )
-    }
-
-    renderHelpUrl = () => {
-        const lng = i18n.language.indexOf('en') > -1 ? 'en' : 'zh-CN'
-        return `https://docs.darwinia.network/docs/${lng}/crab-tut-claim-cring`
     }
 
     renderGuide = (from, to) => {
@@ -939,13 +582,13 @@ class Claims extends Component {
                 {status !== 0 ? <div className={`${styles.claim}`}>
                     <Container>
                         <div className={styles.claimBox}>
-                            {/* {status === 1 ? this.step1() : null} */}
                             {status === 1 ? this.renderContent() : null}
-                            {/* {status === 2 || status === 3 ? this.step2() : null}
-                            {status === 4 ? this.step4() : null} */}
                             <div className={styles.powerBy}>
                                 Powered By Darwinia Network
                             </div>
+                            <a className={styles.helpBall} href="https://darwinia.network" target="_blank" rel="noopener noreferrer">
+                                <img src={helpBallIcon} alt="help icon"/>
+                            </a>
                         </div>
                         <div className={styles.guideBox}>
                             {this.renderGuide(from, to)}

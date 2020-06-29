@@ -100,7 +100,6 @@ function signTron(account, text, signCallBack) {
 }
 
 function buildInGenesisEth(account, params, callback) {
-    console.log(111, params)
     let web3js = new Web3(window.ethereum || window.web3.currentProvider);
     const contract = new web3js.eth.Contract(TokenABI, config[`${params.tokenType.toUpperCase()}_ETH_ADDRESS`]);
 
