@@ -10,8 +10,20 @@ jobs:
       - uses: actions/setup-node@v1
         with:
           node-version: '10'
+
+      - id: yarn_cache_dir
+        run: echo "::set-output name=dir::$(yarn cache dir)"
+
+      - uses: actions/cache@v2
+        with:
+          path: ${{ steps.yarn_cache_dir.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
       - run: yarn install
       - run: yarn build_dev
+
       - uses: actions/upload-artifact@v2
         with:
           name: dists
