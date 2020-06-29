@@ -1,0 +1,42 @@
+name: CI
+on: [push]
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '10'
+
+      - id: yarn_cache_dir
+        run: echo "::set-output name=dir::$(yarn cache dir)"
+
+      - uses: actions/cache@v2
+        with:
+          path: ${{ steps.yarn_cache_dir.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      - run: yarn install
+      - run: yarn build_dev
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: dists
+          path: build/
+      - env:
+          ITERING_DEPLOYER_SSH_PRIVATE_KEY: "${{ secrets.ITERING_DEPLOYER_SSH_PRIVATE_KEY }}"
+          ITERING_RSYNC_HOST: "${{ secrets.ITERING_RSYNC_HOST }}"
+          ITERING_RSYNC_USER: deployer
+          ITERING_RSYNC_SRC: build/
+          ITERING_RSYNC_DEST: /var/www/claims-crosschain
+        run: |
+          eval $(ssh-agent -s)
+          echo -n "$ITERING_DEPLOYER_SSH_PRIVATE_KEY" | base64 -d | tr -d '\r' | ssh-add -
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "$ITERING_RSYNC_HOST" >> ~/.ssh/known_hosts
+          rsync -vh -rtz --delete "$ITERING_RSYNC_SRC" "$ITERING_RSYNC_USER@$ITERING_RSYNC_HOST:$ITERING_RSYNC_DEST"
