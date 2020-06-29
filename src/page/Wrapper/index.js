@@ -164,12 +164,12 @@ const chainIcons = {
 }
 
 const lineConfig = [ 
-    [1, 2, true, false],
+    [1, 2, false, true],
     [3, 1, true, false],
     [3, 2, false, false],
-    [3, 4, true, false],
-    [2, 4, false, true],
-    [5, 6, false, true],
+    [3, 4, false, false],
+    [2, 4, false, false],
+    [5, 6, false, false],
     [3, 6, false, false]
 ]
 
@@ -592,11 +592,14 @@ class Claims extends Component {
                         <div className={styles.nebula2}></div>
                         {this.renderBall('ethereum', 1)}
                         {this.renderBall('crab', 2)}
+                        {this.renderBall('darwinia-bg', 3, true)}
                         {this.renderBall('darwinia', 3)}
-                        {this.renderBall('darwinia-bg', 3)}
+                        
                         {this.renderBall('tron', 4)}
+                        {this.renderBall('polkadot', 5, true)}
                         {this.renderBall('polkadot', 5)}
                         {this.renderBall('kusama', 6)}
+                        {this.renderBall('acala', 7, true)}
                         {this.renderBall('acala', 7)}
 
                         {this.renderSubBall(1)}
@@ -842,28 +845,29 @@ class Claims extends Component {
 
     }
 
-    renderBall = (id, styleId) => {
+    renderBall = (id, styleId, isBg = false) => {
         const { checkedBall } = this.state
         const isBallActive = this.isBallActive(id)
-        const isDisableBallClass = isBallActive[0] ? '' : styles.disableBall
-        const isDisableBallShadowClass = isBallActive[0] ? '' : styles.disableBallShadow
+        const isDisableBallClass = (isBg || isBallActive[0]) ? '' : styles.disableBall
+        const isBgClass = !isBg  ? styles.ballInstant : styles.ballIsBg
+        // const isDisableBallShadowClass = isBallActive[0] ? '' : styles.disableBallShadow
         return (
             <>
                 <div className={styles.scaleBox}>
-                    <div id={`ball${styleId}`} className={`${styles['ball' + styleId]} ${styles[`ballbg-${id}`]} ${isDisableBallClass}`} onClick={(e) => this.checkedBall(id, e)}>
-                        <img className={styles.ballIcon} src={chainIcons[id]} alt="chain logo" />
-                        <p>{id}</p>
+                    <div id={`ball${styleId}`} className={`${styles['ball' + styleId]} ${isBgClass} ${styles[`ballbg-${id}`]} ${isDisableBallClass}`} onClick={(e) => {if(isBg) return; this.checkedBall(id, e)}}>
+                        {!isBg ? <img className={styles.ballIcon} src={chainIcons[id]} alt="chain logo" /> : null}
+                        {!isBg ? <p>{id}</p> : null}
                     </div>
                     {/* <div className={`animeBg ${styles[`ball${styleId}Shadow`]}  ${isDisableBallShadowClass}`}></div> */}
                 </div>
-                {isBallActive[1] === 2 && chainMap[`${checkedBall}_${id}`] && chainMap[`${checkedBall}_${id}`].length ?
+                {!isBg && isBallActive[1] === 2 && chainMap[`${checkedBall}_${id}`] && chainMap[`${checkedBall}_${id}`].length ?
                     chainMap[`${checkedBall}_${id}`].map((item) => {
                         return <div className={`${styles[`ball${styleId}Btn`]}`} onClick={(e) => this.fn_wrapper(e, item, checkedBall, id)}>{item}</div>
                     })
-                    : ''}
-                {isBallActive[1] === 1 && !(chainMap[`${checkedBall}_${id}`] && chainMap[`${checkedBall}_${id}`].length) && (!chainMap[checkedBall] || !chainMap[checkedBall].length) ?
+                    : null}
+                {!isBg && isBallActive[1] === 1 && !(chainMap[`${checkedBall}_${id}`] && chainMap[`${checkedBall}_${id}`].length) && (!chainMap[checkedBall] || !chainMap[checkedBall].length) ?
                     <div className={`${styles[`ball${styleId}Btn`]} ${styles.disableBtn}`}>敬请期待</div>
-                    : ''}
+                    : null}
             </>
         )
     }

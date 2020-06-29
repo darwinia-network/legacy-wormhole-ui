@@ -348,7 +348,6 @@ class Claims extends Component {
                 {status === 1 ? this.step1() : null}
                 {status === 2 || status === 3 ? this.step2() : null}
                 {status === 4 ? this.step4() : null}
-                
             </div>
         );
     }

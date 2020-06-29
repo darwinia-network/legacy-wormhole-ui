@@ -212,6 +212,19 @@
   }
 }
 
+.historyEmpty {
+  background-color: #F4F4F5;
+  padding-top: 90px;
+  padding-bottom: 90px;
+  margin-bottom: 40px;
+  p{
+    font-size: 14px;
+    color: $crosschain-text-normal;
+    text-align: center;
+    margin-bottom: 0;
+  }
+}
+
 .historyItem {
   background-color: #F4F4F5;
   padding: 20px;

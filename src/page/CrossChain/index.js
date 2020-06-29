@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Container, Button, Form } from 'react-bootstrap'
+import { Container, Button, Form, Spinner } from 'react-bootstrap'
 
 import 'react-toastify/dist/ReactToastify.css';
 import dayjs from 'dayjs';
@@ -24,7 +24,6 @@ import labelTitleLogo from './img/label-title-logo.png';
 import helpSmall from './img/help-s.png';
 
 import chainMap from './chain';
-import check from "@polkadot/util-crypto/address/check";
 
 class Claims extends Component {
     constructor(props, context) {
@@ -52,7 +51,7 @@ class Claims extends Component {
             crossChainBalanceText: '',
             crossChainBalance: Web3.utils.toBN(0),
             hash: '',
-            history: []
+            history: null
         }
     }
 
@@ -424,9 +423,17 @@ class Claims extends Component {
                         <h1><img alt="" src={labelTitleLogo} /><span>{t('crosschain:Connected to')}：</span></h1>
                         <p>{account[networkType]}</p>
                     </div>
-
-                    {history.map((item) => {
-
+                    {!history ? 
+                    <div className="d-flex flex-wrap justify-content-center pb-4">
+                        <Spinner animation="border" />
+                    </div>
+                     : null}
+                     { history && history.length === 0 ?
+                     <div className={styles.historyEmpty}>
+                         <p>暂无映射记录</p>
+                     </div>
+                     :null}
+                    {history ? history.map((item) => {
                         return (<div className={styles.historyItem}>
                             <div>
                                 <h3>时间</h3>
@@ -446,7 +453,7 @@ class Claims extends Component {
                             </div>
                             <Button variant="outline-purple" block href={this.renderExplorerUrl(item.tx, item.chain)}>{t('crosschain:Txhash')}</Button>
                         </div>)
-                    })}
+                    }) : null}
                     <div className={styles.buttonBox}>
                         <Button variant="outline-gray" onClick={() => this.goBack(1)}>{t('crosschain:Back')}</Button>
                     </div>

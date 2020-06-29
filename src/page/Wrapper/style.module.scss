@@ -320,12 +320,22 @@ $chains: ethereum, crab, tron, darwinia, kusama, polkadot, acala;
   background-color: #201B36;
   position: relative;
 
-  .scaleBox>div:hover {
+  .ballIsBg {
+    background: #201B36!important;
+    box-shadow: none!important;
+    transform: none!important;
+  }
+
+  // .scaleBox>.ballInstant:hover {
+  //   transform: none!important;
+  // }
+
+  .scaleBox .ballInstant:hover {
     // position: absolute;
     // animation: shandowScale 1.5s infinite ease-in;
     transform:scale(1.05);
-    
   }
+  
   .scaleBox {
     p{
       font-size: 20px;
