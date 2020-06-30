@@ -26,7 +26,7 @@
     "Not claimed": "未领取"
   },
   "crosschain": {
-    "title": "cRING 跨链转账",
+    "title": "跨链转账",
     "step_1": "选择网络",
     "step_2": "输入接收地址",
     "step_3": "成功",
@@ -68,6 +68,9 @@
     "Destination": "接收地址",
     "darwinaPage": "http://darwinia.oss-cn-hangzhou.aliyuncs.com/claims/crab_cn.pdf",
     "Claims": "已领取",
-    "Not claimed": "未领取"
+    "Not claimed": "未领取",
+    "Coming Soon": "敬请期待",
+    "airdrop": "空投",
+    "crosschain": "跨链转账"
   }
 }
