@@ -342,7 +342,7 @@ $chains: ethereum, crab, tron, darwinia, kusama, polkadot, acala;
   //   transform: none!important;
   // }
 
-  .scaleBox .ballInstant:hover {
+  .scaleBox .ballInstant:not(.disableBall):hover {
     // position: absolute;
     // animation: shandowScale 1.5s infinite ease-in;
     transform:scale(1.05);

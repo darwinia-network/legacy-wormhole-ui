@@ -1,26 +1,22 @@
 import React, { Component } from "react";
-import { Container, Button, Form } from 'react-bootstrap'
+import { Button, Form } from 'react-bootstrap'
+import { withRouter } from 'react-router-dom';
 
-import { ToastContainer, toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import dayjs from 'dayjs';
 import Web3 from 'web3';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 
 import { connect, sign, formToast, getAirdropData, config, formatBalance, getClaimsInfo, getClaimsInfo1 } from './utils'
-import archorsComponent from '../../components/anchorsComponent'
 import { withTranslation } from "react-i18next";
 import i18n from '../../locales/i18n';
 
 import styles from "./style.module.scss";
-import darwiniaLogo from './img/darwinia-logo.png';
 import step1open from './img/step-1-open.png';
 import step2open from './img/step-2-open.png';
 import step2close from './img/step-2-close.png';
 import step3open from './img/step-3-open.png';
 import step3close from './img/step-3-close.png';
-import promoteLogo from './img/promote-logo.png';
-import promoteLogoEn from './img/promote-logo-en.png';
 import helpLogo from './img/help-icon.png';
 import labelTitleLogo from './img/label-title-logo.png';
 
@@ -44,7 +40,18 @@ class Claims extends Component {
     }
 
     componentDidMount() {
-        archorsComponent()
+        this.routerHandle()
+    }
+
+
+    routerHandle = (location) => {
+        const {hash} = location || this.props.location;
+        if(hash === '#tron') {
+            this.setState({networkType: 'tron'})
+        }
+        if(hash === '#ethereum') {
+            this.setState({networkType: 'eth'})
+        }
     }
 
     setValue = (key, event) => {
@@ -341,7 +348,6 @@ class Claims extends Component {
     }
 
     render() {
-        const { t } = this.props
         const { status } = this.state
         return (
             <div className={styles.claimBox}>
@@ -353,4 +359,4 @@ class Claims extends Component {
     }
 }
 
-export default withTranslation()(Claims);
+export default withRouter(withTranslation()(Claims));

@@ -1,9 +1,9 @@
 import React, { Component } from "react";
 import { Container, Button } from 'react-bootstrap'
+import { withRouter, Link } from 'react-router-dom';
 
 import { ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
-import dayjs from 'dayjs';
 import Web3 from 'web3';
 import _ from 'lodash';
 import archorsComponent from '../../components/anchorsComponent'
@@ -37,6 +37,7 @@ var isUserInteracting = false,
     lat = 0,
     phi = 0,
     theta = 0;
+var requestId = undefined;
 
 function init() {
 
@@ -73,7 +74,6 @@ function init() {
 
     mesh1 = new THREE.Mesh(geometry1, material1);
     mesh2 = new THREE.Mesh(geometry2, material2);
-
     scene1.add(mesh1);
     scene2.add(mesh2);
 
@@ -93,6 +93,19 @@ function init() {
     window.addEventListener('resize', onWindowResize, false);
 }
 
+function clearRenderer(){
+
+    [renderer1, renderer2].forEach((renderer) => {
+        if(renderer) {
+            renderer.dispose();
+            renderer.forceContextLoss();
+            renderer.context = null;
+            renderer.domElement = null;
+            renderer = null;    
+        } 
+    })
+}
+
 function onWindowResize() {
     camera1.aspect = window.innerWidth / window.innerHeight;
     camera1.updateProjectionMatrix();
@@ -104,7 +117,7 @@ function onWindowResize() {
 }
 
 function animate() {
-    requestAnimationFrame(animate);
+    requestId = requestAnimationFrame(animate);
     update();
 }
 
@@ -155,8 +168,8 @@ const lineConfig = [
     [1, 2, false, true],
     [3, 1, true, false],
     [3, 2, false, false],
-    [3, 4, false, false],
-    [2, 4, false, false],
+    [3, 4, true, false],
+    [2, 4, true, false],
     [5, 6, false, false],
     [3, 6, false, false]
 ]
@@ -194,12 +207,13 @@ class Claims extends Component {
             renderPage: 'crosschain',
             lines: [],
             path: [],
-            slot: []
+            slot: [],
+            unlisten: null
         }
     }
 
     componentDidMount() {
-        const { status } = this.state
+        console.log('wrapper componentDidMount')
         archorsComponent()
         // anime({
         //     targets: '.animeBg',
@@ -226,7 +240,48 @@ class Claims extends Component {
             'trailing': true
         })
         
+        this.routerHandle()
 
+        this.unlisten = this.props.history.listen((location, action) => {
+            this.routerHandle(location);
+        });
+    }
+
+    componentWillUnmount() {
+        this.removeBgListener()
+        this.unlisten()
+    }
+
+    routerHandle = (location) => {
+        const {pathname} = location || this.props.location;
+        const { status } = this.state;
+        if(pathname.indexOf('airdrop') > -1 && status !== 1) {
+            this.setState({
+                renderPage: 'airdrop',
+                status: 1
+            });
+            return;
+        }
+
+        if(pathname.indexOf('crosschain') > -1 && status !== 1) {
+            this.setState({
+                renderPage: 'crosschain',
+                status: 1
+            });
+            return;
+        }
+
+        if(pathname === '/') { 
+            this.setState({
+                status: 0
+            },() => {
+                this.addBgListener()
+            });
+        }
+    }
+
+    addBgListener = () => {
+        const { status } = this.state
         if (status === 0) {
             const lines = this.getLineInfo(lineConfig)
             const path = this.getPathInfo(PathConfig)
@@ -239,20 +294,21 @@ class Claims extends Component {
                 slot
                })
             })
-
+            this.removeBgListener();
             init();
             animate();
             window.addEventListener('resize', this.debounceLineFn);
         }
     }
 
-    componentWillUnmount() {
-        this.removeListener()
-    }
-
-    removeListener = () => {
+    removeBgListener = () => {
+        clearRenderer()
         window.removeEventListener('resize', this.debounceLineFn);
         window.removeEventListener('resize', onWindowResize, false);
+        if (requestId) {
+            cancelAnimationFrame(requestId);
+            requestId = undefined;
+        }
     }
 
     getLineColor = (valid) => {
@@ -269,7 +325,7 @@ class Claims extends Component {
             const rectBall1 = document.getElementById(`ball${element[0]}`).getBoundingClientRect()
             const rectBall2 = document.getElementById(`ball${element[1]}`).getBoundingClientRect()
             const rectSVG = document.getElementById('svgBox').getBoundingClientRect()
-
+            if(!rectBall1) return null;
             const marginRadio = 0.45
             const center1 = [rectBall1.x + (rectBall1.width / 2), rectBall1.y + (rectBall1.height / 2)]
             const center2 = [rectBall2.x + (rectBall2.width / 2), rectBall2.y + (rectBall2.height / 2)]
@@ -284,7 +340,7 @@ class Claims extends Component {
             const theta = Math.atan2((center2[1] - center1[1]), (center2[0] - center1[0])) * (180 / Math.PI)
 
             const translateY = -8
-            const translateX = (30 * Math.sin(2 * Math.PI / 360 * theta)) / 2
+            // const translateX = (30 * Math.sin(2 * Math.PI / 360 * theta)) / 2
 
 
             const lineColor = [this.getLineColor(element[2]), this.getLineColor(element[3])]
@@ -312,11 +368,12 @@ class Claims extends Component {
     getSlotInfo = (relates) => {
         const slotPath = []
         relates.map((element) => {
-            const line35 = document.getElementById(`path-${element[0]}-${element[1]}`)
-            const line35Length = line35.getTotalLength()
-            const p0 = line35.getPointAtLength(line35Length/2)
-            const p1 = line35.getPointAtLength(line35Length/2 - 2)
-            const p2 = line35.getPointAtLength(line35Length/2 + 2)
+            const line = document.getElementById(`path-${element[0]}-${element[1]}`)
+            if(!line) return null;
+            const lineLength = line.getTotalLength()
+            const p0 = line.getPointAtLength(lineLength/2)
+            const p1 = line.getPointAtLength(lineLength/2 - 2)
+            const p2 = line.getPointAtLength(lineLength/2 + 2)
             const theta = Math.atan2(p2.y - p1.y,p2.x - p1.x) * (180 / Math.PI)
             
             slotPath.push(<use xlinkHref="#slot" id={`path-${element[0]}-${element[1]}-instant`} x={p0.x-8.5} y={p0.y-17} transform={`rotate(${theta+90}, ${p0.x} ${p0.y})`}>
@@ -331,7 +388,7 @@ class Claims extends Component {
             const rectBall1 = document.getElementById(`ball${element[0]}`).getBoundingClientRect()
             const rectBall2 = document.getElementById(`ball${element[1]}`).getBoundingClientRect()
             const rectSVG = document.getElementById('svgBox').getBoundingClientRect()
-
+            if(!rectBall1) return null;
             // const marginRadio = 0.45
             const center1 = [rectBall1.x + (rectBall1.width / 2), rectBall1.y + (rectBall1.height / 2)]
             const center2 = [rectBall2.x + (rectBall2.width / 2), rectBall2.y + (rectBall2.height / 2)]
@@ -460,24 +517,35 @@ class Claims extends Component {
 
 
     fn_airdrop = () => {
-        this.setState({
-            status: 1,
-            renderPage: 'airdrop'
-        })
+        const { history } = this.props
+        const { from } = this.state
+        history.push(`/airdrop/#${from}`)
+        // this.setState({
+        //     status: 1,
+        //     renderPage: 'airdrop'
+        // }, () => {
+        //     history.push(`/airdrop/#${from}`)
+        // })
     }
 
     fn_crosschain = () => {
-        this.setState({
-            status: 1,
-            renderPage: 'crosschain'
-        })
+        const { history } = this.props
+        const { from } = this.state
+        history.push(`/crosschain/#${from}`)
+        // this.setState({
+        //     status: 1,
+        //     renderPage: 'crosschain'
+        // }, () => {
+        //     history.push(`/crosschain/#${from}`)
+        // })
     }
 
     fn_wrapper = (e, fnname, from, to) => {
         e.stopPropagation()
-        this[`fn_${fnname}`] && this[`fn_${fnname}`]()
         this.setState({
             from, to
+        }, () => {
+            this[`fn_${fnname}`] && this[`fn_${fnname}`]()
         })
     }
 
@@ -494,6 +562,7 @@ class Claims extends Component {
     }
 
     renderBall = (id, styleId, isBg = false) => {
+        const {t} = this.props;
         const { checkedBall } = this.state
         const isBallActive = this.isBallActive(id)
         const isDisableBallClass = (isBg || isBallActive[0]) ? '' : styles.disableBall
@@ -510,11 +579,11 @@ class Claims extends Component {
                 </div>
                 {!isBg && isBallActive[1] === 2 && chainMap[`${checkedBall}_${id}`] && chainMap[`${checkedBall}_${id}`].length ?
                     chainMap[`${checkedBall}_${id}`].map((item) => {
-                        return <div className={`${styles[`ball${styleId}Btn`]}`} onClick={(e) => this.fn_wrapper(e, item, checkedBall, id)}>{item}</div>
+                        return <div className={`${styles[`ball${styleId}Btn`]}`} onClick={(e) => this.fn_wrapper(e, item, checkedBall, id)}>{t(`crosschain:${item}`)}</div>
                     })
                     : null}
                 {!isBg && isBallActive[1] === 1 && !(chainMap[`${checkedBall}_${id}`] && chainMap[`${checkedBall}_${id}`].length) && (!chainMap[checkedBall] || !chainMap[checkedBall].length) ?
-                    <div className={`${styles[`ball${styleId}Btn`]} ${styles.disableBtn}`}>敬请期待</div>
+                    <div className={`${styles[`ball${styleId}Btn`]} ${styles.disableBtn}`}>{t('crosschain:Coming Soon')}</div>
                     : null}
             </>
         )
@@ -559,17 +628,17 @@ class Claims extends Component {
         const { t } = this.props
         const { status, from, to } = this.state
         if (status !== 0) {
-            this.removeListener()
+            this.removeBgListener()
         }
         return (
             <div className={styles.wrapperBox}>
                 <div className={`${styles.header}`}>
                     <div className={`container ${styles.headerInner}`}>
                         <div>
-                            <a href="/">
+                            <Link to="/">
                                 <img alt="darwina network logo" src={darwiniaLogo} />
                                 <span>{t('crosschain:title')}</span>
-                            </a>
+                            </Link>
                         </div>
                         <div>
                             <a href="javascript:void(0)" onClick={this.changeLng} className={styles.changeLng}>
@@ -617,4 +686,4 @@ class Claims extends Component {
     }
 }
 
-export default withTranslation()(Claims);
+export default withRouter(withTranslation()(Claims));

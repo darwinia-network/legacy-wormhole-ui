@@ -1,5 +1,6 @@
 import React, { Component } from "react";
-import { Container, Button, Form, Spinner } from 'react-bootstrap'
+import { Button, Form, Spinner } from 'react-bootstrap'
+import { withRouter } from 'react-router-dom';
 
 import 'react-toastify/dist/ReactToastify.css';
 import dayjs from 'dayjs';
@@ -7,7 +8,6 @@ import Web3 from 'web3';
 import { encodeAddress } from '@polkadot/util-crypto';
 
 import { connect, sign, formToast, getAirdropData, config, formatBalance, getBuildInGenesisInfo, getTokenBalance, buildInGenesis } from './utils'
-import archorsComponent from '../../components/anchorsComponent'
 import { withTranslation } from "react-i18next";
 import i18n from '../../locales/i18n';
 
@@ -54,7 +54,17 @@ class Claims extends Component {
     }
 
     componentDidMount() {
-        archorsComponent()
+        this.routerHandle()
+    }
+
+    routerHandle = (location) => {
+        const {hash} = location || this.props.location;
+        if(hash === '#tron') {
+            this.setState({networkType: 'tron'})
+        }
+        if(hash === '#ethereum') {
+            this.setState({networkType: 'eth'})
+        }
     }
 
     setValue = (key, event, fn, cb) => {
@@ -412,7 +422,7 @@ class Claims extends Component {
 
     step4 = () => {
         const { t } = this.props
-        const { networkType, account, airdropNumber, claimTarget, claimAmount, hasFetched, history } = this.state
+        const { networkType, account, history } = this.state
         return (
             <div>
                 {this.renderHeader()}
@@ -432,7 +442,7 @@ class Claims extends Component {
                      </div>
                      :null}
                     {history ? history.map((item) => {
-                        return (<div className={styles.historyItem}>
+                        return (<div className={styles.historyItem} key={item.tx}>
                             <div>
                         <h3>{t('crosschain:Time')}</h3>
                                 <p>{dayjs.unix(item.block_timestamp).format('YYYY-MM-DD HH:mm:ss ZZ')}</p>
@@ -449,7 +459,7 @@ class Claims extends Component {
                         <h3>{t('crosschain:Destination account')}</h3>
                                 <p>{encodeAddress('0x' + item.target, 18)}</p>
                             </div>
-                            <Button variant="outline-purple" block href={this.renderExplorerUrl(item.tx, item.chain)}>{t('crosschain:Txhash')}</Button>
+                            <Button variant="outline-purple" block target="_blank" href={this.renderExplorerUrl(item.tx, item.chain)}>{t('crosschain:Txhash')}</Button>
                         </div>)
                     }) : null}
                     <div className={styles.buttonBox}>
@@ -521,8 +531,7 @@ class Claims extends Component {
     }
 
     render() {
-        const { t } = this.props
-        const { status, from, to } = this.state
+        const { status } = this.state
         return (
             <div>
                 <div className={styles.claimBox}>
@@ -535,4 +544,4 @@ class Claims extends Component {
     }
 }
 
-export default withTranslation()(Claims);
+export default withRouter(withTranslation()(Claims));
