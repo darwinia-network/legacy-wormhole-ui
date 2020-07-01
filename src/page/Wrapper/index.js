@@ -375,7 +375,13 @@ class Claims extends Component {
             const p1 = line.getPointAtLength(lineLength/2 - 2)
             const p2 = line.getPointAtLength(lineLength/2 + 2)
             const theta = Math.atan2(p2.y - p1.y,p2.x - p1.x) * (180 / Math.PI)
-            
+            slotPath.push(<defs>
+                <mask id={`mask-path-${element[0]}-${element[1]}`}>
+                    
+                    <circle cx={p0.x} cy={p0.y} r={lineLength/2} fill="white"></circle>
+                    <circle cx={p0.x} cy={p0.y} r="10" fill="black"></circle>
+                </mask>
+            </defs>)
             slotPath.push(<use xlinkHref="#slot" id={`path-${element[0]}-${element[1]}-instant`} x={p0.x-8.5} y={p0.y-17} transform={`rotate(${theta+90}, ${p0.x} ${p0.y})`}>
             </use>)
         })
@@ -399,11 +405,10 @@ class Claims extends Component {
             // const p1 = [parseInt((center12[0] - (center12[0] - center1[0])*0.8 - rectSVG.x).toFixed(1)), parseInt((center12[1] - rectSVG.y + (rectBall1.width - rectBall2.width) / 3).toFixed(1))]
             // const p2 = [parseInt((center12[0] + (center2[0] - center12[0])*0.8 - rectSVG.x).toFixed(1)), parseInt((center12[1] - rectSVG.y + (rectBall1.width - rectBall2.width) / 4).toFixed(1))]
             const curvetoPath = distance12/1.3;
-            lines.push(<g transform={`rotate(${0}, ${parseInt(center1[0])} ${parseInt(center1[1])})`}>
+            lines.push(<g transform={`rotate(${0}, ${parseInt(center1[0])} ${parseInt(center1[1])})`} mask={`url(#mask-path-${element[0]}-${element[1]}`}>
                 <path id={`path-${element[0]}-${element[1]}`} d={`m${center1[0]-rectSVG.x},${parseInt(center1[1]-rectSVG.y)}C${parseInt(center1[0]-rectSVG.x + curvetoPath)},${parseInt(center1[1]-rectSVG.y - curvetoPath)} ${parseInt(center1[0] -rectSVG.x+ distance12 - curvetoPath)},${parseInt(center2[1]-rectSVG.y + curvetoPath)} ${parseInt(center2[0]-rectSVG.x)},${parseInt(center2[1]-rectSVG.y)}`} style={{strokeWidth: "2"}} stroke="#43455a" fill="none"/>
             </g>
             )
-
         });
         return lines
     }
