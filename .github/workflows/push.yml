@@ -28,6 +28,7 @@ jobs:
         with:
           name: dists
           path: build/
+
       - env:
           ITERING_DEPLOYER_SSH_PRIVATE_KEY: "${{ secrets.ITERING_DEPLOYER_SSH_PRIVATE_KEY }}"
           ITERING_RSYNC_HOST: "${{ secrets.ITERING_RSYNC_HOST }}"
