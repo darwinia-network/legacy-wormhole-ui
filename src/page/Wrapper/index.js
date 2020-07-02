@@ -554,10 +554,16 @@ class Claims extends Component {
         })
     }
 
+    onChangePath = (path) => {
+        this.setState(path)
+    }
+
     renderContent = () => {
         const { renderPage } = this.state;
         return (<>
-            {renderPage === 'crosschain' ? <CrossChain /> : null}
+            {renderPage === 'crosschain' ? <CrossChain onChangePath={(path) => {
+                this.onChangePath(path)
+            }}/> : null}
             {renderPage === 'airdrop' ? <Claim /> : null}
         </>)
     }

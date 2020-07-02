@@ -7,7 +7,7 @@ import dayjs from 'dayjs';
 import Web3 from 'web3';
 import { encodeAddress } from '@polkadot/util-crypto';
 
-import { connect, sign, formToast, getAirdropData, config, formatBalance, getBuildInGenesisInfo, getTokenBalance, buildInGenesis, parseChain, textTransform } from './utils'
+import { connect, sign, formToast, getAirdropData, config, formatBalance, getBuildInGenesisInfo, getTokenBalance, buildInGenesis, parseChain, textTransform, remove0x } from './utils'
 import { withTranslation } from "react-i18next";
 import i18n from '../../locales/i18n';
 
@@ -59,11 +59,18 @@ class Claims extends Component {
 
     routerHandle = (location) => {
         const {hash} = location || this.props.location;
+        const { onChangePath } = this.props
         if(hash === '#tron') {
             this.setState({networkType: 'tron'})
+            onChangePath({
+                from: 'tron'
+            })
         }
         if(hash === '#ethereum') {
             this.setState({networkType: 'eth'})
+            onChangePath({
+                from: 'ethereum'
+            })
         }
     }
 
@@ -300,7 +307,7 @@ class Claims extends Component {
     }
 
     step1 = () => {
-        const { t } = this.props
+        const { t, onChangePath } = this.props
         const { networkType } = this.state
         return (
             <div>
@@ -310,7 +317,11 @@ class Claims extends Component {
                         <Form.Group controlId="networkSelectGroup">
                             <Form.Label>{t('crosschain:Select Chain')}</Form.Label>
                             <Form.Control as="select" value={networkType}
-                                onChange={(value) => this.setValue('networkType', value)}>
+                                onChange={(value) => this.setValue('networkType', value, null, (data) => {
+                                    onChangePath({
+                                        from: parseChain(data)
+                                    })
+                                })}>
                                 <option value="eth">Ethereum -> Darwinia MainNet</option>
                                 <option value="tron">Tron -> Darwinia MainNet</option>
                             </Form.Control>
@@ -527,7 +538,14 @@ class Claims extends Component {
             tron: `${config.TRONSCAN_DOMAIN}/#transaction/`
         }
 
-        return `${domain[_networkType || networkType]}${_hash || hash}`
+        let urlHash = _hash || hash;
+
+
+        if((_networkType || networkType) === 'tron') {
+            urlHash = remove0x(urlHash)
+        }
+
+        return `${domain[_networkType || networkType]}${urlHash}`
     }
 
     render() {

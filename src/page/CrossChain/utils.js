@@ -361,3 +361,9 @@ export function textTransform(text, type) {
         return text.toLowerCase()
     }
 }
+
+export function remove0x(text) {
+    if(text.slice(0,2) === '0x') {
+        return text.slice(2)
+    }
+}
