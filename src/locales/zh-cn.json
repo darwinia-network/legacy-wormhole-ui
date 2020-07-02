@@ -71,6 +71,15 @@
     "Not claimed": "未领取",
     "Coming Soon": "敬请期待",
     "airdrop": "空投",
-    "crosschain": "跨链转账"
+    "crosschain": "跨链转账",
+    "The entered {{account}} account is incorrect": "输入的{{account}}网络账号不正确",
+    "The transfer amount cannot be 0": "转账金额不能为0"
+  },
+  "comomon": {
+    "Ethereum network type does not match": "以太坊网络类型不匹配",
+    "TRON network type does not match": "波场网络类型不匹配",
+    "Please install MetaMask first": "请解锁MetaMask",
+    "Please unlock TronLink first": "请解锁TronLink",
+    "Please install TronLink first": "请安装TronLink"
   }
 }

@@ -19,7 +19,12 @@ function connectEth(accountsChangedCallback, t) {
 
         if (window.ethereum) {
             window.ethereum.enable()
-                .then((account) => {
+                .then(async(account) => {
+                    const networkid = await web3js.eth.net.getId()
+                    if(config.ETHEREUM_NETWORK != networkid) {
+                        formToast(t('common:Ethereum network type does not match'));
+                        return;
+                    }
                     if (window.ethereum.on) {
                         window.ethereum.on('accountsChanged', (accounts) => {
                             if (accounts.length > 0) {
@@ -41,15 +46,21 @@ function connectEth(accountsChangedCallback, t) {
             }).catch(console.error)
         }
     } else {
-        formToast(t('Please install MetaMask first'));
+        formToast(t('common:Please install MetaMask first'));
     }
 }
 
 function connectTron(accountsChangedCallback, t) {
     if (typeof window.tronWeb !== 'undefined') {
         if (!(window.tronWeb && window.tronWeb.ready)) {
-            formToast(t('Please unlock TronLink first'));
+            formToast(t('common:Please unlock TronLink first'));
             return
+        }
+        if(window.tronWeb.fullNode && window.tronWeb.fullNode.host) {
+            if(window.tronWeb.fullNode.host.indexOf(config.TRON_NETWORK_SYMBOL) == -1) {
+                formToast(t('common:TRON network type does not match'));
+                return
+            }
         }
         const wallet = window.tronWeb.defaultAddress;
         const preAddress = wallet.base58;
@@ -63,7 +74,7 @@ function connectTron(accountsChangedCallback, t) {
         })
         accountsChangedCallback && accountsChangedCallback('tron', wallet.base58)
     } else {
-        formToast(t('Please install TronLink first'));
+        formToast(t('common:Please install TronLink first'));
     }
 }
 
@@ -141,7 +152,7 @@ export function sign(type, account, text, callback, t) {
     const checkResult = checkAddress(text, config.S58_PREFIX);
 
     if (!checkResult[0]) {
-        formToast(t(`The entered {{account}} account is incorrect`, {
+        formToast(t(`crosschain:The entered {{account}} account is incorrect`, {
             replace: {
                 account: config.NETWORK_NAME,
             }
@@ -164,7 +175,7 @@ export function buildInGenesis(type, account, params, callback, t) {
     const checkResult = checkAddress(params.to, config.S58_PREFIX);
 
     if (!checkResult[0]) {
-        formToast(t(`The entered {{account}} account is incorrect`, {
+        formToast(t(`crosschain:The entered {{account}} account is incorrect`, {
             replace: {
                 account: config.NETWORK_NAME,
             }
@@ -173,7 +184,7 @@ export function buildInGenesis(type, account, params, callback, t) {
     }
 
     if (params.value.eq(new BN(0))) {
-        formToast(t(`The transfer amount cannot be 0`))
+        formToast(t(`crosschain:The transfer amount cannot be 0`))
         return
     }
 

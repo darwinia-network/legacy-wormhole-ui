@@ -70,7 +70,9 @@
     "Claims": "Claimed",
     "Not claimed": "Not claimed",
     "Coming Soon": "Coming Soon",
-    "airdrop": "airdrop",
-    "crosschain": "crosschain"
+    "airdrop": "Claim Airdrop",
+    "crosschain": "Cross-chain Transfer",
+    "Ethereum network type does not match": "Ethereum network type does not match",
+    "TRON network type does not match": "TRON network type does not match"
   }
 }
