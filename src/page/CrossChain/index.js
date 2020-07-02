@@ -7,7 +7,7 @@ import dayjs from 'dayjs';
 import Web3 from 'web3';
 import { encodeAddress } from '@polkadot/util-crypto';
 
-import { connect, sign, formToast, getAirdropData, config, formatBalance, getBuildInGenesisInfo, getTokenBalance, buildInGenesis } from './utils'
+import { connect, sign, formToast, getAirdropData, config, formatBalance, getBuildInGenesisInfo, getTokenBalance, buildInGenesis, parseChain, textTransform } from './utils'
 import { withTranslation } from "react-i18next";
 import i18n from '../../locales/i18n';
 
@@ -449,7 +449,7 @@ class Claims extends Component {
                             </div>
                             <div>
                         <h3>{t('crosschain:Cross-chain direction')}</h3>
-                                <p>{item.chain} -> Darwinia MainNet</p>
+                                <p>{textTransform(parseChain(item.chain), 'capitalize')} -> Darwinia MainNet</p>
                             </div>
                             <div>
                         <h3>{t('crosschain:Amount')}</h3>
