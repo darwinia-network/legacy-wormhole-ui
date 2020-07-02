@@ -51,10 +51,12 @@ function connectTron(accountsChangedCallback, t) {
             return
         }
         const wallet = window.tronWeb.defaultAddress;
-
+        const preAddress = wallet.base58;
         window.tronWeb.on("addressChanged", wallet => {
             if (window.tronWeb) {
-                accountsChangedCallback && accountsChangedCallback('tron', wallet.base58)
+                if(preAddress !== wallet.base58) {
+                    accountsChangedCallback && accountsChangedCallback('tron', wallet.base58)
+                }
             }
         })
         accountsChangedCallback && accountsChangedCallback('tron', wallet.base58)
