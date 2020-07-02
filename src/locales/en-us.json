@@ -72,7 +72,14 @@
     "Coming Soon": "Coming Soon",
     "airdrop": "Claim Airdrop",
     "crosschain": "Cross-chain Transfer",
+    "The entered {{account}} account is incorrect": "The entered {{account}} account is incorrect",
+    "The transfer amount cannot be 0": "The transfer amount cannot be 0"
+  },
+  "common": {
     "Ethereum network type does not match": "Ethereum network type does not match",
-    "TRON network type does not match": "TRON network type does not match"
+    "TRON network type does not match": "TRON network type does not match",
+    "Please install MetaMask first": "Please install MetaMask first",
+    "Please unlock TronLink first": "Please unlock TronLink first",
+    "Please install TronLink first": "Please install TronLink first"
   }
 }
