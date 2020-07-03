@@ -564,7 +564,9 @@ class Claims extends Component {
             {renderPage === 'crosschain' ? <CrossChain onChangePath={(path) => {
                 this.onChangePath(path)
             }}/> : null}
-            {renderPage === 'airdrop' ? <Claim /> : null}
+            {renderPage === 'airdrop' ? <Claim  onChangePath={(path) => {
+                this.onChangePath(path)
+            }}/> : null}
         </>)
     }
 

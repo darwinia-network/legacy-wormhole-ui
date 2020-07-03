@@ -8,6 +8,7 @@ import Web3 from 'web3';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 
 import { connect, sign, formToast, getAirdropData, config, formatBalance, getClaimsInfo, getClaimsInfo1 } from './utils'
+import { parseChain } from '../../util'
 import { withTranslation } from "react-i18next";
 import i18n from '../../locales/i18n';
 
@@ -46,11 +47,18 @@ class Claims extends Component {
 
     routerHandle = (location) => {
         const {hash} = location || this.props.location;
+        const { onChangePath } = this.props
         if(hash === '#tron') {
             this.setState({networkType: 'tron'})
+            onChangePath({
+                from: 'tron'
+            })
         }
         if(hash === '#ethereum') {
             this.setState({networkType: 'eth'})
+            onChangePath({
+                from: 'ethereum'
+            })
         }
     }
 
@@ -230,7 +238,7 @@ class Claims extends Component {
     }
 
     step1 = () => {
-        const { t } = this.props
+        const { t, history, onChangePath } = this.props
         const { networkType } = this.state
         return (
             <div>
@@ -240,7 +248,15 @@ class Claims extends Component {
                         <Form.Group controlId="networkSelectGroup">
                             <Form.Label>{t('page:Select Chain')}</Form.Label>
                             <Form.Control as="select" value={networkType}
-                                onChange={(value) => this.setValue('networkType', value)}>
+                                onChange={(value) => {
+                                        history.replace({
+                                            hash: `#${parseChain(value.target.value)}`
+                                        })
+                                        this.setValue('networkType', value)
+                                        onChangePath({
+                                            from: parseChain(value.target.value)
+                                        })
+                                    }}>
                                 <option value="eth">Ethereum</option>
                                 <option value="tron">Tron</option>
                             </Form.Control>

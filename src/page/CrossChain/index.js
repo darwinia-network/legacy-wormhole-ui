@@ -49,6 +49,7 @@ class Claims extends Component {
             crossChainBalanceText: '',
             crossChainBalance: Web3.utils.toBN(0),
             hash: '',
+            txhash: '',
             history: null
         }
     }
@@ -150,8 +151,9 @@ class Claims extends Component {
             value: crossChainBalance,
             tokenType
         }, (hash) => {
+            console.log(11111, hash)
             this.setState({
-                hash: hash,
+                txhash: hash,
                 status: 3
             })
         }, t)
@@ -307,7 +309,7 @@ class Claims extends Component {
     }
 
     step1 = () => {
-        const { t, onChangePath } = this.props
+        const { t, onChangePath, history } = this.props
         const { networkType } = this.state
         return (
             <div>
@@ -318,6 +320,9 @@ class Claims extends Component {
                             <Form.Label>{t('crosschain:Select Chain')}</Form.Label>
                             <Form.Control as="select" value={networkType}
                                 onChange={(value) => this.setValue('networkType', value, null, (data) => {
+                                    history.replace({
+                                        hash: `#${parseChain(data)}`
+                                    })
                                     onChangePath({
                                         from: parseChain(data)
                                     })
@@ -527,24 +532,21 @@ class Claims extends Component {
 
     renderHelpUrl = () => {
         const lng = i18n.language.indexOf('en') > -1 ? 'en' : 'zh-CN'
-        return `https://docs.darwinia.network/docs/${lng}/crab-tut-claim-cring`
+        return `https://docs.darwinia.network/docs/${lng}/crab-tut-create-account`
     }
 
     renderExplorerUrl = (_hash, _networkType) => {
         const lng = i18n.language.indexOf('en') > -1 ? 'en' : 'zh'
-        const { hash, networkType } = this.state
+        const { txhash, networkType } = this.state
         const domain = {
             eth: `${config.ETHERSCAN_DOMAIN[lng]}/tx/`,
             tron: `${config.TRONSCAN_DOMAIN}/#transaction/`
         }
-
-        let urlHash = _hash || hash;
-
-
+       
+        let urlHash = _hash || txhash;
         if((_networkType || networkType) === 'tron') {
             urlHash = remove0x(urlHash)
         }
-
         return `${domain[_networkType || networkType]}${urlHash}`
     }
 
