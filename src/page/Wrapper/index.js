@@ -174,6 +174,8 @@ const lineConfig = [
     [3, 6, false, false]
 ]
 
+const styleIdToChainName = ['ethereum', 'crab', 'darwinia', 'tron', 'polkadot', 'kusama', 'acala']
+
 const PathConfig = [
     [3, 5, true, false],
     [5, 7, true, false]
@@ -322,6 +324,11 @@ class Claims extends Component {
     getLineInfo = (relates) => {
         let lines = []
         relates.forEach(element => {
+            const isBallActive1 = this.isBallActive(styleIdToChainName[element[0] - 1])
+            const isBallActive2 = this.isBallActive(styleIdToChainName[element[1] - 1])
+            const isLineActive = isBallActive1[0] && isBallActive2[0] && (isBallActive1[1] === 1 || isBallActive1[1] === 0) && (isBallActive2[1] === 2 || isBallActive2[1] === 0) ;
+            const isLineActive2 = isBallActive1[0] && isBallActive2[0] && (isBallActive1[1] === 2 || isBallActive1[1] === 0) && (isBallActive2[1] === 1 || isBallActive2[1] === 0);
+
             const rectBall1 = document.getElementById(`ball${element[0]}`).getBoundingClientRect()
             const rectBall2 = document.getElementById(`ball${element[1]}`).getBoundingClientRect()
             const rectSVG = document.getElementById('svgBox').getBoundingClientRect()
@@ -345,23 +352,20 @@ class Claims extends Component {
 
             const lineColor = [this.getLineColor(element[2]), this.getLineColor(element[3])]
             const dashArray = [this.getDashArray(element[2]), this.getDashArray(element[3])]
-            // translate(${translateX},${translateY})
-            // lines.push(<g id="arrow" style ={{transform: [translate(8px, 8px) rotate(${theta}, ${pCenter[0]} ${pCenter[1]}) `}}>
-            lines.push(<g id="arrow" transform={`rotate(${theta}, ${pCenter[0] + 3} ${pCenter[1]})`}>
-                <line x1={p1[0]} y1={p1[1] + translateY} x2={p2[0]} y2={p2[1] + translateY} style={{ stroke: lineColor[1], strokeWidth: "2", fillOpacity: 'null', strokeLinejoin: 'null', fill: 'null', strokeDasharray: dashArray[1], strokeLinecap: "round" }} />
-                {/* <line  x1={p1[0]} y1={p1[1]} x2={p2[0]} y2={p2[1]} style={{ stroke: "url(#svg_8)", strokeWidth: "3"}} /> */}
-                {/* <rect x={p1[0]} y={p1[1]-1.5} width={halfLine*2} height={3} style={{ fill: "url(#orange_red)", strokeWidth: "3"}} /> */}
-                {/* <rect x={p1[0]} y={p1[1]-1.5} width={halfLine*2} height={3} style={{ fill: "url(#orange_red)", strokeWidth: "3", strokeDasharray:"2 2"}} /> */}
-                {/* <line fill="none" stroke="url(#svg_8)" strokeWidth="4.5" x1="133" y1="252.45313" x2="384" y2="85.45313" id="svg_7"  strokeDasharray="5,5"/> */}
-                <polygon points={`${p2[0] + 10} ${p2[1] + translateY},${p2[0]} ${p2[1] - 6 + translateY}, ${p2[0]} ${p2[1] + 6 + translateY}`} style={{ strokeWidth: 0, fill: lineColor[1] }} />
+
+            const line2Opacity = isLineActive2 ? "null" : '0.4';
+            const lineOpacity = isLineActive ? "null" : '0.4';
+
+            lines.push(<g key={`line${element[0]}-${element[1]}-${lineOpacity}`} transform={`rotate(${theta}, ${pCenter[0] + 3} ${pCenter[1]})`}>
+                <line x1={p1[0]} y1={p1[1] + translateY} x2={p2[0]} y2={p2[1] + translateY} style={{ strokeOpacity: lineOpacity, stroke: lineColor[1], strokeWidth: "2",  strokeLinejoin: 'null', fill: 'null', strokeDasharray: dashArray[1], strokeLinecap: "round" }} />
+                <polygon points={`${p2[0] + 10} ${p2[1] + translateY},${p2[0]} ${p2[1] - 6 + translateY}, ${p2[0]} ${p2[1] + 6 + translateY}`} style={{ strokeWidth: 0, fill: lineColor[1], fillOpacity: lineOpacity }} />
             </g>)
 
-            lines.push(<g id="arrow1" transform={`rotate(${theta + 180}, ${pCenter[0] + 3} ${pCenter[1]})`}>
-                <line x1={p1[0]} y1={p1[1] + translateY} x2={p2[0]} y2={p2[1] + translateY} style={{ stroke: lineColor[0], strokeWidth: "2", fillOpacity: 'null', strokeLinejoin: 'null', fill: 'null', strokeDasharray: dashArray[0], strokeLinecap: "round" }} />
-                <polygon points={`${p2[0] + 10} ${p2[1] + translateY},${p2[0]} ${p2[1] - 6 + translateY}, ${p2[0]} ${p2[1] + 6 + translateY}`} style={{ strokeWidth: 0, fill: lineColor[0] }} />
+            lines.push(<g key={`line${element[1]}-${element[0]}-${line2Opacity}`} transform={`rotate(${theta + 180}, ${pCenter[0] + 3} ${pCenter[1]})`}>
+                <line x1={p1[0]} y1={p1[1] + translateY} x2={p2[0]} y2={p2[1] + translateY} style={{ stroke: lineColor[0],strokeOpacity: line2Opacity, strokeWidth: "2", fillOpacity: 'null', strokeLinejoin: 'null', fill: 'null', strokeDasharray: dashArray[0], strokeLinecap: "round" }} />
+                <polygon points={`${p2[0] + 10} ${p2[1] + translateY},${p2[0]} ${p2[1] - 6 + translateY}, ${p2[0]} ${p2[1] + 6 + translateY}`} style={{ strokeWidth: 0, fill: lineColor[0],fillOpacity: line2Opacity  }} />
             </g>)
         });
-        // lines.push(<use id="one" x="150" y="110" xlinkHref="#arrow"/>)
         return lines
     }
 
@@ -369,6 +373,12 @@ class Claims extends Component {
         const slotPath = []
         relates.map((element) => {
             const line = document.getElementById(`path-${element[0]}-${element[1]}`)
+
+            const isBallActive1 = this.isBallActive(styleIdToChainName[element[0] - 1])
+            const isBallActive2 = this.isBallActive(styleIdToChainName[element[1] - 1])
+            const isLineActive = isBallActive1[0] && isBallActive2[0] && (isBallActive1[1] === 1 || isBallActive1[1] === 0) && (isBallActive2[1] === 2 || isBallActive2[1] === 0) ;
+            const lineOpacity = isLineActive ? "#43455a" : '#222133';
+
             if(!line) return null;
             const lineLength = line.getTotalLength()
             const p0 = line.getPointAtLength(lineLength/2)
@@ -377,12 +387,11 @@ class Claims extends Component {
             const theta = Math.atan2(p2.y - p1.y,p2.x - p1.x) * (180 / Math.PI)
             slotPath.push(<defs>
                 <mask id={`mask-path-${element[0]}-${element[1]}`}>
-                    
                     <circle cx={p0.x} cy={p0.y} r={lineLength/2} fill="white"></circle>
                     <circle cx={p0.x} cy={p0.y} r="10" fill="black"></circle>
                 </mask>
             </defs>)
-            slotPath.push(<use xlinkHref="#slot" id={`path-${element[0]}-${element[1]}-instant`} x={p0.x-8.5} y={p0.y-17} transform={`rotate(${theta+90}, ${p0.x} ${p0.y})`}>
+            slotPath.push(<use xlinkHref="#slot" key={`path-${element[0]}-${element[1]}-instant-${lineOpacity}`} id={`path-${element[0]}-${element[1]}-instant`} x={p0.x-8.5} y={p0.y-17} transform={`rotate(${theta+90}, ${p0.x} ${p0.y})`} fill={lineOpacity}>
             </use>)
         })
         return slotPath;
@@ -394,19 +403,21 @@ class Claims extends Component {
             const rectBall1 = document.getElementById(`ball${element[0]}`).getBoundingClientRect()
             const rectBall2 = document.getElementById(`ball${element[1]}`).getBoundingClientRect()
             const rectSVG = document.getElementById('svgBox').getBoundingClientRect()
+
+            const isBallActive1 = this.isBallActive(styleIdToChainName[element[0] - 1])
+            const isBallActive2 = this.isBallActive(styleIdToChainName[element[1] - 1])
+            const isLineActive = isBallActive1[0] && isBallActive2[0] && (isBallActive1[1] === 1 || isBallActive1[1] === 0) && (isBallActive2[1] === 2 || isBallActive2[1] === 0) ;
+            const lineOpacity = isLineActive ? "null" : '0.4';
+
             if(!rectBall1) return null;
-            // const marginRadio = 0.45
+
             const center1 = [rectBall1.x + (rectBall1.width / 2), rectBall1.y + (rectBall1.height / 2)]
             const center2 = [rectBall2.x + (rectBall2.width / 2), rectBall2.y + (rectBall2.height / 2)]
             const distance12 = Math.sqrt(Math.pow(center1[0] - center2[0], 2) + Math.pow(center1[1] - center2[1], 2))
-            // const center12 = [(center1[0] + center2[0]) / 2, (center1[1] + center2[1]) / 2]
-
-            // let halfLine = (distance12 - (rectBall1.width / 2) - (rectBall2.width / 2)) / 2 * marginRadio
-            // const p1 = [parseInt((center12[0] - (center12[0] - center1[0])*0.8 - rectSVG.x).toFixed(1)), parseInt((center12[1] - rectSVG.y + (rectBall1.width - rectBall2.width) / 3).toFixed(1))]
-            // const p2 = [parseInt((center12[0] + (center2[0] - center12[0])*0.8 - rectSVG.x).toFixed(1)), parseInt((center12[1] - rectSVG.y + (rectBall1.width - rectBall2.width) / 4).toFixed(1))]
+          
             const curvetoPath = distance12/1.3;
             lines.push(<g transform={`rotate(${0}, ${parseInt(center1[0])} ${parseInt(center1[1])})`} mask={`url(#mask-path-${element[0]}-${element[1]}`}>
-                <path id={`path-${element[0]}-${element[1]}`} d={`m${center1[0]-rectSVG.x},${parseInt(center1[1]-rectSVG.y)}C${parseInt(center1[0]-rectSVG.x + curvetoPath)},${parseInt(center1[1]-rectSVG.y - curvetoPath)} ${parseInt(center1[0] -rectSVG.x+ distance12 - curvetoPath)},${parseInt(center2[1]-rectSVG.y + curvetoPath)} ${parseInt(center2[0]-rectSVG.x)},${parseInt(center2[1]-rectSVG.y)}`} style={{strokeWidth: "2"}} stroke="#43455a" fill="none"/>
+                <path key={`path-${element[0]}-${element[1]}-${lineOpacity}`} id={`path-${element[0]}-${element[1]}`} d={`m${center1[0]-rectSVG.x},${parseInt(center1[1]-rectSVG.y)}C${parseInt(center1[0]-rectSVG.x + curvetoPath)},${parseInt(center1[1]-rectSVG.y - curvetoPath)} ${parseInt(center1[0] -rectSVG.x+ distance12 - curvetoPath)},${parseInt(center2[1]-rectSVG.y + curvetoPath)} ${parseInt(center2[0]-rectSVG.x)},${parseInt(center2[1]-rectSVG.y)}`} style={{strokeWidth: "2"}} stroke="#43455a" strokeOpacity={lineOpacity} fill="none"/>
             </g>
             )
         });
@@ -453,9 +464,19 @@ class Claims extends Component {
     checkedBall = (id, e) => {
         e.preventDefault();
         e.stopPropagation();
+        
         this.setState({
             checkedBall: id,
             relatedBall: chainMap[id] || []
+        }, () => {
+            const lines = this.getLineInfo(lineConfig);
+            const path = this.getPathInfo(PathConfig);
+            const slot = this.getSlotInfo(PathConfig);
+            this.setState({
+                lines,
+                path,
+                slot
+            })
         })
     }
 
@@ -499,7 +520,7 @@ class Claims extends Component {
                                 </linearGradient>
                             </defs>
                             <defs> 
-                                <path stroke="null" d="m7.51084,18.3341l0.00057,2.86487l4.13369,0l-0.00057,-2.86487l3.21509,0l0.00057,2.86487l3.4434,0.00011l0.00077,4.35207c-0.00181,4.38449 -3.27441,8.08257 -7.63603,8.62874l-2.18129,0c-4.36161,-0.5462 -7.63422,-4.24427 -7.63603,-8.62876l0,-4.35205l3.44531,-0.00011l-0.00057,-2.86487l3.21509,0zm3.08558,-17.61409c4.36161,0.5462 7.63422,4.24426 7.63603,8.62875l0,4.35205l-17.45257,0l-0.00077,-4.35207c0.00181,-4.38449 3.27441,-8.08256 7.63603,-8.62874l2.18129,0z" id="slot" fill="#43455a" strokeWidth="2"/>
+                                <path stroke="null" d="m7.51084,18.3341l0.00057,2.86487l4.13369,0l-0.00057,-2.86487l3.21509,0l0.00057,2.86487l3.4434,0.00011l0.00077,4.35207c-0.00181,4.38449 -3.27441,8.08257 -7.63603,8.62874l-2.18129,0c-4.36161,-0.5462 -7.63422,-4.24427 -7.63603,-8.62876l0,-4.35205l3.44531,-0.00011l-0.00057,-2.86487l3.21509,0zm3.08558,-17.61409c4.36161,0.5462 7.63422,4.24426 7.63603,8.62875l0,4.35205l-17.45257,0l-0.00077,-4.35207c0.00181,-4.38449 3.27441,-8.08256 7.63603,-8.62874l2.18129,0z" id="slot" strokeWidth="2"/>
                             </defs>
                             {this.state.lines}
                             {this.state.path}
