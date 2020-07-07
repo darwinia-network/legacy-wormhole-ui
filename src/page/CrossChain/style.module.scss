@@ -246,147 +246,67 @@
       margin-bottom: 10px;
     }
   }
-  >div:last-child{
-    margin-bottom: 20px;
+  .line{
+    height: 1px;
+    background-color: #E0DFE2;
+    margin: 10px 0;
   }
 }
 
-// $marginX: 0.1;
-// $ball1Bg: linear-gradient(320deg,rgba(254,56,118,1) 0%,rgba(124,48,221,1) 71%,rgba(58,48,221,1) 100%);
-// $ballBtnBg: linear-gradient(270deg,rgba(254,56,118,1) 0%,rgba(124,48,221,1) 71%,rgba(58,48,221,1) 100%);
-// $ballBtnWidth: 170px;
+.transferProgress {
+  display: flex;
+  flex-direction: column;
+  background-color: #EEEEEF;
+  padding-top: 18px;
+  padding-bottom: 14px;
+  .Inactive {
+    color: #999999;
+    p{
+      color: #999999;
+    }
+    &::after{
+      background-color: #999999!important;
+    }
+  }
+  .iconBox, .titleBox{
+    display: flex;
+    &>div{
+      flex: 1;
+      text-align: center;
+    }
+  }
 
-// @mixin ball($width, $top, $left, $bg) {
-//   width: $width;
-//   height: $width;
-//   border-radius: $width / 2;
-//   top: $top;
-//   left: $left;
-//   z-index: 10;
-//   cursor: pointer;
-//   position: absolute;
-//   background: $bg;
-//   display: flex;
-//   align-items: center;
-//   justify-content: center;
-//   color: #fff;
-// }
+  .iconBox{
+    margin-bottom: 14px;
+    img {
+      width: 33px;
+      height: 33px;
+    }
+    &>div{
+      position: relative;
+    }
+  }
 
-// @mixin ballShadow($width, $top, $left, $bg) {
-//   width: $width * (1 + $marginX);
-//   height: $width * (1 + $marginX);
-//   border-radius: $width * (1 + $marginX) / 2;
-//   top: calc(#{$top} - #{$width * $marginX / 2});
-//   left: calc(#{$left} - #{$width * $marginX / 2});
-//   z-index: 1;
-//   position: absolute;
-//   opacity: 0.2;
-//   background: $bg;
-// }
+  .iconBox>div:not(:last-child)::after{
+    content: '';
+    position: absolute;
+    width: 60px;
+    height: 2px;
+    background-color: $crosschain-text-main;
+    top: 16.5px;
+    right: 0;
+    margin-right: -30px;
+  }
 
-// @mixin ballBtn($width, $top, $left) {
-//   top: calc(#{$top} + #{$width} + #{$width * $marginX / 2} + 20px);
-//   left: calc(#{$left} + #{$width  / 2} - #{$ballBtnWidth / 2});
-//   position: absolute;
-//   width: $ballBtnWidth;
-//   color: #fff;
-//   text-align: center;
-//   border-radius:2px;
-//   background: $ballBtnBg;
-//   font-size: 14px;
-//   padding-top: 8px;
-//   padding-bottom: 7px;
-//   cursor: pointer;
-//   z-index: 20;
-// }
-
-// .ballBox {
-//   min-height: calc(100vh - 58px);
-//   background-color: #201B36;
-//   position: relative;
-
-//   .disableBall {
-//     opacity: 0.2;
-//   }
-//   .disableBallShadow {
-//     opacity: 0.04;
-//   }
-
-//   .ball1{
-//     @include ball(26vmin, 10vh, 12.5vw, $ball1Bg);
-//   }
-//   .ball1Shadow{
-//     @include ballShadow(26vmin, 10vh, 12.5vw, $ball1Bg);
-//   }
-//   .ball1Btn{
-//     @include ballBtn(26vmin, 10vh, 12.5vw);
-//   }
-
-
-//   .ball2Btn{
-//     @include ballBtn(20vmin,50vh, 15.6vw)
-//   }
-
-//   .ball2{
-//     @include ball(20vmin, 50vh, 15.6vw, $ball1Bg);
-//   }
-//   .ball2Shadow{
-//     @include ballShadow(20vmin, 50vh, 15.6vw, $ball1Bg);
-//   }
-
-//   .ball3Btn{
-//     @include ballBtn(30vmin,15.5vh, 35vw)
-//   }
-//   .ball3{
-//     @include ball(30vmin, 15.5vh, 35vw, $ball1Bg);
-//   }
-//   .ball3Shadow{
-//     @include ballShadow(30vmin, 15.5vh, 35vw, $ball1Bg);
-//   }
-
-//   .ball4{
-//     @include ball(20vmin, 64vh, 40vw, $ball1Bg);
-//   }
-//   .ball4Shadow{
-//     @include ballShadow(20vmin, 64vh, 40vw, $ball1Bg);
-//   }
-//   .ball4Btn{
-//     @include ballBtn(20vmin, 64vh, 40vw)
-//   }
-
-//   .ball5{
-//     @include ball(24vmin, 11vh, 60vw, $ball1Bg);
-//   }
-//   .ball5Shadow{
-//     @include ballShadow(24vmin, 11vh, 60vw, $ball1Bg);
-//   }
-//   .ball5Btn{
-//     @include ballBtn(24vmin, 11vh, 60vw)
-//   }
-
-
-//   .ball6{
-//     @include ball(20vmin, 52vh, 64vw, $ball1Bg);
-//   }
-//   .ball6Shadow{
-//     @include ballShadow(20vmin, 52vh, 64vw, $ball1Bg);
-//   }
-//   .ball6Btn{
-//     @include ballBtn(20vmin, 52vh, 64vw)
-//   }
-
-
-//   .ball7{
-//     @include ball(18vmin, 31vh, 80vw, $ball1Bg);
-//   }
-//   .ball7Shadow{
-//     @include ballShadow(18vmin, 31vh, 80vw, $ball1Bg);
-//   }
-//   .ball7Btn{
-//     @include ballBtn(18vmin, 31vh, 80vw)
-//   }
-
-// }
+  .titleBox {
+    p{
+      word-break: break-word;
+    }
+    .hashBtn{
+      padding: 0.1rem 0.5rem;
+    }
+  }
+}
 
 .guideBox{
   position: relative;
@@ -394,69 +314,6 @@
   height: 600px;
   margin-left: 170px;
 }
-
-
-// .ballFrom{
-//   @include ball(190px, 50px, 10px, $ball1Bg);
-// }
-// .ballFromShadow{
-//   @include ballShadow(190px, 50px, 10px, $ball1Bg);
-// }
-
-// .ballTo{
-//   @include ball(190px, 400px, 10px, $ball1Bg);
-// }
-// .ballToShadow{
-//   @include ballShadow(190px, 400px, 10px, $ball1Bg);
-// }
-
-
-// @keyframes nebula-float-1 {
-//   0%, 100% {
-//     filter:blur(39px);
-
-
-//   }
-//   50% {
-//     filter:blur(30px);
-
-//   }
-// }
-
-// @keyframes nebula-float-2 {
-//   0%, 100% {
-//     filter:blur(39px);
-//     background:linear-gradient(270deg,rgba(254,56,118,1) 0%,rgba(124,48,221,1) 71%,rgba(58,48,221,1) 100%);
-
-//   }
-//   50% {
-//     filter:blur(25px);
-//     background:linear-gradient(270deg,rgba(254,56,118,1) 0%,rgba(124,48,221,1) 50%,rgba(58,48,221,1) 100%);
-//   }
-// }
-
-// .nebula1 {
-//   width:25vw;
-//   height:25vh;
-//   background:linear-gradient(270deg,rgba(254,56,118,1) 0%,rgba(124,48,221,1) 71%,rgba(58,48,221,1) 100%);
-//   opacity:0.5;
-//   filter:blur(39px);
-//   left: 0vw;
-//   bottom: 0;
-//   position: absolute;
-//   animation: nebula-float-1 8s ease-out infinite;
-// }
-
-// .nebula2 {
-//   width:18vw;
-//   height:18vh;
-//   background:linear-gradient(270deg,rgba(254,56,118,1) 0%,rgba(124,48,221,1) 71%,rgba(58,48,221,1) 100%);
-//   opacity:0.5;
-//   top: 0;
-//   right: 0vw;
-//   position: absolute;
-//   animation: nebula-float-2 8s ease-out infinite;
-// }
 
 .stepRoadMap {
   h3{
@@ -590,19 +447,6 @@
       padding-right: 0;
       flex-direction: column-reverse;
     }
-
-    // .changeLngMobil {
-    //   padding: 2px 10px;
-    //   position: absolute;
-    //   top: 20px;
-    //   right: 20px;
-    //   display: block;
-    //   text-decoration: none;
-    // }
-
-    // a.changeLngMobil:hover, a.changeLngMobil:active {
-    //   color: #fff;
-    // }
   }
 
   .claimBox {
@@ -625,5 +469,13 @@
 
       display: none;
     }
+  }
+
+
+  .transferProgress {
+    .iconBox>div:not(:last-child)::after{
+      width: 40px;
+      margin-right: -20px;
+    } 
   }
 }

@@ -73,7 +73,12 @@
     "airdrop": "空投",
     "crosschain": "跨链转账",
     "The entered {{account}} account is incorrect": "输入的{{account}}网络账号不正确",
-    "The transfer amount cannot be 0": "转账金额不能为0"
+    "The transfer amount cannot be 0": "转账金额不能为0",
+    "Transaction Send": "交易发送成功",
+    "Ethereum Confirmed": "Ethereum网络确认",
+    "Tron Confirmed": "TRON网络确认",
+    "Darwinia Confirmed": "Darwinia网络确认"
+
   },
   "common": {
     "Ethereum network type does not match": "以太坊网络类型不匹配",

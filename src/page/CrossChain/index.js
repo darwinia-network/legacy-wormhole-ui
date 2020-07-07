@@ -7,7 +7,8 @@ import dayjs from 'dayjs';
 import Web3 from 'web3';
 import { encodeAddress } from '@polkadot/util-crypto';
 
-import { connect, sign, formToast, getAirdropData, config, formatBalance, getBuildInGenesisInfo, getTokenBalance, buildInGenesis, parseChain, textTransform, remove0x } from './utils'
+import { connect, sign, formToast, getAirdropData, config, formatBalance, getBuildInGenesisInfo, getTokenBalance, buildInGenesis, textTransform, remove0x } from './utils'
+import { parseChain } from '../../util';
 import { withTranslation } from "react-i18next";
 import i18n from '../../locales/i18n';
 
@@ -21,7 +22,25 @@ import helpLogo from './img/help-icon.png';
 import labelTitleLogo from './img/label-title-logo.png';
 import helpSmall from './img/help-s.png';
 
+import stepStartIcon from './img/tx-step-start-icon.svg';
+import stepEthereumIcon from './img/tx-step-ethereum-icon.svg';
+import stepTronIcon from './img/tx-step-tron-icon.svg';
+import stepDarwiniaIcon from './img/tx-step-darwinia-icon.svg';
+import stepInactiveEthereumIcon from './img/tx-step-ethereum-inactive-icon.svg';
+import stepInactiveTronIcon from './img/tx-step-ethereum-inactive-icon.svg';
+import stepInactiveDarwiniaIcon from './img/tx-step-darwinia-inactive-icon.svg';
+
 import chainMap from './chain';
+
+const txProgressIcon = {
+    stepStartIcon,
+    stepEthereumIcon,
+    stepDarwiniaIcon,
+    stepInactiveEthereumIcon,
+    stepInactiveDarwiniaIcon,
+    stepTronIcon,
+    stepInactiveTronIcon
+}
 
 class Claims extends Component {
     constructor(props, context) {
@@ -59,16 +78,16 @@ class Claims extends Component {
     }
 
     routerHandle = (location) => {
-        const {hash} = location || this.props.location;
+        const { hash } = location || this.props.location;
         const { onChangePath } = this.props
-        if(hash === '#tron') {
-            this.setState({networkType: 'tron'})
+        if (hash === '#tron') {
+            this.setState({ networkType: 'tron' })
             onChangePath({
                 from: 'tron'
             })
         }
-        if(hash === '#ethereum') {
-            this.setState({networkType: 'eth'})
+        if (hash === '#ethereum') {
+            this.setState({ networkType: 'eth' })
             onChangePath({
                 from: 'ethereum'
             })
@@ -347,21 +366,21 @@ class Claims extends Component {
                                 <p>{t('crosschain:Phase 1')}</p>
                                 <p>2020.05.30 - 2020.06.30</p>
                             </div>
-        <p>{t('crosschain:The cross-chain transfers at this stage will arrive after launching the Darwinia mainnet and will be sent to the destination account by Genesis Block')}</p>
+                            <p>{t('crosschain:The cross-chain transfers at this stage will arrive after launching the Darwinia mainnet and will be sent to the destination account by Genesis Block')}</p>
                         </div>
                         <div className={styles.stepRoadMapItem}>
                             <div>
-        <p>{t('crosschain:Phase 2')}</p>
+                                <p>{t('crosschain:Phase 2')}</p>
                                 <p>2020 Q3</p>
                             </div>
-        <p>{t('crosschain:Cross-chain transfers at this stage will arrive immediately (network delays may occur),but only support One-way transfers to the Darwinia main network')}</p>
+                            <p>{t('crosschain:Cross-chain transfers at this stage will arrive immediately (network delays may occur),but only support One-way transfers to the Darwinia main network')}</p>
                         </div>
                         <div className={styles.stepRoadMapItem}>
                             <div>
-        <p>{t('crosschain:Phase 3')}</p>
+                                <p>{t('crosschain:Phase 3')}</p>
                                 <p>2020 Q3 - Q4</p>
                             </div>
-        <p>{t('crosschain:Cross-chain transfers at this stage will arrive immediately (network delays may occur), and support two-way or multi-way transfers')}</p>
+                            <p>{t('crosschain:Cross-chain transfers at this stage will arrive immediately (network delays may occur), and support two-way or multi-way transfers')}</p>
                         </div>
                     </div>
                 </div>
@@ -402,14 +421,14 @@ class Claims extends Component {
                                 {t('crosschain:Please be sure to fill in the real Darwinia mainnet account, and keep the account recovery files such as mnemonic properly.')}
                             </Form.Text>
 
-                        <Form.Label>{t('crosschain:Cross-chain transfer token')}</Form.Label>
+                            <Form.Label>{t('crosschain:Cross-chain transfer token')}</Form.Label>
                             <Form.Control as="select" value={tokenType}
                                 onChange={(value) => this.setValue('tokenType', value)}>
                                 <option value="ring">RING({t('crosschain:MAX')} {formatBalance(ringBalance, 'ether')})</option>
                                 <option value="kton">KTON({t('crosschain:MAX')} {formatBalance(ktonBalance, 'ether')})</option>
                             </Form.Control>
 
-                        <Form.Label>{t('crosschain:Amount')}</Form.Label>
+                            <Form.Label>{t('crosschain:Amount')}</Form.Label>
                             <Form.Control type="number" placeholder={t('crosschain:Amount')} value={crossChainBalanceText}
                                 onChange={(value) => this.setValue('crossChainBalance', value, this.toWeiBNMiddleware, this.setBNValue)} />
                         </Form.Group>
@@ -447,35 +466,41 @@ class Claims extends Component {
                         <h1><img alt="" src={labelTitleLogo} /><span>{t('crosschain:Connected to')}：</span></h1>
                         <p>{account[networkType]}</p>
                     </div>
-                    {!history ? 
-                    <div className="d-flex flex-wrap justify-content-center pb-4">
-                        <Spinner animation="border" />
-                    </div>
-                     : null}
-                     { history && history.length === 0 ?
-                     <div className={styles.historyEmpty}>
-                         <p>{t('No Cross-chain transfer history')}</p>
-                     </div>
-                     :null}
+                    {!history ?
+                        <div className="d-flex flex-wrap justify-content-center pb-4">
+                            <Spinner animation="border" />
+                        </div>
+                        : null}
+                    {history && history.length === 0 ?
+                        <div className={styles.historyEmpty}>
+                            <p>{t('No Cross-chain transfer history')}</p>
+                        </div>
+                        : null}
                     {history ? history.map((item) => {
                         return (<div className={styles.historyItem} key={item.tx}>
                             <div>
-                        <h3>{t('crosschain:Time')}</h3>
+                                <h3>{t('crosschain:Time')}</h3>
                                 <p>{dayjs.unix(item.block_timestamp).format('YYYY-MM-DD HH:mm:ss ZZ')}</p>
                             </div>
                             <div>
-                        <h3>{t('crosschain:Cross-chain direction')}</h3>
+                                <h3>{t('crosschain:Cross-chain direction')}</h3>
                                 <p>{textTransform(parseChain(item.chain), 'capitalize')} -> Darwinia MainNet</p>
                             </div>
                             <div>
-                        <h3>{t('crosschain:Amount')}</h3>
+                                <h3>{t('crosschain:Amount')}</h3>
                                 <p>{formatBalance(Web3.utils.toBN(item.amount), 'ether')} {item.currency.toUpperCase()}</p>
                             </div>
                             <div>
-                        <h3>{t('crosschain:Destination account')}</h3>
+                                <h3>{t('crosschain:Destination account')}</h3>
                                 <p>{encodeAddress('0x' + item.target, 18)}</p>
                             </div>
-                            <Button variant="outline-purple" block target="_blank" href={this.renderExplorerUrl(item.tx, item.chain)}>{t('crosschain:Txhash')}</Button>
+                            <div className={styles.line}></div>
+                            {this.renderTransferProgress(parseChain(item.chain), 'darwinia', 2, {
+                                from: {
+                                    tx: item.tx,
+                                    chain: item.chain
+                                }
+                            })}
                         </div>)
                     }) : null}
                     <div className={styles.buttonBox}>
@@ -510,6 +535,36 @@ class Claims extends Component {
         })
     }
 
+    renderProgress = (current, threshold, isStyle = true) => {
+        const className = current >= threshold ? '' : 'Inactive'
+        return isStyle ? styles[className] : className
+    }
+
+    renderTransferProgress = (from, to, step, hash) => {
+        const { t } = this.props
+        return (
+            <div className={styles.transferProgress}>
+                <div className={styles.iconBox}>
+                    <div><img src={stepStartIcon} alt="tx"></img></div>
+                    <div className={`${this.renderProgress(step, 3)}`}><img src={txProgressIcon[`step${this.renderProgress(step, 2, false)}${textTransform(from, 'capitalize')}Icon`]} alt="tx"></img></div>
+                    <div className={`${this.renderProgress(step, 3)}`}><img src={txProgressIcon[`step${this.renderProgress(step, 3, false)}${textTransform(to, 'capitalize')}Icon`]} alt="tx"></img></div>
+                </div>
+                <div className={styles.titleBox}>
+                    <div>
+                        <p>{t('crosschain:Transaction Send')}</p>
+                    </div>
+                    <div className={`${this.renderProgress(step, 2)}`}>
+                        <p>{t(`crosschain:${textTransform(from, 'capitalize')} Confirmed`)}</p>
+                        <Button className={styles.hashBtn} variant="outline-purple" target="_blank" href={this.renderExplorerUrl(hash.from.tx, hash.from.chain)}>{t('crosschain:Txhash')}</Button>
+                    </div>
+                    <div className={`${this.renderProgress(step, 3)}`}>
+                        <p>{t('crosschain:Darwinia Confirmed')}</p>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
     renderBall = (id, styleId) => {
         const { checkedBall } = this.state
         const isBallActive = this.isBallActive(id)
@@ -542,9 +597,9 @@ class Claims extends Component {
             eth: `${config.ETHERSCAN_DOMAIN[lng]}/tx/`,
             tron: `${config.TRONSCAN_DOMAIN}/#transaction/`
         }
-       
+
         let urlHash = _hash || txhash;
-        if((_networkType || networkType) === 'tron') {
+        if ((_networkType || networkType) === 'tron') {
             urlHash = remove0x(urlHash)
         }
         return `${domain[_networkType || networkType]}${urlHash}`
