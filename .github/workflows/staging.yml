@@ -1,5 +1,8 @@
-name: CI
-on: [push]
+name: Staging
+on:
+  push:
+    # branches:
+    #   - "feature/**"
 
 jobs:
   build-and-deploy:
@@ -17,16 +20,16 @@ jobs:
       - uses: actions/cache@v2
         with:
           path: ${{ steps.yarn_cache_dir.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-yarn-staging-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
-            ${{ runner.os }}-yarn-
+            ${{ runner.os }}-yarn-staging-
 
       - run: yarn install
       - run: yarn build_dev
 
       - uses: actions/upload-artifact@v2
         with:
-          name: dists
+          name: dists-staging
           path: build/
 
       - env:
