@@ -37,10 +37,25 @@ jobs:
           username: ${{ secrets.QUAY_IO_BOT_USERNAME }}
           password: ${{ secrets.QUAY_IO_BOT_PASSWORD }}
           registry: quay.io
-          repository: darwinia-network/bridge-apps
+          repository: ${{ github.repository }}
           tag_with_sha: true
           add_git_labels: true
 
-      - id: docker_image
-        # See: https://github.com/docker/github-actions/blob/0f18e2abad9a4ac2963d2516246787375b5ec917/internal/options/tag.go#L87
-        run: echo "::set-output name=sha_tag::$(echo "sha-$GITHUB_SHA" | cut -c -11)"
+      - name: Trigger deployment
+        env:
+          DEPLOY_PHASE: production
+        run: |
+          export IMAGE_TAG=$(echo "sha-$GITHUB_SHA" | cut -c -11)
+          export DESCRIPTION="GitHub Actions Context:
+          * Run ID: ${{ github.run_id }}
+          * Commit: ${{ github.sha }}
+          * Ref: ${{ github.ref }}
+          "
+          curl -fsSL -w "%{http_code}" -X POST \
+            -F "token=${{ secrets.ITERING_DEPLOYMENT_TRIGGER_TOKEN }}" \
+            -F "ref=master" \
+            -F "variables[DEPLOY_PHASE]=$DEPLOY_PHASE" \
+            -F "variables[DEPLOY_PROJECT]=${{ github.repository }}" \
+            -F "variables[DEPLOY_IMAGE_TAG]=$IMAGE_TAG" \
+            -F "variables[DEPLOY_DESCRIPTION]=$DESCRIPTION" \
+            "${{ secrets.ITERING_DEPLOYMENT_TRIGGER_ENDPOINT }}"
