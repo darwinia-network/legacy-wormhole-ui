@@ -46,7 +46,7 @@ jobs:
           * Commit: ${{ github.sha }}
           * Ref: ${{ github.ref }}
           "
-          curl -fsSL -w "%{http_code}" -X POST \
+          curl -fsSL -o /dev/null -X POST \
             -F "token=${{ secrets.ITERING_DEPLOYMENT_TRIGGER_TOKEN }}" \
             -F "ref=master" \
             -F "variables[DEPLOY_PHASE]=$DEPLOY_PHASE" \
