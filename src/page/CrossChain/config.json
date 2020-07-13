@@ -7,7 +7,7 @@
     "NETWORK_NAME": "Darwinia Crab",
     "SNAPSHOT_TIMESTAMP": 1584683400,
     "SUBSCAN_API": "https://crab.subscan.io",
-    "DAPP_API": "https://dapp.darwinia.network",
+    "DAPP_API": "https://api.darwinia.network",
     "ETHERSCAN_DOMAIN": {
       "en": "https://ropsten.etherscan.io",
       "zh": "https://ropsten.etherscan.io"
@@ -28,7 +28,7 @@
     "NETWORK_NAME": "Darwinia MainNet",
     "SNAPSHOT_TIMESTAMP": 1584683400,
     "SUBSCAN_API": "https://crab.subscan.io",
-    "DAPP_API": "https://dapp.darwinia.network",
+    "DAPP_API": "https://api.darwinia.network",
     "ETHERSCAN_DOMAIN": {
       "en": "https://etherscan.io",
       "zh": "https://cn.etherscan.com"
