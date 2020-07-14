@@ -1,8 +1,8 @@
 name: Staging
 on:
   push:
-    # branches:
-    #   - "feature/**"
+    branches: ["*"]
+    # tags: ["*"]
 
 jobs:
   build-and-deploy:
@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
         with:
-          node-version: '10'
+          node-version: "10"
 
       - uses: actions/cache@v2
         with:
@@ -22,20 +22,31 @@ jobs:
       - run: yarn install
       - run: yarn build_dev
 
-      - uses: actions/upload-artifact@v2
+      - uses: docker/build-push-action@v1
         with:
-          name: dists-staging
-          path: build/
+          username: ${{ secrets.QUAY_IO_BOT_USERNAME }}
+          password: ${{ secrets.QUAY_IO_BOT_PASSWORD }}
+          registry: quay.io
+          repository: ${{ github.repository }}
+          add_git_labels: true
+          tag_with_sha: true
+          tag_with_ref: false # Do not tag on every individual branch
 
-      - env:
-          ITERING_DEPLOYER_SSH_PRIVATE_KEY: "${{ secrets.ITERING_DEPLOYER_SSH_PRIVATE_KEY }}"
-          ITERING_RSYNC_HOST: "${{ secrets.ITERING_RSYNC_HOST }}"
-          ITERING_RSYNC_USER: deployer
-          ITERING_RSYNC_SRC: build/
-          ITERING_RSYNC_DEST: /var/www/claims-crosschain
+      - name: Trigger deployment
+        env:
+          DEPLOY_PHASE: staging
         run: |
-          eval $(ssh-agent -s)
-          echo -n "$ITERING_DEPLOYER_SSH_PRIVATE_KEY" | base64 -d | tr -d '\r' | ssh-add -
-          mkdir -p ~/.ssh
-          ssh-keyscan -H "$ITERING_RSYNC_HOST" >> ~/.ssh/known_hosts
-          rsync -vh -rtz --delete "$ITERING_RSYNC_SRC" "$ITERING_RSYNC_USER@$ITERING_RSYNC_HOST:$ITERING_RSYNC_DEST"
+          export IMAGE_TAG=$(echo "sha-$GITHUB_SHA" | cut -c -11)
+          export DESCRIPTION="GitHub Actions Context:
+          * Run ID: ${{ github.run_id }}
+          * Commit: ${{ github.sha }}
+          * Ref: ${{ github.ref }}
+          "
+          curl -fsSL -o /dev/null -X POST \
+            -F "token=${{ secrets.ITERING_DEPLOYMENT_TRIGGER_TOKEN }}" \
+            -F "ref=master" \
+            -F "variables[DEPLOY_PHASE]=$DEPLOY_PHASE" \
+            -F "variables[DEPLOY_PROJECT]=${{ github.repository }}" \
+            -F "variables[DEPLOY_IMAGE_TAG]=$IMAGE_TAG" \
+            -F "variables[DEPLOY_DESCRIPTION]=$DESCRIPTION" \
+            "${{ secrets.ITERING_DEPLOYMENT_TRIGGER_ENDPOINT }}"
