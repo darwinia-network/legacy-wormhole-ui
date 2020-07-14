@@ -1,8 +1,8 @@
 name: Staging
 on:
   push:
-    # branches:
-    #   - "feature/**"
+    branches: ["*"]
+    # tags: ["*"]
 
 jobs:
   build-and-deploy:
@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
         with:
-          node-version: '10'
+          node-version: "10"
 
       - uses: actions/cache@v2
         with:
@@ -22,7 +22,31 @@ jobs:
       - run: yarn install
       - run: yarn build_dev
 
-      - uses: actions/upload-artifact@v2
+      - uses: docker/build-push-action@v1
         with:
-          name: dists-staging
-          path: build/
+          username: ${{ secrets.QUAY_IO_BOT_USERNAME }}
+          password: ${{ secrets.QUAY_IO_BOT_PASSWORD }}
+          registry: quay.io
+          repository: ${{ github.repository }}
+          add_git_labels: true
+          tag_with_sha: true
+          tag_with_ref: false # Do not tag on every individual branch
+
+      - name: Trigger deployment
+        env:
+          DEPLOY_PHASE: staging
+        run: |
+          export IMAGE_TAG=$(echo "sha-$GITHUB_SHA" | cut -c -11)
+          export DESCRIPTION="GitHub Actions Context:
+          * Run ID: ${{ github.run_id }}
+          * Commit: ${{ github.sha }}
+          * Ref: ${{ github.ref }}
+          "
+          curl -fsSL -o /dev/null -X POST \
+            -F "token=${{ secrets.ITERING_DEPLOYMENT_TRIGGER_TOKEN }}" \
+            -F "ref=master" \
+            -F "variables[DEPLOY_PHASE]=$DEPLOY_PHASE" \
+            -F "variables[DEPLOY_PROJECT]=${{ github.repository }}" \
+            -F "variables[DEPLOY_IMAGE_TAG]=$IMAGE_TAG" \
+            -F "variables[DEPLOY_DESCRIPTION]=$DESCRIPTION" \
+            "${{ secrets.ITERING_DEPLOYMENT_TRIGGER_ENDPOINT }}"
