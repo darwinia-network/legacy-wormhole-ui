@@ -26,16 +26,3 @@ jobs:
         with:
           name: dists-staging
           path: build/
-
-      - env:
-          ITERING_DEPLOYER_SSH_PRIVATE_KEY: "${{ secrets.ITERING_DEPLOYER_SSH_PRIVATE_KEY }}"
-          ITERING_RSYNC_HOST: "${{ secrets.ITERING_RSYNC_HOST }}"
-          ITERING_RSYNC_USER: deployer
-          ITERING_RSYNC_SRC: build/
-          ITERING_RSYNC_DEST: /var/www/claims-crosschain
-        run: |
-          eval $(ssh-agent -s)
-          echo -n "$ITERING_DEPLOYER_SSH_PRIVATE_KEY" | base64 -d | tr -d '\r' | ssh-add -
-          mkdir -p ~/.ssh
-          ssh-keyscan -H "$ITERING_RSYNC_HOST" >> ~/.ssh/known_hosts
-          rsync -vh -rtz --delete "$ITERING_RSYNC_SRC" "$ITERING_RSYNC_USER@$ITERING_RSYNC_HOST:$ITERING_RSYNC_DEST"
