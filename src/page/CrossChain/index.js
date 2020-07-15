@@ -358,13 +358,11 @@ class Claims extends Component {
                 </div>
                 <div className={styles.formBox}>
                     <div className={styles.stepRoadMap}>
-                        <h3>{t('crosschain:Roadmap for cross-chain transfers')}<a target="_blank" rel="noopener noreferrer" href="https://darwinia.network">
-                            <img src={helpSmall} alt="help" />
-                        </a></h3>
+                        <h3>{t('crosschain:Roadmap for cross-chain transfers')}</h3>
                         <div className={styles.stepRoadMapItem}>
                             <div>
                                 <p>{t('crosschain:Phase 1')}</p>
-                                <p>2020.05.30 - 2020.06.30</p>
+                            <p>{t('crosschain:In progress')}</p>
                             </div>
                             <p>{t('crosschain:The cross-chain transfers at this stage will arrive after launching the Darwinia mainnet and will be sent to the destination account by Genesis Block')}</p>
                         </div>
@@ -587,7 +585,7 @@ class Claims extends Component {
 
     renderHelpUrl = () => {
         const lng = i18n.language.indexOf('en') > -1 ? 'en' : 'zh-CN'
-        return `https://docs.darwinia.network/docs/${lng}/crab-tut-create-account`
+        return `https://docs.darwinia.network/docs/${lng}/wiki-intro`
     }
 
     renderExplorerUrl = (_hash, _networkType) => {

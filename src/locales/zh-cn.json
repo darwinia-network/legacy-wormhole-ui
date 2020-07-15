@@ -77,8 +77,8 @@
     "Transaction Send": "交易发送成功",
     "Ethereum Confirmed": "Ethereum网络确认",
     "Tron Confirmed": "TRON网络确认",
-    "Darwinia Confirmed": "Darwinia网络确认"
-
+    "Darwinia Confirmed": "Darwinia网络确认",
+    "In progress": "正在进行中"
   },
   "common": {
     "Ethereum network type does not match": "以太坊网络类型不匹配",

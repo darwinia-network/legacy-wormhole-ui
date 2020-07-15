@@ -77,7 +77,8 @@
     "Transaction Send": "Transaction Send",
     "Ethereum Confirmed": "Ethereum Confirmed",
     "Tron Confirmed": "TRON Confirmed",
-    "Darwinia Confirmed": "Darwinia Confirmed"
+    "Darwinia Confirmed": "Darwinia Confirmed",
+    "In progress": "In progress"
   },
   "common": {
     "Ethereum network type does not match": "Ethereum network type does not match",
