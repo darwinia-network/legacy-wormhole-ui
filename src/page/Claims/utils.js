@@ -40,26 +40,28 @@ function connectEth(accountsChangedCallback, t) {
             }).catch(console.error)
         }
     } else {
-        formToast(t('Please install MetaMask first'));
+        formToast(t('common:Please install MetaMask first'));
     }
 }
 
 function connectTron(accountsChangedCallback, t) {
     if (typeof window.tronWeb !== 'undefined') {
         if (!(window.tronWeb && window.tronWeb.ready)) {
-            formToast(t('Please unlock TronLink first'));
+            formToast(t('common:Please unlock TronLink first'));
             return
         }
         const wallet = window.tronWeb.defaultAddress;
-
+        const preAddress = wallet.base58;
         window.tronWeb.on("addressChanged", wallet => {
             if (window.tronWeb) {
-                accountsChangedCallback && accountsChangedCallback('tron', wallet.base58)
+                if(preAddress !== wallet.base58) {
+                    accountsChangedCallback && accountsChangedCallback('tron', wallet.base58)
+                }
             }
         })
         accountsChangedCallback && accountsChangedCallback('tron', wallet.base58)
     } else {
-        formToast(t('Please install TronLink first'));
+        formToast(t('common:Please install TronLink first'));
     }
 }
 
@@ -109,7 +111,7 @@ export function sign(type, account, text, callback, t) {
     const checkResult = checkAddress(text, config.S58_PREFIX);
 
     if (!checkResult[0]) {
-        formToast(t(`The entered {{account}} account is incorrect`, {
+        formToast(t(`crosschain:The entered {{account}} account is incorrect`, {
             replace: {
                 account: config.NETWORK_NAME,
             }
@@ -179,4 +181,5 @@ export const wxRequest = async (params = {}, url) => {
 }
 
 export const getClaimsInfo = (params) => wxRequest(params, `${config.SUBSCAN_API}/api/other/claims`)
+export const getClaimsInfo1 = (params) => wxRequest(params, `https://www.evolution.land/api/eth/gas_price`)
 

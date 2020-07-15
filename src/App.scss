@@ -135,3 +135,24 @@ body {
 
 }
 
+#space-container-top {
+  opacity: 0.6;
+  position: absolute;
+  top: -53px;
+  left: 0;
+  z-index:1;
+  overflow: hidden;
+    height: 100vh;
+}
+#space-container{
+  position: absolute;
+  top: -53px;
+  left: 0;
+  z-index:1;
+  overflow: hidden;
+    height: 100vh;
+}
+
+svg{
+  z-index: 5;
+}

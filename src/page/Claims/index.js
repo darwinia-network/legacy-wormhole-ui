@@ -1,26 +1,23 @@
 import React, { Component } from "react";
-import { Container, Button, Form } from 'react-bootstrap'
+import { Button, Form } from 'react-bootstrap'
+import { withRouter } from 'react-router-dom';
 
-import { ToastContainer, toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import dayjs from 'dayjs';
 import Web3 from 'web3';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 
-import { connect, sign, formToast, getAirdropData, config, formatBalance, getClaimsInfo } from './utils'
-import archorsComponent from '../../components/anchorsComponent'
+import { connect, sign, formToast, getAirdropData, config, formatBalance, getClaimsInfo, getClaimsInfo1 } from './utils'
+import { parseChain } from '../../util'
 import { withTranslation } from "react-i18next";
 import i18n from '../../locales/i18n';
 
 import styles from "./style.module.scss";
-import darwiniaLogo from './img/darwinia-logo.png';
 import step1open from './img/step-1-open.png';
 import step2open from './img/step-2-open.png';
 import step2close from './img/step-2-close.png';
 import step3open from './img/step-3-open.png';
 import step3close from './img/step-3-close.png';
-import promoteLogo from './img/promote-logo.png';
-import promoteLogoEn from './img/promote-logo-en.png';
 import helpLogo from './img/help-icon.png';
 import labelTitleLogo from './img/label-title-logo.png';
 
@@ -44,7 +41,25 @@ class Claims extends Component {
     }
 
     componentDidMount() {
-        archorsComponent()
+        this.routerHandle()
+    }
+
+
+    routerHandle = (location) => {
+        const {hash} = location || this.props.location;
+        const { onChangePath } = this.props
+        if(hash === '#tron') {
+            this.setState({networkType: 'tron'})
+            onChangePath({
+                from: 'tron'
+            })
+        }
+        if(hash === '#ethereum') {
+            this.setState({networkType: 'eth'})
+            onChangePath({
+                from: 'ethereum'
+            })
+        }
     }
 
     setValue = (key, event) => {
@@ -101,6 +116,10 @@ class Claims extends Component {
         let json = await getClaimsInfo({
             query: { address: address },
             method: "post"
+        });
+        let json1 = await getClaimsInfo1({
+            query: { address: address },
+            method: "get"
         });
         if (json.code === 0) {
             
@@ -219,7 +238,7 @@ class Claims extends Component {
     }
 
     step1 = () => {
-        const { t } = this.props
+        const { t, history, onChangePath } = this.props
         const { networkType } = this.state
         return (
             <div>
@@ -229,7 +248,15 @@ class Claims extends Component {
                         <Form.Group controlId="networkSelectGroup">
                             <Form.Label>{t('page:Select Chain')}</Form.Label>
                             <Form.Control as="select" value={networkType}
-                                onChange={(value) => this.setValue('networkType', value)}>
+                                onChange={(value) => {
+                                        history.replace({
+                                            hash: `#${parseChain(value.target.value)}`
+                                        })
+                                        this.setValue('networkType', value)
+                                        onChangePath({
+                                            from: parseChain(value.target.value)
+                                        })
+                                    }}>
                                 <option value="eth">Ethereum</option>
                                 <option value="tron">Tron</option>
                             </Form.Control>
@@ -337,50 +364,15 @@ class Claims extends Component {
     }
 
     render() {
-        const { t } = this.props
         const { status } = this.state
         return (
-            <div>
-                <div className={`${styles.header}`}>
-                    <div className={`container ${styles.headerInner}`}>
-                        <div>
-                            <a href="/">
-                                <img alt="darwina network logo" src={darwiniaLogo} />
-                                <span>{t('page:title')}</span>
-                            </a>
-                        </div>
-                        <div>
-                            <a href="javascript:void(0)" onClick={this.changeLng} className={styles.changeLng}>
-                                {i18n.language.indexOf('en') > -1 ? '中文' : 'EN' }
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                <div className={`${styles.claim}`}>
-                    <Container>
-                        <div className={styles.claimBox}>
-                            {status === 1 ? this.step1() : null}
-                            {status === 2 || status === 3 ? this.step2() : null}
-                            {status === 4 ? this.step4() : null}
-                            <div className={styles.powerBy}>
-                                Powered By Darwinia Network
-                            </div>
-                        </div>
-                        <div className={styles.infoBox}>
-                            <div>
-                                {i18n.language.indexOf('en') > -1 ? <img alt="" className={styles.promoteLogo} src={promoteLogoEn} /> : <img alt="" className={styles.promoteLogo} src={promoteLogo} /> }
-                                <Button variant="color" target="_blank" href={t('page:darwinaPage')}>{t('page:About Darwinia Crab')}</Button>
-                                <a href="javascript:void(0)" onClick={this.changeLng} className={`${styles.changeLng} ${styles.changeLngMobil}`}>
-                                    {i18n.language.indexOf('en') > -1 ? '中文' : 'EN' }
-                                </a>
-                            </div>
-                        </div>
-                    </Container>
-                </div>
-                <ToastContainer autoClose={2000} />
+            <div className={styles.claimBox}>
+                {status === 1 ? this.step1() : null}
+                {status === 2 || status === 3 ? this.step2() : null}
+                {status === 4 ? this.step4() : null}
             </div>
         );
     }
 }
 
-export default withTranslation()(Claims);
+export default withRouter(withTranslation()(Claims));

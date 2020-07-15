@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="270px" height="270px" viewBox="0 0 270 270" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>darwinia</title>
+    <defs>
+        <radialGradient cx="32.9427083%" cy="78.6863426%" fx="32.9427083%" fy="78.6863426%" r="90.416088%" gradientTransform="translate(0.329427,0.786863),rotate(-55.795275),scale(1.000000,0.922392),translate(-0.329427,-0.786863)" id="radialGradient-1">
+            <stop stop-color="#6730DD" offset="0%"></stop>
+            <stop stop-color="#51007F" offset="65.5774546%"></stop>
+            <stop stop-color="#FF36A4" offset="100%"></stop>
+        </radialGradient>
+        <circle id="path-2" cx="135" cy="135" r="135"></circle>
+        <filter x="-11.9%" y="-11.9%" width="123.7%" height="123.7%" filterUnits="objectBoundingBox" id="filter-3">
+            <feGaussianBlur stdDeviation="20" in="SourceAlpha" result="shadowBlurInner1"></feGaussianBlur>
+            <feOffset dx="20" dy="-24" in="shadowBlurInner1" result="shadowOffsetInner1"></feOffset>
+            <feComposite in="shadowOffsetInner1" in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1" result="shadowInnerInner1"></feComposite>
+            <feColorMatrix values="0 0 0 0 1   0 0 0 0 1   0 0 0 0 1  0 0 0 0.432309878 0" type="matrix" in="shadowInnerInner1"></feColorMatrix>
+        </filter>
+    </defs>
+    <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="darwinia">
+            <use fill="url(#radialGradient-1)" fill-rule="evenodd" xlink:href="#path-2"></use>
+            <use fill="black" fill-opacity="1" filter="url(#filter-3)" xlink:href="#path-2"></use>
+        </g>
+    </g>
+</svg>
