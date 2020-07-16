@@ -697,7 +697,7 @@ class Claims extends Component {
                             {this.renderGuide(from, to)}
                             {/* <div> */}
                             {/* {i18n.language.indexOf('en') > -1 ? <img alt="" className={styles.promoteLogo} src={promoteLogoEn} /> : <img alt="" className={styles.promoteLogo} src={promoteLogo} />}
-                                <Button variant="color" target="_blank" href={t('crosschain:darwinaPage')}>{t('crosschain:About Darwinia Crab')}</Button> */}
+                                <Button variant="color" target="_blank" href={t('crosschain:darwinaPage')}>{t('crosschain:About Darwinia')}</Button> */}
                             {/* <a href="javascript:void(0)" onClick={this.changeLng} className={`${styles.changeLng} ${styles.changeLngMobil}`}>
                                     {i18n.language.indexOf('en') > -1 ? '中文' : 'EN'}
                                 </a> */}
@@ -706,7 +706,7 @@ class Claims extends Component {
                         <div className={styles.infoBox}>
                             <div>
                                 <img alt="" className={styles.promoteLogo} src={promoteLogo} />
-                                <Button variant="color" target="_blank" href={t('page:darwinaPage')}>{t('page:About Darwinia Crab')}</Button>
+                                <Button variant="color" target="_blank" href={t('page:darwinaPage')}>{t('page:About Darwinia')}</Button>
                                 {/* <a href="javascript:void(0)" onClick={this.changeLng} className={`${styles.changeLng} ${styles.changeLngMobil}`}>
                                     {i18n.language.indexOf('en') > -1 ? '中文' : 'EN'}
                                 </a> */}
