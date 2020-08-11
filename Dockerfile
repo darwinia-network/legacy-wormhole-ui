@@ -1,6 +1,14 @@
-FROM nginx:stable-alpine
+FROM node:10.17.0-jessie as builder
+WORKDIR /app
 
-COPY ./build /usr/share/nginx/html
-COPY ./docker/nginx-default.conf /etc/nginx/conf.d/default.conf
+ARG BUILD_COMMAND
 
-EXPOSE 80/tcp
+COPY package.json yarn.lock ./
+RUN yarn install
+COPY . .
+RUN yarn run ${BUILD_COMMAND}
+
+FROM nginx:mainline-alpine
+
+COPY --from=builder /app/build /usr/share/nginx/html
+COPY ./nginx-http.conf /etc/nginx/conf.d/default.conf
