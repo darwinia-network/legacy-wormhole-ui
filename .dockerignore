@@ -1,1 +1,7 @@
-/node_modules
+/.git
+/.vscode
+/.yarn/cache
+/Dockerfile
+
+build/
+node_modules/
