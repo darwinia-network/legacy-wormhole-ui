@@ -1,7 +1,6 @@
 name: Production
 on:
   push:
-    # branches: [master]
     tags: ["*"]
 
 jobs:
