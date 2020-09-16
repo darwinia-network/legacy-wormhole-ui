@@ -585,7 +585,7 @@ class Claims extends Component {
 
     renderHelpUrl = () => {
         const lng = i18n.language.indexOf('en') > -1 ? 'en' : 'zh-CN'
-        return `https://docs.darwinia.network/docs/${lng}/wiki-intro`
+        return `https://docs.darwinia.network/docs/${lng}/wiki-tut-create-account`
     }
 
     renderExplorerUrl = (_hash, _networkType) => {
