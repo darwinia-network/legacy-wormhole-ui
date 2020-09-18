@@ -3,7 +3,7 @@
     "ETHEREUM_NETWORK": 3,
     "TRON_NETWORK_SYMBOL": "shasta",
     "SIGN_PREFIX": "Pay RINGs to the Darwinia account:",
-    "S58_PREFIX": 42,
+    "S58_PREFIX": 18,
     "NETWORK_NAME": "Darwinia Crab",
     "SNAPSHOT_TIMESTAMP": 1584683400,
     "SUBSCAN_API": "https://crab.subscan.io",

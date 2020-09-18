@@ -34,12 +34,12 @@
     "search": "Cross-chain History",
     "claim": "Cross-chain Transfer",
     "Roadmap for cross-chain transfers": "Roadmap for cross-chain transfers:",
-    "Phase 1":"Phase 1: Genesis cross-chain",
-    "The cross-chain transfers at this stage will arrive after launching the Darwinia mainnet and will be sent to the destination account by Genesis Block":"The cross-chain transfers at this stage will arrive after launching the Darwinia mainnet and will be sent to the destination account by Genesis Block.",
-    "Phase 2":"Phase 2: One-way cross-chain",
-    "Cross-chain transfers at this stage will arrive immediately (network delays may occur),but only support One-way transfers to the Darwinia main network":"Cross-chain transfers at this stage will arrive immediately (network delays may occur),but only support One-way transfers to the Darwinia main network.",
-    "Phase 3":"Phase 3: Multi-way cross-chain",
-    "Cross-chain transfers at this stage will arrive immediately (network delays may occur), and support two-way or multi-way transfers":"Cross-chain transfers at this stage will arrive immediately (network delays may occur), and support two-way or multi-way transfers.",
+    "Phase 1":"Phase 1: Genesis swap",
+    "The RING in genesis swaps will arrive after launching the Darwinia mainnet and will be sent to the destination account by Genesis Block.":"The RING in genesis swaps will arrive after launching the Darwinia mainnet and will be sent to the destination account by Genesis Block.",
+    "Phase 2":"Phase 2: One-way cross-chain swap",
+    "Cross-chain swaps at this stage will arrive immediately (network delays may occur),but only support One-way swaps to the Darwinia main network.":"Cross-chain swaps at this stage will arrive immediately (network delays may occur),but only support One-way swaps to the Darwinia main network.",
+    "Phase 3":"Phase 3: Multi-way cross-chain swap",
+    "Cross-chain swaps at this stage will arrive immediately (network delays may occur), and support two-way or multi-way swaps.":"Cross-chain swaps at this stage will arrive immediately (network delays may occur), and support two-way or multi-way swaps.",
     "Please be sure to fill in the real Darwinia mainnet account, and keep the account recovery files such as mnemonic properly.":"Please be sure to fill in the real Darwinia mainnet account, and keep the account recovery files such as mnemonic properly.",
     "Cross-chain transfer token":"Cross-chain transfer token",
     "MAX":"MAX",
@@ -50,6 +50,7 @@
     "Cross-chain direction":"Cross-chain direction",
     "Destination account":"Destination account",
     "Please enter the destination account of Darwinia mainnet":"Please enter the destination account of Darwinia mainnet",
+    "Please select the destination account of Darwinia mainnet":"Please enter the account of Darwinia Network",
     "Darwinia Network account":"Darwinia Network account",
     "Txhash": "Txhash",
     "Airdrop Is Coming": "Airdrop Is Coming",
@@ -77,13 +78,23 @@
     "Ethereum Confirmed": "Ethereum Confirmed",
     "Tron Confirmed": "TRON Confirmed",
     "Darwinia Confirmed": "Darwinia Confirmed",
-    "In progress": "In progress"
+    "In progress": "2020/09/15 - 2020/09/24 16:00（UTC+8）",
+    "Connecting node": "Connecting node...",
+    "Extrinsic Failed": "Extrinsic Failed",
+    "Note：Please keep at least 2 CRING as extrinsic fee": "Note: Please keep at least 2 CRING as extrinsic fee",
+    "crab_darwinia_crosschain": "Genesis Swap",
+    "ethereum_crab_airdrop": "Claim Airdrop",
+    "tron_crab_airdrop": "Claim Airdrop",
+    "ethereum_darwinia_crosschain": "Cross-chain Transfer",
+    "tron_darwinia_crosschain": "Cross-chain Transfer"
   },
   "common": {
     "Ethereum network type does not match": "Ethereum network type does not match",
     "TRON network type does not match": "TRON network type does not match",
     "Please install MetaMask first": "Please install MetaMask first",
     "Please unlock TronLink first": "Please unlock TronLink first",
-    "Please install TronLink first": "Please install TronLink first"
+    "Please install TronLink first": "Please install TronLink first",
+    "Please install Polkadot Extension": "Please install Polkadot Extension",
+    "Polkadot Extension has no account": "Polkadot Extension has no account"
   }
 }
