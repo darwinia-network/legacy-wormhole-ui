@@ -30,6 +30,12 @@ import Claim from '../Claims';
 
 // import anime from 'animejs';
 
+const helpUrl = {
+    eth_crosschain: 'https://mp.weixin.qq.com/s/c-aVPjDibyfUAHYZo1HW9w',
+    tron_crosschain: 'https://mp.weixin.qq.com/s/c-aVPjDibyfUAHYZo1HW9w',
+    crab_crosschain: 'https://medium.com/@DarwiniaNetwork/must-read-darwinia-mainnet-progressive-launch-announcement-ff20a04a8bdd'
+}
+
 const THREE = window.THREE;
 var camera1, camera2, scene1, scene2, renderer1, renderer2;
 var isUserInteracting = false,
@@ -579,8 +585,13 @@ class Claims extends Component {
         this.setState(path)
     }
 
+    renderHelpUrl = () => {
+        const { from, renderPage } = this.state;
+        return helpUrl[`${from}_${renderPage}`] || 'https://darwinia.network'
+    }
+
     renderContent = () => {
-        const { from, to, renderPage } = this.state;
+        const { renderPage } = this.state;
         return (<>
             {renderPage === 'crosschain' ? <CrossChain onChangePath={(path) => {
                 this.onChangePath(path)
@@ -690,7 +701,7 @@ class Claims extends Component {
                             <div className={styles.powerBy}>
                                 Powered By Darwinia Network
                             </div>
-                            <a className={styles.helpBall} href="https://darwinia.network" target="_blank" rel="noopener noreferrer">
+                            <a className={styles.helpBall} href={this.renderHelpUrl()} target="_blank" rel="noopener noreferrer">
                                 <img src={helpBallIcon} alt="help icon"/>
                             </a>
                         </div>

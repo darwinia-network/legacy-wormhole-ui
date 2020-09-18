@@ -446,11 +446,12 @@ class Claims extends Component {
                         </Form.Group>
                         <div className={styles.buttonBox}>
                             <Button variant="outline-purple" onClick={this.toResult}>{t('crosschain:search')}</Button>
-                            <Button variant="outline-purple" onClick={() => this.toClaims(2)}>{t(`crosschain:claim`)}</Button>
+                            <Button variant="outline-purple" onClick={() => this.toClaims(2)}>{networkType === 'crab' ? t(`crosschain:claim`) : t(`crosschain_ethtron:claim`)}</Button>
                         </div>
                     </div>
                 </div>
-                <div className={styles.formBox}>
+
+                {networkType === 'crab' ? <div className={styles.formBox}>
                     <div className={styles.stepRoadMap}>
                         <h3>{t('crosschain:Roadmap for cross-chain transfers')}</h3>
                         <div className={styles.stepRoadMapItem}>
@@ -475,7 +476,34 @@ class Claims extends Component {
                             <p>{t('crosschain:Cross-chain swaps at this stage will arrive immediately (network delays may occur), and support two-way or multi-way swaps.')}</p>
                         </div>
                     </div>
-                </div>
+                </div> : null}
+
+                {networkType === 'eth' || networkType === 'tron'  ? <div className={styles.formBox}>
+                    <div className={styles.stepRoadMap}>
+                        <h3>{t('crosschain_ethtron:Roadmap for cross-chain transfers')}</h3>
+                        <div className={styles.stepRoadMapItem}>
+                            <div>
+                                <p>{t('crosschain_ethtron:Phase 1')}</p>
+                            <p>{t('crosschain:In progress')}</p>
+                            </div>
+                            <p>{t('crosschain_ethtron:The cross-chain transfers at this stage will arrive after launching the Darwinia mainnet and will be sent to the destination account by Genesis Block')}</p>
+                        </div>
+                        <div className={styles.stepRoadMapItem}>
+                            <div>
+                                <p>{t('crosschain_ethtron:Phase 2')}</p>
+                                <p>2020 Q3</p>
+                            </div>
+                            <p>{t('crosschain_ethtron:Cross-chain transfers at this stage will arrive immediately (network delays may occur),but only support One-way transfers to the Darwinia main network')}</p>
+                        </div>
+                        <div className={styles.stepRoadMapItem}>
+                            <div>
+                                <p>{t('crosschain_ethtron:Phase 3')}</p>
+                                <p>2020 Q3 - Q4</p>
+                            </div>
+                            <p>{t('crosschain_ethtron:Cross-chain transfers at this stage will arrive immediately (network delays may occur), and support two-way or multi-way transfers')}</p>
+                        </div>
+                    </div>
+                </div> : null}
             </div>
         )
     }
