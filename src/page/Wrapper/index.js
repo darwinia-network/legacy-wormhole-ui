@@ -30,6 +30,12 @@ import Claim from '../Claims';
 
 // import anime from 'animejs';
 
+const helpUrl = {
+    eth_crosschain: 'https://mp.weixin.qq.com/s/c-aVPjDibyfUAHYZo1HW9w',
+    tron_crosschain: 'https://mp.weixin.qq.com/s/c-aVPjDibyfUAHYZo1HW9w',
+    crab_crosschain: 'https://medium.com/@DarwiniaNetwork/must-read-darwinia-mainnet-progressive-launch-announcement-ff20a04a8bdd'
+}
+
 const THREE = window.THREE;
 var camera1, camera2, scene1, scene2, renderer1, renderer2;
 var isUserInteracting = false,
@@ -101,8 +107,8 @@ function clearRenderer(){
             renderer.forceContextLoss();
             renderer.context = null;
             renderer.domElement = null;
-            renderer = null;    
-        } 
+            renderer = null;
+        }
     })
 }
 
@@ -164,10 +170,10 @@ const chainIcons = {
     tron: tronIcon
 }
 
-const lineConfig = [ 
+const lineConfig = [
     [1, 2, false, true],
     [3, 1, true, false],
-    [3, 2, false, false],
+    [3, 2, true, false],
     [3, 4, true, false],
     [2, 4, true, false],
     [5, 6, false, false],
@@ -241,7 +247,7 @@ class Claims extends Component {
             'leading': true,
             'trailing': true
         })
-        
+
         this.routerHandle()
 
         this.unlisten = this.props.history.listen((location, action) => {
@@ -273,7 +279,7 @@ class Claims extends Component {
             return;
         }
 
-        if(pathname === '/') { 
+        if(pathname === '/') {
             this.setState({
                 status: 0
             },() => {
@@ -414,7 +420,7 @@ class Claims extends Component {
             const center1 = [rectBall1.x + (rectBall1.width / 2), rectBall1.y + (rectBall1.height / 2)]
             const center2 = [rectBall2.x + (rectBall2.width / 2), rectBall2.y + (rectBall2.height / 2)]
             const distance12 = Math.sqrt(Math.pow(center1[0] - center2[0], 2) + Math.pow(center1[1] - center2[1], 2))
-          
+
             const curvetoPath = distance12/1.3;
             lines.push(<g transform={`rotate(${0}, ${parseInt(center1[0])} ${parseInt(center1[1])})`} mask={`url(#mask-path-${element[0]}-${element[1]}`}>
                 <path key={`path-${element[0]}-${element[1]}-${lineOpacity}`} id={`path-${element[0]}-${element[1]}`} d={`m${center1[0]-rectSVG.x},${parseInt(center1[1]-rectSVG.y)}C${parseInt(center1[0]-rectSVG.x + curvetoPath)},${parseInt(center1[1]-rectSVG.y - curvetoPath)} ${parseInt(center1[0] -rectSVG.x+ distance12 - curvetoPath)},${parseInt(center2[1]-rectSVG.y + curvetoPath)} ${parseInt(center2[0]-rectSVG.x)},${parseInt(center2[1]-rectSVG.y)}`} style={{strokeWidth: "2"}} stroke="#43455a" strokeOpacity={lineOpacity} fill="none"/>
@@ -464,7 +470,7 @@ class Claims extends Component {
     checkedBall = (id, e) => {
         e.preventDefault();
         e.stopPropagation();
-        
+
         this.setState({
             checkedBall: id,
             relatedBall: chainMap[id] || []
@@ -491,7 +497,7 @@ class Claims extends Component {
                         {this.renderBall('crab', 2)}
                         {this.renderBall('darwinia-bg', 3, true)}
                         {this.renderBall('darwinia', 3)}
-                        
+
                         {this.renderBall('tron', 4)}
                         {this.renderBall('polkadot', 5, true)}
                         {this.renderBall('polkadot', 5)}
@@ -519,7 +525,7 @@ class Claims extends Component {
                                     <stop stopColor="#ffffff" offset="1" />
                                 </linearGradient>
                             </defs>
-                            <defs> 
+                            <defs>
                                 <path stroke="null" d="m7.51084,18.3341l0.00057,2.86487l4.13369,0l-0.00057,-2.86487l3.21509,0l0.00057,2.86487l3.4434,0.00011l0.00077,4.35207c-0.00181,4.38449 -3.27441,8.08257 -7.63603,8.62874l-2.18129,0c-4.36161,-0.5462 -7.63422,-4.24427 -7.63603,-8.62876l0,-4.35205l3.44531,-0.00011l-0.00057,-2.86487l3.21509,0zm3.08558,-17.61409c4.36161,0.5462 7.63422,4.24426 7.63603,8.62875l0,4.35205l-17.45257,0l-0.00077,-4.35207c0.00181,-4.38449 3.27441,-8.08256 7.63603,-8.62874l2.18129,0z" id="slot" strokeWidth="2"/>
                             </defs>
                             {this.state.lines}
@@ -579,13 +585,19 @@ class Claims extends Component {
         this.setState(path)
     }
 
+    renderHelpUrl = () => {
+        const { from, renderPage } = this.state;
+        return helpUrl[`${from}_${renderPage}`] || 'https://darwinia.network'
+    }
+
     renderContent = () => {
         const { renderPage } = this.state;
         return (<>
             {renderPage === 'crosschain' ? <CrossChain onChangePath={(path) => {
                 this.onChangePath(path)
             }}/> : null}
-            {renderPage === 'airdrop' ? <Claim  onChangePath={(path) => {
+            {renderPage === 'airdrop' ? <Claim
+            onChangePath={(path) => {
                 this.onChangePath(path)
             }}/> : null}
         </>)
@@ -613,7 +625,7 @@ class Claims extends Component {
                 </div>
                 {!isBg && isBallActive[1] === 2 && chainMap[`${checkedBall}_${id}`] && chainMap[`${checkedBall}_${id}`].length ?
                     chainMap[`${checkedBall}_${id}`].map((item) => {
-                        return <div className={`${styles[`ball${styleId}Btn`]}`} onClick={(e) => this.fn_wrapper(e, item, checkedBall, id)}>{t(`crosschain:${item}`)}</div>
+                        return <div className={`${styles[`ball${styleId}Btn`]}`} onClick={(e) => this.fn_wrapper(e, item, checkedBall, id)}>{t(`crosschain:${checkedBall}_${id}_${item}`)}</div>
                     })
                     : null}
                 {!isBg && isBallActive[1] === 1 && !(chainMap[`${checkedBall}_${id}`] && chainMap[`${checkedBall}_${id}`].length) && (!chainMap[checkedBall] || !chainMap[checkedBall].length) ?
@@ -689,7 +701,7 @@ class Claims extends Component {
                             <div className={styles.powerBy}>
                                 Powered By Darwinia Network
                             </div>
-                            <a className={styles.helpBall} href="https://darwinia.network" target="_blank" rel="noopener noreferrer">
+                            <a className={styles.helpBall} href={this.renderHelpUrl()} target="_blank" rel="noopener noreferrer">
                                 <img src={helpBallIcon} alt="help icon"/>
                             </a>
                         </div>

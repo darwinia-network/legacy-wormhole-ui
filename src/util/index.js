@@ -5,7 +5,8 @@ export function parseChain(chain, transform) {
       'eth': 'ethereum',
       'ether': 'ethereum',
       'tron': 'tron',
-      'trx': 'tron'
+      'trx': 'tron',
+      'crab': 'crab'
   };
   if(!map[_chain]) return chain;
   return map[_chain];

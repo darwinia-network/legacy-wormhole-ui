@@ -135,6 +135,12 @@ body {
 
 }
 
+@media (min-width: 1200px) {
+  .container {
+      max-width: 1300px;
+  }
+}
+
 #space-container-top {
   opacity: 0.6;
   position: absolute;

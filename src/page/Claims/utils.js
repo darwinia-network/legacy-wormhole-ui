@@ -1,4 +1,4 @@
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import axios from 'axios';
 import ConfigJson from './config';
 import Web3 from 'web3';

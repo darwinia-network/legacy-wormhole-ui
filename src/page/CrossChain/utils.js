@@ -1,11 +1,14 @@
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
+import { web3Accounts, web3Enable, web3FromAddress, web3ListRpcProviders, web3UseRpcProvider } from '@polkadot/extension-dapp';
+
 import axios from 'axios';
 import ConfigJson from './config';
 import Web3 from 'web3';
-import { checkAddress, decodeAddress } from '@polkadot/util-crypto';
+import { checkAddress, decodeAddress, encodeAddress, setSS58Format } from '@polkadot/util-crypto';
 import BN from 'bn.js';
 import genesisData from './genesis';
 import TokenABI from './tokenABI';
+const { ApiPromise, WsProvider } = require('@darwinia/api');
 
 function buf2hex(buffer) { // buffer is an ArrayBuffer
     return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('');
@@ -16,17 +19,17 @@ export const config = ConfigJson[process.env.REACT_APP_CHAIN];
 function connectEth(accountsChangedCallback, t) {
     if (typeof window.ethereum !== 'undefined' || typeof window.web3 !== 'undefined') {
         let web3js = new Web3(window.ethereum || window.web3.currentProvider);
-
+        let subscribe = null;
         if (window.ethereum) {
             window.ethereum.enable()
-                .then(async(account) => {
+                .then(async (account) => {
                     const networkid = await web3js.eth.net.getId()
-                    if(config.ETHEREUM_NETWORK != networkid) {
+                    if (config.ETHEREUM_NETWORK != networkid) {
                         formToast(t('common:Ethereum network type does not match'));
                         return;
                     }
                     if (window.ethereum.on) {
-                        window.ethereum.on('accountsChanged', (accounts) => {
+                        subscribe = window.ethereum.on('accountsChanged', (accounts) => {
                             if (accounts.length > 0) {
                                 accountsChangedCallback && accountsChangedCallback('eth', accounts[0].toLowerCase());
                             }
@@ -34,7 +37,7 @@ function connectEth(accountsChangedCallback, t) {
                     }
 
                     if (account.length > 0) {
-                        accountsChangedCallback && accountsChangedCallback('eth', account[0].toLowerCase());
+                        accountsChangedCallback && accountsChangedCallback('eth', account[0].toLowerCase(), subscribe);
                     }
                 })
                 .catch(console.error)
@@ -56,26 +59,43 @@ function connectTron(accountsChangedCallback, t) {
             formToast(t('common:Please unlock TronLink first'));
             return
         }
-        if(window.tronWeb.fullNode && window.tronWeb.fullNode.host) {
-            if(window.tronWeb.fullNode.host.indexOf(config.TRON_NETWORK_SYMBOL) == -1) {
+        if (window.tronWeb.fullNode && window.tronWeb.fullNode.host) {
+            if (window.tronWeb.fullNode.host.indexOf(config.TRON_NETWORK_SYMBOL) == -1) {
                 formToast(t('common:TRON network type does not match'));
                 return
             }
         }
         const wallet = window.tronWeb.defaultAddress;
         const preAddress = wallet.base58;
-        window.tronWeb.on("addressChanged", wallet => {
+        let subscribe = null;
+        subscribe = window.tronWeb.on("addressChanged", wallet => {
             if (window.tronWeb) {
                 console.log('addressChanged', preAddress, wallet.base58)
-                if(preAddress !== wallet.base58) {
+                if (preAddress !== wallet.base58) {
                     accountsChangedCallback && accountsChangedCallback('tron', wallet.base58)
                 }
             }
         })
-        accountsChangedCallback && accountsChangedCallback('tron', wallet.base58)
+        accountsChangedCallback && accountsChangedCallback('tron', wallet.base58, subscribe)
     } else {
         formToast(t('common:Please install TronLink first'));
     }
+}
+
+async function connectSubstrate(accountsChangedCallback, t, networkType) {
+    const allInjected = await web3Enable('wormhole.darwinia.network');
+    const allAccounts = await web3Accounts();
+    if (!allInjected || allInjected.length === 0) {
+        formToast(t('common:Please install Polkadot Extension'));
+        return;
+    }
+
+    if (!allAccounts || allAccounts.length === 0) {
+        formToast(t('common:Polkadot Extension has no account'));
+        return;
+    }
+
+    accountsChangedCallback && accountsChangedCallback(networkType, allAccounts);
 }
 
 function getRawData(text) {
@@ -126,16 +146,45 @@ function buildInGenesisEth(account, params, callback) {
 async function buildInGenesisTron(account, params, callback) {
     const tronwebjs = window.tronWeb
     let contract = await tronwebjs.contract().at(config[`${params.tokenType.toUpperCase()}_TRON_ADDRESS`])
-    const res = contract.methods.transferAndFallback(config['TRON_DARWINIA_CROSSCHAIN'], params.value.toString(), params.toHex).send({  
+    const res = contract.methods.transferAndFallback(config['TRON_DARWINIA_CROSSCHAIN'], params.value.toString(), params.toHex).send({
         feeLimit: tronwebjs.toSun(100),
         callValue: 0,
         shouldPollResponse: false,
-     })
-     res.then((hash) => {
+    })
+    res.then((hash) => {
         callback && callback(hash);
-     }).catch((e) => {
+    }).catch((e) => {
         console.log(e)
-     })
+    })
+}
+
+export function convertSS58Address(text, isShort = false) {
+    let address = encodeAddress(text, config.S58_PREFIX)
+    const length = 8
+    if(isShort) {
+        address = address.substr(0, length) + '...' +address.substr(address.length - length, length)
+    }
+    return address
+}
+
+export function isMiddleScreen() {
+    return document.body.clientWidth < 1170;
+}
+
+async function buildInGenesisCrab(account, params, callback, t) {
+    try {
+        console.log('buildInGenesisCrab', { account, params, callback }, params.value.toString())
+        if (window.crabApi) {
+            await window.crabApi.isReady;
+            const injector = await web3FromAddress(account);
+            window.crabApi.setSigner(injector.signer);
+            const hash = await window.crabApi.tx.crabIssuing.swapAndBurnToGenesis(params.value)
+            .signAndSend(account);
+            callback && callback(hash);
+        }
+    } catch (error) {
+        console.log(error);
+    }
 }
 
 export function connect(type, callback, t) {
@@ -145,6 +194,10 @@ export function connect(type, callback, t) {
 
     if (type === 'eth') {
         connectEth(callback, t)
+    }
+
+    if (type === 'crab') {
+        connectSubstrate(callback, t, 'crab')
     }
 }
 
@@ -173,7 +226,7 @@ export function sign(type, account, text, callback, t) {
 
 export function buildInGenesis(type, account, params, callback, t) {
     const checkResult = checkAddress(params.to, config.S58_PREFIX);
-
+    console.log('buildInGenesis', checkResult, params.to, config.S58_PREFIX);
     if (!checkResult[0]) {
         formToast(t(`crosschain:The entered {{account}} account is incorrect`, {
             replace: {
@@ -197,6 +250,10 @@ export function buildInGenesis(type, account, params, callback, t) {
 
     if (type === 'eth') {
         buildInGenesisEth(account, params, callback)
+    }
+
+    if (type === 'crab') {
+        buildInGenesisCrab(account, params, callback, t)
     }
 }
 
@@ -252,7 +309,37 @@ export const wxRequest = async (params = {}, url) => {
 
 export const getClaimsInfo = (params) => wxRequest(params, `${config.SUBSCAN_API}/api/other/claims`)
 
-export const getBuildInGenesisInfo = (params) => wxRequest(params, `${config.DAPP_API}/api/ringBurn`)
+export const getBuildInGenesisInfo = async (params, cb, failedcb) => {
+    let json = await wxRequest(params, `${config.DAPP_API}/api/ringBurn`);
+    if (json.code === 0) {
+        if (json.data.length === 0) {
+            json = {
+                data: []
+            }
+        }
+
+        cb && cb(json.data)
+    } else {
+        failedcb && failedcb()
+    }
+}
+
+export const getCringGenesisSwapInfo = async (params, cb, failedcb) => {
+    let json = await wxRequest(params, `${config.SUBSCAN_API}/api/other/crabissuing`)
+    if (json.code === 0) {
+        if (!json.data.list || json.data.list.length === 0) {
+            cb && cb([])
+            return;
+        }
+
+        cb && cb(json.data.list.map((item) => {
+            item.target = encodeAddress(params.query.address, config.S58_PREFIX);
+            return item;
+        }))
+    } else {
+        failedcb && failedcb()
+    }
+}
 
 export function getTokenBalanceEth(account = '') {
     try {
@@ -288,6 +375,7 @@ export function getTokenBalanceEth(account = '') {
         })
     } catch (error) {
         console.log(error);
+        return ['0', '0'];
     }
 }
 
@@ -325,33 +413,58 @@ export async function getTokenBalanceTron(account = '') {
         })
     } catch (error) {
         console.log(error);
+        return ['0', '0'];
+    }
+}
+
+export async function getTokenBalanceCrab(account = '') {
+    try {
+        if (!window.crabApi) {
+            const provider = new WsProvider('wss://crab.darwinia.network');
+
+            // Create the API and wait until ready
+            window.crabApi = new ApiPromise({ provider });
+            await window.crabApi.isReady;
+        }
+        await window.crabApi.isReady;
+        const usableBalance = await window.crabApi.rpc.balances.usableBalance(0, account);
+        return [usableBalance.usableBalance.toString(), '0'];
+    } catch (error) {
+        console.log(error);
+        return ['0', '0']
     }
 }
 
 export function getTokenBalance(networkType, account) {
-    if(networkType === 'eth') {
+    if (networkType === 'eth') {
         return getTokenBalanceEth(account)
-    } else {
+    }
+    if (networkType === 'tron') {
         return getTokenBalanceTron(account)
     }
+    if (networkType === 'crab') {
+        return getTokenBalanceCrab(account)
+    }
+
+    return ['0', '0']
 }
 
 export function textTransform(text, type) {
-    if(type === 'capitalize') {
+    if (type === 'capitalize') {
         return text.charAt(0).toUpperCase() + text.slice(1)
     }
 
-    if(type === 'uppercase') {
+    if (type === 'uppercase') {
         return text.toUpperCase()
     }
 
-    if(type === 'lowercase') {
+    if (type === 'lowercase') {
         return text.toLowerCase()
     }
 }
 
 export function remove0x(text) {
-    if(text.slice(0,2) === '0x') {
+    if (text.slice(0, 2) === '0x') {
         return text.slice(2)
     }
     return text;
