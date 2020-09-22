@@ -2,7 +2,7 @@
   "page": {
     "title": "cRING 领取工具",
     "step_1": "选择网络",
-    "step_2": "输入接收地址",
+    "step_2": "输入接收账号",
     "step_3": "成功",
     "Select Chain": "请选择网络",
     "search": "查询",
@@ -20,7 +20,7 @@
     "Result": "查询结果",
     "Claims Result": "领取结果",
     "Copied": "复制成功",
-    "Destination": "接收地址",
+    "Destination": "接收账号",
     "darwinaPage": "https://darwinia.network/",
     "Claims": "已领取",
     "Not claimed": "未领取"
@@ -28,7 +28,7 @@
   "crosschain": {
     "title": "跨链转账",
     "step_1": "选择网络",
-    "step_2": "输入接收地址",
+    "step_2": "输入接收账号",
     "step_3": "成功",
     "Select Chain": "请确认网络，并连接至钱包：",
     "search": "跨链记录",
@@ -40,18 +40,18 @@
     "Cross-chain swaps at this stage will arrive immediately (network delays may occur),but only support One-way swaps to the Darwinia main network.":"此阶段的跨链兑换，RING 立即到账（可能存在一定的网络延迟），但仅支持发至Darwinia 主网的单向兑换",
     "Phase 3":"阶段3: 多向跨链",
     "Cross-chain swaps at this stage will arrive immediately (network delays may occur), and support two-way or multi-way swaps.":"此阶段的跨链兑换，RING/CRING立即到账（可能存在一定的网络延迟），且支持双向兑换或多项兑换。",
-    "Please be sure to fill in the real Darwinia mainnet account, and keep the account recovery files such as mnemonic properly.":"请务必填写真实的 Darwinia 主网地址，并妥善保管助记词等账号恢复文件。",
+    "Please be sure to fill in the real Darwinia mainnet account, and keep the account recovery files such as mnemonic properly.":"请务必填写真实的 Darwinia 主网账号，并妥善保管助记词等账号恢复文件。",
     "Cross-chain transfer token":"跨链转账通证",
-    "MAX":"最大",
+    "MAX":"全部",
     "Amount": "数量",
     "Confirmed！After Darwinia mainnet launched, you will receive this cross-chain transfer.":"交易发送成功！Darwinia 主网上线后，您将收到本次跨链转账。",
     "No Cross-chain transfer history":"暂无跨链转账记录",
     "Time":"时间",
     "Cross-chain direction":"跨链流向",
-    "Destination account":"接收地址",
-    "Please enter the destination account of Darwinia mainnet":"请输入 Darwinia 主网接收地址",
-    "Please select the destination account of Darwinia mainnet":"请选择 Darwinia 地址",
-    "Darwinia Network account":"Darwinia 主网地址",
+    "Destination account":"接收账号",
+    "Please enter the destination account of Darwinia mainnet":"请输入 Darwinia 主网接收账号",
+    "Please select Darwinia mainnet destination account":"请选择Darwinia 主网接收账号",
+    "Darwinia Network account":"Darwinia 主网账号",
     "Txhash": "查看交易",
     "Airdrop Is Coming": "空投来袭",
     "About Darwinia": "了解 Darwinia",
@@ -66,7 +66,7 @@
     "Result": "查询结果",
     "Claims Result": "领取结果",
     "Copied": "复制成功",
-    "Destination": "接收地址",
+    "Destination": "接收账号",
     "Claims": "已领取",
     "Not claimed": "未领取",
     "Coming Soon": "敬请期待",
@@ -86,7 +86,8 @@
     "ethereum_crab_airdrop": "空投",
     "tron_crab_airdrop": "空投",
     "ethereum_darwinia_crosschain": "跨链转账",
-    "tron_darwinia_crosschain": "跨链转账"
+    "tron_darwinia_crosschain": "跨链转账",
+    "Balance": "余额"
   },
   "crosschain_ethtron": {
     "claim": "跨链转账",
@@ -97,7 +98,7 @@
     "Cross-chain transfers at this stage will arrive immediately (network delays may occur),but only support One-way transfers to the Darwinia main network":"此阶段的跨链转账，立即到账（可能存在一定的网络延迟），但仅支持发至Darwinia 主网的单向转账",
     "Phase 3":"阶段3: 多向跨链",
     "Cross-chain transfers at this stage will arrive immediately (network delays may occur), and support two-way or multi-way transfers":"此阶段的跨链转账，立即到账（可能存在一定的网络延迟），且支持双向或多向转账",
-    "Please be sure to fill in the real Darwinia mainnet account, and keep the account recovery files such as mnemonic properly.":"请务必填写真实的 Darwinia 主网地址，并妥善保管助记词等账号恢复文件。"
+    "Please be sure to fill in the real Darwinia mainnet account, and keep the account recovery files such as mnemonic properly.":"请务必填写真实的 Darwinia 主网账号，并妥善保管助记词等账号恢复文件。"
   },
   "common": {
     "Ethereum network type does not match": "以太坊网络类型不匹配",

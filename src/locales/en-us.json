@@ -50,7 +50,7 @@
     "Cross-chain direction":"Cross-chain direction",
     "Destination account":"Destination account",
     "Please enter the destination account of Darwinia mainnet":"Please enter the destination account of Darwinia mainnet",
-    "Please select the destination account of Darwinia mainnet":"Please enter the account of Darwinia Network",
+    "Please select Darwinia mainnet destination account":"Please enter the account of Darwinia Network",
     "Darwinia Network account":"Darwinia Network account",
     "Txhash": "Txhash",
     "Airdrop Is Coming": "Airdrop Is Coming",
@@ -86,7 +86,8 @@
     "ethereum_crab_airdrop": "Claim Airdrop",
     "tron_crab_airdrop": "Claim Airdrop",
     "ethereum_darwinia_crosschain": "Cross-chain Transfer",
-    "tron_darwinia_crosschain": "Cross-chain Transfer"
+    "tron_darwinia_crosschain": "Cross-chain Transfer",
+    "Balance": "Balance"
   },
   "crosschain_ethtron": {
     "claim": "Cross-chain Transfer",

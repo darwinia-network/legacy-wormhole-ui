@@ -12,6 +12,7 @@ import {
     getTokenBalance, buildInGenesis, textTransform, remove0x, convertSS58Address, isMiddleScreen,
     getCringGenesisSwapInfo
 } from './utils'
+import { InputRightWrap } from '../../components/InputRightWrap'
 import { parseChain } from '../../util';
 import { withTranslation } from "react-i18next";
 import i18n from '../../locales/i18n';
@@ -124,7 +125,7 @@ class Claims extends Component {
             [key]: fn ? fn(event.target.value) : event.target.value
         })
         cb && cb(event.target.value)
-        event.persist()
+        event.persist && event.persist()
     }
 
     setBNValue = (value) => {
@@ -181,7 +182,8 @@ class Claims extends Component {
                 account: {
                     ...account,
                     [_networkType]: initAccount,
-                    [`${_networkType}List`]: _account
+                    [`${_networkType}List`]: _account,
+                    isReady: false
                 }
             }, async () => {
                 if (this.state.account[_networkType]) {
@@ -532,28 +534,40 @@ class Claims extends Component {
                 </div> : null}
 
                 {/* form - ethereum, tron network */}
-                {status === 2 && (networkType === 'eth' || networkType === 'tron') ? <div className={styles.formBox}>
+                {status === 2 && account.isReady && (networkType === 'eth' || networkType === 'tron') ? <div className={styles.formBox}>
                     <div className={`${styles.networkBox} claims-network-box`}>
                         <Form.Group controlId="darwinaAddressGroup">
                             <Form.Label>{t('crosschain:Please enter the destination account of Darwinia mainnet')} <a href={this.renderHelpUrl()} target="_blank"
                                 rel="noopener noreferrer"><img alt=""
                                     className={styles.labelIcon} src={helpLogo} /></a> </Form.Label>
                             <Form.Control type="text" placeholder={t('crosschain:Darwinia Network account')} value={darwiniaAddress}
-                                onChange={(value) => this.setValue('darwiniaAddress', value)} />
+                                onChange={(value) => this.setValue('darwiniaAddress', value, null)} />
                             <Form.Text className="text-muted">
                                 {t('crosschain:Please be sure to fill in the real Darwinia mainnet account, and keep the account recovery files such as mnemonic properly.')}
                             </Form.Text>
 
                             <Form.Label>{t('crosschain:Cross-chain transfer token')}</Form.Label>
                             <Form.Control as="select" value={tokenType}
-                                onChange={(value) => this.setValue('tokenType', value)}>
-                                <option value="ring">RING({t('crosschain:MAX')} {formatBalance(ringBalance, 'ether')})</option>
-                                <option value="kton">KTON({t('crosschain:MAX')} {formatBalance(ktonBalance, 'ether')})</option>
+                                onChange={(value) => this.setValue('tokenType', value, null, () => {
+                                    this.setState({
+                                        crossChainBalanceText: ''
+                                    })
+                                })}>
+                                <option value="ring">RING</option>
+                                <option value="kton">KTON</option>
                             </Form.Control>
 
                             <Form.Label>{t('crosschain:Amount')}</Form.Label>
-                            <Form.Control type="number" placeholder={t('crosschain:Amount')} value={crossChainBalanceText}
-                                onChange={(value) => this.setValue('crossChainBalance', value, this.toWeiBNMiddleware, this.setBNValue)} />
+                            <InputRightWrap text={t('crosschain:MAX')} onClick={
+                                () => {
+                                    this.setValue('crossChainBalance', {target: {value: formatBalance(this.state[`${tokenType}Balance`], 'ether')}}, this.toWeiBNMiddleware, this.setBNValue)
+                                }
+                            }>
+                                <Form.Control type="number" placeholder={`${t('crosschain:Balance')} : ${formatBalance(this.state[`${tokenType}Balance`], 'ether')}`}
+                                    autoComplete="off"
+                                    value={crossChainBalanceText}
+                                    onChange={(value) => this.setValue('crossChainBalance', value, this.toWeiBNMiddleware, this.setBNValue)} />
+                            </InputRightWrap>
                         </Form.Group>
                         <div className={styles.buttonBox}>
                             <Button variant="color" onClick={this.buildInGenesis}>{t('crosschain:Submit')}</Button>
@@ -566,7 +580,7 @@ class Claims extends Component {
                 {status === 2 && account.isReady && (networkType === 'crab') ? <div className={styles.formBox}>
                     <div className={`${styles.networkBox} claims-network-box`}>
                         <Form.Group controlId="darwinaAddressGroup">
-                            <Form.Label>{t('crosschain:Please select the destination account of Darwinia mainnet')} <a href={this.renderHelpUrl()} target="_blank"
+                            <Form.Label>{t('crosschain:Please select Darwinia mainnet destination account')} <a href={this.renderHelpUrl()} target="_blank"
                                 rel="noopener noreferrer"><img alt=""
                                     className={styles.labelIcon} src={helpLogo} /></a> </Form.Label>
                             <Form.Control as="select" value={account[networkType]}
@@ -585,12 +599,20 @@ class Claims extends Component {
                             <Form.Label>{t('crosschain:Cross-chain transfer token')}</Form.Label>
                             <Form.Control as="select" value={tokenType}
                                 onChange={(value) => this.setValue('tokenType', value)}>
-                                <option value="ring">CRING({formatBalance(ringBalance, 'gwei')})</option>
+                                <option value="ring">CRING</option>
                             </Form.Control>
 
                             <Form.Label>{t('crosschain:Amount')}</Form.Label>
-                            <Form.Control type="number" placeholder={t('crosschain:Amount')} value={crossChainBalanceText}
-                                onChange={(value) => this.setValue('crossChainBalance', value, (value) => this.toWeiBNMiddleware(value, 'gwei'), this.setBNValue)} />
+                            <InputRightWrap text={t('crosschain:MAX')} onClick={
+                                () => {
+                                    this.setValue('crossChainBalance', {target: {value: formatBalance(ringBalance.gte(Web3.utils.toBN(2000000000)) ? ringBalance.sub(Web3.utils.toBN(2000000000)) : Web3.utils.toBN(0), 'gwei')}}, (value) => this.toWeiBNMiddleware(value, 'gwei'), this.setBNValue)
+                                }
+                            }>
+                                <Form.Control type="number" value={crossChainBalanceText}
+                                    autoComplete="off"
+                                    placeholder={`${t('crosschain:Balance')} : ${formatBalance(ringBalance, 'gwei')} CRING`}
+                                    onChange={(value) => this.setValue('crossChainBalance', value, (value) => this.toWeiBNMiddleware(value, 'gwei'), this.setBNValue)} />
+                            </InputRightWrap>
                             <Form.Text className="text-muted">
                                 {t('crosschain:Note：Please keep at least 2 CRING as extrinsic fee')}
                                 </Form.Text>
