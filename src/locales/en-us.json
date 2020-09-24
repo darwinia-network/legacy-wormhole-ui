@@ -33,6 +33,7 @@
     "Select Chain": "Please confirm the network and connect to the wallet:",
     "search": "Cross-chain History",
     "claim": "Cross-chain Swap",
+    "claimEnd": "Phase 1: Genesis swap has been closed",
     "Roadmap for cross-chain transfers": "Roadmap for cross-chain transfers:",
     "Phase 1":"Phase 1: Genesis swap",
     "The RING in genesis swaps will arrive after launching the Darwinia mainnet and will be sent to the destination account by Genesis Block.":"The RING in genesis swaps will arrive after launching the Darwinia mainnet and will be sent to the destination account by Genesis Block.",
@@ -91,6 +92,7 @@
   },
   "crosschain_ethtron": {
     "claim": "Cross-chain Transfer",
+    "claimEnd": "Phase 1: Genesis cross-chain has been closed",
     "Roadmap for cross-chain transfers": "Roadmap for cross-chain transfers:",
     "Phase 1":"Phase 1: Genesis cross-chain",
     "The cross-chain transfers at this stage will arrive after launching the Darwinia mainnet and will be sent to the destination account by Genesis Block":"The cross-chain transfers at this stage will arrive after launching the Darwinia mainnet and will be sent to the destination account by Genesis Block.",

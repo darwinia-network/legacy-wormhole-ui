@@ -448,7 +448,7 @@ class Claims extends Component {
                         </Form.Group>
                         <div className={styles.buttonBox}>
                             <Button variant="outline-purple" onClick={this.toResult}>{t('crosschain:search')}</Button>
-                            <Button variant="outline-purple" onClick={() => this.toClaims(2)}>{networkType === 'crab' ? t(`crosschain:claim`) : t(`crosschain_ethtron:claim`)}</Button>
+                            <Button disabled variant="outline-purple">{networkType === 'crab' ? t(`crosschain:claimEnd`) : t(`crosschain_ethtron:claimEnd`)}</Button>
                         </div>
                     </div>
                 </div>
@@ -493,14 +493,14 @@ class Claims extends Component {
                         <div className={styles.stepRoadMapItem}>
                             <div>
                                 <p>{t('crosschain_ethtron:Phase 2')}</p>
-                                <p>2020 Q3</p>
+                                <p>2020 Q4</p>
                             </div>
                             <p>{t('crosschain_ethtron:Cross-chain transfers at this stage will arrive immediately (network delays may occur),but only support One-way transfers to the Darwinia main network')}</p>
                         </div>
                         <div className={styles.stepRoadMapItem}>
                             <div>
                                 <p>{t('crosschain_ethtron:Phase 3')}</p>
-                                <p>2020 Q3 - Q4</p>
+                                <p>2020 Q4+</p>
                             </div>
                             <p>{t('crosschain_ethtron:Cross-chain transfers at this stage will arrive immediately (network delays may occur), and support two-way or multi-way transfers')}</p>
                         </div>

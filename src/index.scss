@@ -60,6 +60,12 @@ code {
     font-size: 14px;
 }
 
+.btn-outline-purple[disabled] {
+    border: 1px solid #a0a0a0!important;
+    color: #a0a0a0!important;
+    font-size: 14px;
+}
+
 .btn-outline-purple {
     border: 1px solid #3A30DD;
     color: #3A30DD;

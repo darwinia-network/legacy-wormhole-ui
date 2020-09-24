@@ -33,6 +33,7 @@
     "Select Chain": "请确认网络，并连接至钱包：",
     "search": "跨链记录",
     "claim": "跨链兑换",
+    "claimEnd": "阶段1：创世兑换已经结束",
     "Roadmap for cross-chain transfers": "跨链转账路线图：",
     "Phase 1":"阶段1: 创世兑换",
     "The RING in genesis swaps will arrive after launching the Darwinia mainnet and will be sent to the destination account by Genesis Block.":"此阶段的创世兑换，RING 将在 Darwinia 主网上线后到账，通过 Genesis Block 发至指定账号",
@@ -91,6 +92,7 @@
   },
   "crosschain_ethtron": {
     "claim": "跨链转账",
+    "claimEnd": "阶段1：创世跨链已经结束",
     "Roadmap for cross-chain transfers": "跨链转账路线图：",
     "Phase 1":"阶段1: 创世跨链",
     "The cross-chain transfers at this stage will arrive after launching the Darwinia mainnet and will be sent to the destination account by Genesis Block":"此阶段的跨链转账，将在 Darwinia 主网上线后到账，通过 Genesis Block 发至指定账号",
