@@ -717,7 +717,7 @@ class Claims extends Component {
                         <p>{encodeAddress('0x' + item.target, 18)}</p>
                     </div>
                     <div className={styles.line}></div>
-                    {this.renderTransferProgress(item.chain, 'darwinia', 2, {
+                    {this.renderTransferProgress(item.chain, 'darwinia', 3, {
                         from: {
                             tx: item.tx,
                             chain: item.chain
@@ -760,7 +760,7 @@ class Claims extends Component {
                         <p>{item.target}</p>
                     </div>
                     <div className={styles.line}></div>
-                    {this.renderTransferProgress('crab', 'darwinia', 2, {
+                    {this.renderTransferProgress('crab', 'darwinia', 3, {
                         from: {
                             tx: item.extrinsic_index,
                             chain: 'crab'

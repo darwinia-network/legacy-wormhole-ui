@@ -77,6 +77,7 @@
     "The transfer amount cannot be 0": "转账金额不能为0",
     "Transaction Send": "交易发送成功",
     "Ethereum Confirmed": "Ethereum网络确认",
+    "Crab Confirmed": "Darwinia Crab网络确认",
     "Tron Confirmed": "TRON网络确认",
     "Darwinia Confirmed": "Darwinia网络确认",
     "In progress": "2020/09/15 - 2020/09/24 16:00（UTC+8）",
