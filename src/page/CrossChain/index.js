@@ -10,7 +10,7 @@ import { encodeAddress } from '@polkadot/util-crypto';
 import {
     connect, sign, formToast, getAirdropData, config, formatBalance, getBuildInGenesisInfo,
     getTokenBalance, buildInGenesis, textTransform, remove0x, convertSS58Address, isMiddleScreen,
-    getCringGenesisSwapInfo
+    getCringGenesisSwapInfo, redeemToken, redeemDeposit, checkIssuingAllowance, approveRingToIssuing, getEthereumBankDeposit
 } from './utils'
 import { InputRightWrap } from '../../components/InputRightWrap'
 import { parseChain } from '../../util';
@@ -25,7 +25,6 @@ import step3open from './img/step-3-open.png';
 import step3close from './img/step-3-close.png';
 import helpLogo from './img/help-icon.png';
 import labelTitleLogo from './img/label-title-logo.png';
-import helpSmall from './img/help-s.png';
 
 import stepStartIcon from './img/tx-step-start-icon.svg';
 
@@ -38,6 +37,10 @@ import stepInactiveEthereumIcon from './img/tx-step-eth-inactive-icon.svg';
 import stepInactiveTronIcon from './img/tx-step-tron-inactive-icon.svg';
 import stepInactiveDarwiniaIcon from './img/tx-step-darwinia-inactive-icon.svg';
 import stepInactiveCrabIcon from './img/tx-step-crab-inactive-icon.svg';
+
+import roadmapStatus0 from './img/roadmap-status-0.svg';
+import roadmapStatus1 from './img/roadmap-status-1.svg';
+import roadmapStatus2 from './img/roadmap-status-2.svg';
 
 import chainMap from './chain';
 
@@ -87,7 +90,9 @@ class Claims extends Component {
             hash: '',
             txhash: '',
             history: null,
-
+            isAllowanceIssuing: false,
+            isApproving: false,
+            currentDepositID: null
         }
         this.querySubscribe = null
     }
@@ -197,10 +202,31 @@ class Claims extends Component {
                     }
 
                     const balances = await getTokenBalance(networkType, this.state.account[networkType]);
+                    const isAllowance = await checkIssuingAllowance(this.state.account[networkType]);
+                    const getEthereumDeposits = (address) => {
+                        return new Promise((resolve, reject) => {
+                            getEthereumBankDeposit({
+                                query: { address: address },
+                                method: "get"
+                            }, (data) => {
+                                resolve(data);
+                            }, () => {
+                                resolve([])
+                            })
+                        })
+                    }
+
+                    const ethereumDeposits = await getEthereumDeposits(this.state.account[networkType]) || [];
+
+                    console.log('ethereumDeposits', ethereumDeposits)
                     this.setState({
                         ringBalance: Web3.utils.toBN(balances[0]),
-                        ktonBalance: Web3.utils.toBN(balances[1])
+                        ktonBalance: Web3.utils.toBN(balances[1]),
+                        isAllowanceIssuing: isAllowance,
+                        ethereumDeposits: ethereumDeposits,
+                        currentDepositID: ethereumDeposits.length > 0 ? ethereumDeposits[0].deposit_id : null
                     })
+
                     this.setState({
                         account: {
                             ...this.state.account,
@@ -239,6 +265,55 @@ class Claims extends Component {
         }, t)
     }
 
+    redeemToken = () => {
+        const { networkType, account, darwiniaAddress, crossChainBalance, tokenType, currentDepositID } = this.state;
+        const { t } = this.props;
+
+        if (!this.checkForm(networkType === 'crab' ? 'gwei' : 'ether', tokenType)) return;
+
+        if(tokenType === 'ring' || tokenType === 'kton') {
+            redeemToken(networkType, account[networkType], {
+                to: darwiniaAddress,
+                value: crossChainBalance,
+                tokenType
+            }, (hash) => {
+                this.setState({
+                    txhash: hash,
+                    status: 3
+                })
+            }, t)
+        } else {
+            redeemDeposit(networkType, account[networkType], {
+                to: darwiniaAddress,
+                tokenType,
+                depositID: currentDepositID
+            }, (hash) => {
+                this.setState({
+                    txhash: hash,
+                    status: 3
+                })
+            }, t)
+        }
+    }
+
+    approveRingToIssuing = () => {
+        const { networkType, account } = this.state;
+
+        approveRingToIssuing(account[networkType], () => {
+            this.setState({
+                isApproving: true
+            })
+        }, async () => {
+            if(!this.state.isAllowanceIssuing) {
+                const isAllowance = await checkIssuingAllowance(account[networkType]);
+                this.setState({
+                    isApproving: false,
+                    isAllowanceIssuing: isAllowance
+                })
+            }
+        } )
+    }
+
     checkForm = (unit = 'ether') => {
         const { crossChainBalance, crossChainBalanceText, ringBalance, ktonBalance, tokenType } = this.state;
         const balance = {
@@ -246,6 +321,11 @@ class Claims extends Component {
             ktonBalance
         }
         const { t } = this.props;
+
+        if(tokenType === 'deposit') {
+            return true;
+        }
+
         try {
             Web3.utils.toBN(Web3.utils.toWei(crossChainBalanceText, unit))
         } catch (error) {
@@ -413,6 +493,16 @@ class Claims extends Component {
         )
     }
 
+    renderDepositItem = (deposit) => {
+        const { t } = this.props;
+        if(!deposit) return null;
+
+        const depositStartTime = dayjs.unix(deposit.deposit_time);
+        const depositEndTime = depositStartTime.add(30 * deposit.duration, 'day');
+
+        return `${deposit.amount} RING  (${t('Deposit ID')}: ${deposit.deposit_id} ${t('Time')}: ${depositStartTime.format('YYYY/MM/DD')} - ${depositEndTime.format('YYYY/MM/DD')})`;
+    }
+
     checkedBall = (id, e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -442,14 +532,11 @@ class Claims extends Component {
                                     })
                                 })}>
                                 <option value="eth">Ethereum -> Darwinia MainNet</option>
-                                <option value="tron">Tron -> Darwinia MainNet</option>
-                                <option value="crab">Darwinia Crab -> Darwinia MainNet</option>
                             </Form.Control>
                         </Form.Group>
                         <div className={styles.buttonBox}>
                             <Button variant="outline-purple" onClick={this.toResult}>{t('crosschain:search')}</Button>
-                            <Button disabled variant="outline-purple">{networkType === 'crab' ? t(`crosschain:claimEnd`) : t(`crosschain_ethtron:claimEnd`)}</Button>
-                        </div>
+                            <Button variant="outline-purple" onClick={() => this.toClaims(2)}>{networkType === 'crab' ? t(`crosschain:claim`) : t(`crosschain_ethtron:claim`)}</Button>                        </div>
                     </div>
                 </div>
 
@@ -483,23 +570,23 @@ class Claims extends Component {
                 {networkType === 'eth' || networkType === 'tron'  ? <div className={styles.formBox}>
                     <div className={styles.stepRoadMap}>
                         <h3>{t('crosschain_ethtron:Roadmap for cross-chain transfers')}</h3>
-                        <div className={styles.stepRoadMapItem}>
+                        <div className={`${styles.stepRoadMapItem} ${styles.stepRoadMapItemDone}`}>
                             <div>
-                                <p>{t('crosschain_ethtron:Phase 1')}</p>
-                            <p>{t('crosschain:In progress')}</p>
+                                <p><img src={roadmapStatus0} alt="end"></img><span>{t('crosschain_ethtron:Phase 1')}</span></p>
+                                <p>{t('crosschain:In progress')}</p>
                             </div>
                             <p>{t('crosschain_ethtron:The cross-chain transfers at this stage will arrive after launching the Darwinia mainnet and will be sent to the destination account by Genesis Block')}</p>
                         </div>
                         <div className={styles.stepRoadMapItem}>
                             <div>
-                                <p>{t('crosschain_ethtron:Phase 2')}</p>
+                                <p><img src={roadmapStatus1} alt="start"></img><span>{t('crosschain_ethtron:Phase 2')}</span></p>
                                 <p>2020 Q4</p>
                             </div>
                             <p>{t('crosschain_ethtron:Cross-chain transfers at this stage will arrive immediately (network delays may occur),but only support One-way transfers to the Darwinia main network')}</p>
                         </div>
-                        <div className={styles.stepRoadMapItem}>
+                        <div className={`${styles.stepRoadMapItem} ${styles.stepRoadMapItemDone}`}>
                             <div>
-                                <p>{t('crosschain_ethtron:Phase 3')}</p>
+                                <p><img src={roadmapStatus2} alt="start"></img><span>{t('crosschain_ethtron:Phase 3')}</span></p>
                                 <p>2020 Q4+</p>
                             </div>
                             <p>{t('crosschain_ethtron:Cross-chain transfers at this stage will arrive immediately (network delays may occur), and support two-way or multi-way transfers')}</p>
@@ -512,7 +599,7 @@ class Claims extends Component {
 
     step2 = () => {
         const { t } = this.props
-        const { networkType, account, status, darwiniaAddress, ringBalance, ktonBalance, tokenType, crossChainBalanceText, crossChainBalance } = this.state
+        const { networkType, account, status, darwiniaAddress, ringBalance, isApproving, ethereumDeposits, ktonBalance, tokenType, crossChainBalanceText, crossChainBalance, isAllowanceIssuing, currentDepositID } = this.state
         const explorerUrl = this.renderExplorerUrl()
         const middleScreen = isMiddleScreen()
         return (
@@ -555,22 +642,48 @@ class Claims extends Component {
                                 })}>
                                 <option value="ring">RING</option>
                                 <option value="kton">KTON</option>
+                                <option value="deposit">{t('Deposit')}</option>
                             </Form.Control>
 
-                            <Form.Label>{t('crosschain:Amount')}</Form.Label>
-                            <InputRightWrap text={t('crosschain:MAX')} onClick={
-                                () => {
-                                    this.setValue('crossChainBalance', {target: {value: formatBalance(this.state[`${tokenType}Balance`], 'ether')}}, this.toWeiBNMiddleware, this.setBNValue)
-                                }
-                            }>
-                                <Form.Control type="number" placeholder={`${t('crosschain:Balance')} : ${formatBalance(this.state[`${tokenType}Balance`], 'ether')}`}
-                                    autoComplete="off"
-                                    value={crossChainBalanceText}
-                                    onChange={(value) => this.setValue('crossChainBalance', value, this.toWeiBNMiddleware, this.setBNValue)} />
-                            </InputRightWrap>
+                            {tokenType === 'ring' || tokenType === 'kton' ?
+                                <>
+                                    <Form.Label>{t('crosschain:Amount')}</Form.Label>
+                                    <InputRightWrap text={t('crosschain:MAX')} onClick={
+                                        () => {
+                                            this.setValue('crossChainBalance', {target: {value: formatBalance(this.state[`${tokenType}Balance`], 'ether')}}, this.toWeiBNMiddleware, this.setBNValue)
+                                        }
+                                    }>
+                                        <Form.Control type="number" placeholder={`${t('crosschain:Balance')} : ${formatBalance(this.state[`${tokenType}Balance`], 'ether')}`}
+                                            autoComplete="off"
+                                            value={crossChainBalanceText}
+                                            onChange={(value) => this.setValue('crossChainBalance', value, this.toWeiBNMiddleware, this.setBNValue)} />
+                                    </InputRightWrap>
+                                </>
+                            : null}
+
+                            {tokenType === 'deposit' ?
+                                <>
+                                    <Form.Label>{t('crosschain:select deposit')}</Form.Label>
+                                    <Form.Control as="select" value={currentDepositID}
+                                        onChange={(value) => this.setValue('currentDepositID', value, null, () => {
+
+                                        })}>
+                                        {!ethereumDeposits || ethereumDeposits.length === 0 ?
+                                            <option value="">{t('No Deposits')}</option>
+                                            : null
+                                        }
+                                        {ethereumDeposits && ethereumDeposits.length > 0 && ethereumDeposits.map((item) => {
+                                            return <option key={item.deposit_id} value={item.deposit_id}>{this.renderDepositItem(item)}</option>
+                                        })}
+                                    </Form.Control>
+                                </>
+                            : null}
                         </Form.Group>
                         <div className={styles.buttonBox}>
-                            <Button variant="color" onClick={this.buildInGenesis}>{t('crosschain:Submit')}</Button>
+                            { isAllowanceIssuing || tokenType === 'deposit' ?
+                                <Button variant="color" onClick={this.redeemToken}>{t('crosschain:Submit')}</Button> :
+                                <Button disabled={isApproving} variant="color" onClick={this.approveRingToIssuing}>{isApproving ? t('crosschain:Approving') : t('crosschain:Approve')}</Button>
+                            }
                             <Button variant="outline-purple" onClick={() => this.goBack(1)}>{t('crosschain:Back')}</Button>
                         </div>
                     </div>

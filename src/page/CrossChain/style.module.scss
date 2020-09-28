@@ -172,6 +172,7 @@
   .connectInfoBox {
     background: #F5F4F7;
     padding: 20px;
+    border-radius: 4px;
     h1 {
       font-size: 14px;
       font-weight: normal;
@@ -321,12 +322,12 @@
     color: #333;
     margin-bottom: 20px;
   }
-  img{
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-    margin-left: 10px;
-  }
+  // img{
+  //   width: 20px;
+  //   height: 20px;
+  //   cursor: pointer;
+  //   margin-left: 10px;
+  // }
   .stepRoadMapItem {
     margin-bottom: 8px;
     div{
@@ -338,14 +339,38 @@
         font-size: 16px;
         margin-bottom: 0;
         word-break: break-all;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+          img {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+          }
+          span {
+            position: relative;
+            top: 2px;
+          }
       }
       p:first-child{
         font-weight: bold;
       }
     }
     p{
-      color: $crosschain-text-normal;
+      color: $crosschain-text-main;
       font-size: 14px;
+    }
+  }
+
+  .stepRoadMapItemDone {
+    div {
+      p {
+        color: $crosschain-text-disabled;
+      }
+    }
+
+    p {
+      color: $crosschain-text-disabled;
     }
   }
 }
