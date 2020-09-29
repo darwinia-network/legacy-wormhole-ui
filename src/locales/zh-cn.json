@@ -89,7 +89,15 @@
     "tron_crab_airdrop": "空投",
     "ethereum_darwinia_crosschain": "跨链转账",
     "tron_darwinia_crosschain": "跨链转账",
-    "Balance": "余额"
+    "Balance": "余额",
+    "come soon": "敬请期待",
+    "The transaction has been sent, please check the transfer progress in the cross-chain history.": "交易已发送，请至跨链历史查看转账进度。",
+    "Asset Types": "资产类型",
+    "Deposit": "存单",
+    "Select Deposit": "选择存单",
+    "Detail": "详情",
+    "Chain-Relay Confirmed": "源区块桥接成功",
+    "Asset": "资产"
   },
   "crosschain_ethtron": {
     "claim": "跨链转账",

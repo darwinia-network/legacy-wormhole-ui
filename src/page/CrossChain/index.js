@@ -1,12 +1,11 @@
 import React, { Component } from "react";
-import { Button, Form, Spinner } from 'react-bootstrap'
+import { Button, Form, Spinner, Dropdown, ButtonGroup } from 'react-bootstrap'
 import { withRouter } from 'react-router-dom';
 
 import 'react-toastify/dist/ReactToastify.css';
 import dayjs from 'dayjs';
 import Web3 from 'web3';
 import { encodeAddress } from '@polkadot/util-crypto';
-
 import {
     connect, sign, formToast, getAirdropData, config, formatBalance, getBuildInGenesisInfo,
     getTokenBalance, buildInGenesis, textTransform, remove0x, convertSS58Address, isMiddleScreen,
@@ -252,6 +251,7 @@ class Claims extends Component {
     buildInGenesis = () => {
         const { networkType, account, darwiniaAddress, crossChainBalance, tokenType } = this.state;
         const { t } = this.props;
+
         if (!this.checkForm(networkType === 'crab' ? 'gwei' : 'ether')) return;
         buildInGenesis(networkType, account[networkType], {
             to: darwiniaAddress,
@@ -496,11 +496,27 @@ class Claims extends Component {
     renderDepositItem = (deposit) => {
         const { t } = this.props;
         if(!deposit) return null;
+        if(Array.isArray(deposit)) {
+            deposit = deposit[0]
+        }
 
         const depositStartTime = dayjs.unix(deposit.deposit_time);
         const depositEndTime = depositStartTime.add(30 * deposit.duration, 'day');
 
-        return `${deposit.amount} RING  (${t('Deposit ID')}: ${deposit.deposit_id} ${t('Time')}: ${depositStartTime.format('YYYY/MM/DD')} - ${depositEndTime.format('YYYY/MM/DD')})`;
+        return <p>{deposit.amount} RING <span className={styles.depositItem}>({t('Deposit ID')}: {deposit.deposit_id} {t('Time')}: {depositStartTime.format('YYYY/MM/DD')} - {depositEndTime.format('YYYY/MM/DD')})</span></p>;
+    }
+
+    getDepositByID = (id) => {
+        const { ethereumDeposits } = this.state;
+        if(!ethereumDeposits) {
+            return null
+        }
+
+        const r = ethereumDeposits.filter((deposit) => {
+            return deposit.deposit_id === parseInt(id);
+        })
+
+        return r
     }
 
     checkedBall = (id, e) => {
@@ -532,35 +548,38 @@ class Claims extends Component {
                                     })
                                 })}>
                                 <option value="eth">Ethereum -> Darwinia MainNet</option>
+                                <option value="tron">Tron -> Darwinia MainNet</option>
+                                <option value="crab">Darwinia Crab -> Darwinia MainNet</option>
                             </Form.Control>
                         </Form.Group>
                         <div className={styles.buttonBox}>
                             <Button variant="outline-purple" onClick={this.toResult}>{t('crosschain:search')}</Button>
-                            <Button variant="outline-purple" onClick={() => this.toClaims(2)}>{networkType === 'crab' ? t(`crosschain:claim`) : t(`crosschain_ethtron:claim`)}</Button>                        </div>
+                            <Button variant="outline-purple" disabled={networkType !== 'eth'} onClick={() => this.toClaims(2)}>{networkType === 'eth' ? t(`crosschain:claim`) : t(`crosschain:come soon`)}</Button>
+                        </div>
                     </div>
                 </div>
 
                 {networkType === 'crab' ? <div className={styles.formBox}>
                     <div className={styles.stepRoadMap}>
                         <h3>{t('crosschain:Roadmap for cross-chain transfers')}</h3>
-                        <div className={styles.stepRoadMapItem}>
+                        <div className={`${styles.stepRoadMapItem} ${styles.stepRoadMapItemDone}`}>
                             <div>
-                                <p>{t('crosschain:Phase 1')}</p>
+                                <p><img src={roadmapStatus0} alt="end"></img><span>{t('crosschain:Phase 1')}</span></p>
                                 <p>{t('crosschain:In progress')}</p>
                             </div>
                             <p>{t('crosschain:The RING in genesis swaps will arrive after launching the Darwinia mainnet and will be sent to the destination account by Genesis Block.')}</p>
                         </div>
                         <div className={styles.stepRoadMapItem}>
                             <div>
-                                <p>{t('crosschain:Phase 2')}</p>
-                                <p>2020 Q4</p>
+                                <p><img src={roadmapStatus1} alt="start"></img><span>{t('crosschain:Phase 2')}</span></p>
+                                <p>2021</p>
                             </div>
                             <p>{t('crosschain:Cross-chain swaps at this stage will arrive immediately (network delays may occur),but only support One-way swaps to the Darwinia main network.')}</p>
                         </div>
-                        <div className={styles.stepRoadMapItem}>
+                        <div className={`${styles.stepRoadMapItem} ${styles.stepRoadMapItemDone}`}>
                             <div>
-                                <p>{t('crosschain:Phase 3')}</p>
-                                <p>2020 Q4+</p>
+                                <p><img src={roadmapStatus2} alt="start"></img><span>{t('crosschain:Phase 3')}</span></p>
+                                <p>2021</p>
                             </div>
                             <p>{t('crosschain:Cross-chain swaps at this stage will arrive immediately (network delays may occur), and support two-way or multi-way swaps.')}</p>
                         </div>
@@ -580,14 +599,14 @@ class Claims extends Component {
                         <div className={styles.stepRoadMapItem}>
                             <div>
                                 <p><img src={roadmapStatus1} alt="start"></img><span>{t('crosschain_ethtron:Phase 2')}</span></p>
-                                <p>2020 Q4</p>
+                                <p>{networkType === 'tron' ? '2021' : '2020 Q4'}</p>
                             </div>
                             <p>{t('crosschain_ethtron:Cross-chain transfers at this stage will arrive immediately (network delays may occur),but only support One-way transfers to the Darwinia main network')}</p>
                         </div>
                         <div className={`${styles.stepRoadMapItem} ${styles.stepRoadMapItemDone}`}>
                             <div>
                                 <p><img src={roadmapStatus2} alt="start"></img><span>{t('crosschain_ethtron:Phase 3')}</span></p>
-                                <p>2020 Q4+</p>
+                                <p>{networkType === 'tron' ? '2021' : '2020 Q4'}</p>
                             </div>
                             <p>{t('crosschain_ethtron:Cross-chain transfers at this stage will arrive immediately (network delays may occur), and support two-way or multi-way transfers')}</p>
                         </div>
@@ -614,8 +633,10 @@ class Claims extends Component {
                         {status === 3 ? <>
                             <h1><img alt="" src={labelTitleLogo} /><span>{t('crosschain:Darwinia Network account')}：</span></h1>
                             <p>{darwiniaAddress}</p>
-                            <h1><img alt="" src={labelTitleLogo} /><span>{t('crosschain:Amount')}：</span></h1>
-                            <p>{`${formatBalance(crossChainBalance, 'ether')} ${tokenType.toUpperCase()}`}</p>
+                            <h1><img alt="" src={labelTitleLogo} /><span>{t('crosschain:Detail')}：</span></h1>
+                            {tokenType === 'ring' || tokenType === 'kton' ? <p>{`${formatBalance(crossChainBalance, 'ether')} ${tokenType.toUpperCase()}`}</p> : null}
+                            {tokenType === 'deposit' ? this.renderDepositItem(this.getDepositByID(currentDepositID)) : null}
+
                         </> : null}
                     </div>
                 </div> : null}
@@ -633,7 +654,7 @@ class Claims extends Component {
                                 {t('crosschain:Please be sure to fill in the real Darwinia mainnet account, and keep the account recovery files such as mnemonic properly.')}
                             </Form.Text>
 
-                            <Form.Label>{t('crosschain:Cross-chain transfer token')}</Form.Label>
+                            <Form.Label>{t('crosschain:Asset Types')}</Form.Label>
                             <Form.Control as="select" value={tokenType}
                                 onChange={(value) => this.setValue('tokenType', value, null, () => {
                                     this.setState({
@@ -663,8 +684,26 @@ class Claims extends Component {
 
                             {tokenType === 'deposit' ?
                                 <>
-                                    <Form.Label>{t('crosschain:select deposit')}</Form.Label>
-                                    <Form.Control as="select" value={currentDepositID}
+                                    <Form.Label>{t('crosschain:Select Deposit')}</Form.Label>
+                                    <Dropdown as={ButtonGroup} className={styles.reactSelect} onSelect={(eventKey) => {
+                                        this.setState({
+                                            currentDepositID: eventKey
+                                        })
+                                    }}>
+                                        {!ethereumDeposits || ethereumDeposits.length === 0 ?
+                                            <Dropdown.Toggle id="ethereum-deposit">{t('No Deposits')}</Dropdown.Toggle>
+                                            : null
+                                        }
+                                        <Dropdown.Toggle as="div" className={styles.reactSelectToggle} id="ethereum-deposit-toggle">
+                                            {this.renderDepositItem(this.getDepositByID(currentDepositID))}
+                                            </Dropdown.Toggle>
+                                        <Dropdown.Menu className="super-colors">
+                                        {ethereumDeposits && ethereumDeposits.length > 0 && ethereumDeposits.map((item) => {
+                                            return <Dropdown.Item active={item.deposit_id === currentDepositID} key={item.deposit_id} eventKey={item.deposit_id}>{this.renderDepositItem(item)}</Dropdown.Item>
+                                        })}
+                                        </Dropdown.Menu>
+                                    </Dropdown>
+                                    {/* <Form.Control as="select" value={currentDepositID}
                                         onChange={(value) => this.setValue('currentDepositID', value, null, () => {
 
                                         })}>
@@ -675,7 +714,7 @@ class Claims extends Component {
                                         {ethereumDeposits && ethereumDeposits.length > 0 && ethereumDeposits.map((item) => {
                                             return <option key={item.deposit_id} value={item.deposit_id}>{this.renderDepositItem(item)}</option>
                                         })}
-                                    </Form.Control>
+                                    </Form.Control> */}
                                 </>
                             : null}
                         </Form.Group>
@@ -747,7 +786,7 @@ class Claims extends Component {
                 {status === 3 ? <div className={styles.formBox}>
                     <div className={`${styles.networkBox} ${styles.hashBox} claims-network-box`}>
                         <Form.Group controlId="signatureGroup">
-                            <Form.Label>{t('crosschain:Confirmed！After Darwinia mainnet launched, you will receive this cross-chain transfer.')}</Form.Label>
+                            <Form.Label>{t('crosschain:The transaction has been sent, please check the transfer progress in the cross-chain history.')}</Form.Label>
                             <a href={explorerUrl} target="_blank" rel="noopener noreferrer">{explorerUrl}</a>
                         </Form.Group>
                         <div className={styles.buttonBox}>

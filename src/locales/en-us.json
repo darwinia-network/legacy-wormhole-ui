@@ -77,6 +77,7 @@
     "The transfer amount cannot be 0": "The transfer amount cannot be 0",
     "Transaction Send": "Transaction Send",
     "Ethereum Confirmed": "Ethereum Confirmed",
+    "Crab Confirmed": "Darwinia Crab网络确认",
     "Tron Confirmed": "TRON Confirmed",
     "Darwinia Confirmed": "Darwinia Confirmed",
     "In progress": "2020/09/15 - 2020/09/24 16:00（UTC+8）",
@@ -88,7 +89,15 @@
     "tron_crab_airdrop": "Claim Airdrop",
     "ethereum_darwinia_crosschain": "Cross-chain Transfer",
     "tron_darwinia_crosschain": "Cross-chain Transfer",
-    "Balance": "Balance"
+    "Balance": "Balance",
+    "come soon": "come soon",
+    "The transaction has been sent, please check the transfer progress in the cross-chain history.": "The transaction has been sent, please check the transfer progress in the cross-chain history.",
+    "Asset Types": "Asset Types",
+    "Deposit": "Deposit",
+    "Select Deposit": "Select Deposit",
+    "Detail": "Detail",
+    "Chain-Relay Confirmed": "Chain-Relay Confirmed",
+    "Asset": "Asset"
   },
   "crosschain_ethtron": {
     "claim": "Cross-chain Transfer",
