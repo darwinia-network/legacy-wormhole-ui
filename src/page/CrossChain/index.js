@@ -716,7 +716,23 @@ class Claims extends Component {
                                 <option value="deposit">{t('crosschain:Deposit')}</option>
                             </Form.Control>
 
-                            {tokenType === 'kton' || tokenType === 'ring' ?
+                            {tokenType === 'ring' ?
+                                <>
+                                    <Form.Label>{t('crosschain:Amount')}</Form.Label>
+                                    <InputRightWrap text={t('crosschain:MAX')} onClick={
+                                        () => {
+                                            this.setValue('crossChainBalance', {target: {value: formatBalance(ringBalance.gt(crossChainFee) ? ringBalance.sub(crossChainFee) : Web3.utils.toBN(0), 'ether')}}, this.toWeiBNMiddleware, this.setBNValue)
+                                        }
+                                    }>
+                                        <Form.Control type="number" placeholder={`${t('crosschain:Balance')} : ${formatBalance(this.state[`${tokenType}Balance`], 'ether')}`}
+                                            autoComplete="off"
+                                            value={crossChainBalanceText}
+                                            onChange={(value) => this.setValue('crossChainBalance', value, this.toWeiBNMiddleware, this.setBNValue)} />
+                                    </InputRightWrap>
+                                </>
+                            : null}
+
+                            {tokenType === 'kton' ?
                                 <>
                                     <Form.Label>{t('crosschain:Amount')}</Form.Label>
                                     <InputRightWrap text={t('crosschain:MAX')} onClick={
@@ -768,12 +784,12 @@ class Claims extends Component {
                                     </Form.Control> */}
                                 </>
                             : null}
-                            <Form.Text muted className={`${styles.feeTip} ${isSufficientFee ? '' : 'text-muted'}`}>
+                            {tokenType === 'ring' || tokenType ==='kton' ? <Form.Text muted className={`${styles.feeTip} ${isSufficientFee ? '' : 'text-muted'}`}>
                                 {t(`crosschain:Crosschain transfer fee. {{fee}} RING. (Account Balance. {{ring}} RING)`, {
                                     fee: formatBalance(crossChainFee, 'ether').toString(),
                                     ring: formatBalance(this.state[`ringBalance`], 'ether').toString()
                                 })}
-                            </Form.Text>
+                            </Form.Text> : null}
                         </Form.Group>
 
                         <div className={styles.buttonBox}>
