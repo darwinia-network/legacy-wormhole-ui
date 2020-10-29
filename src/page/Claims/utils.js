@@ -181,5 +181,4 @@ export const wxRequest = async (params = {}, url) => {
 }
 
 export const getClaimsInfo = (params) => wxRequest(params, `${config.SUBSCAN_API}/api/other/claims`)
-export const getClaimsInfo1 = (params) => wxRequest(params, `https://www.evolution.land/api/eth/gas_price`)
 
