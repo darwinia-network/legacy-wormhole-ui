@@ -35,7 +35,7 @@
   "scripts": {
     "start_dev": "PORT=3036 REACT_APP_CHAIN=development react-scripts start",
     "start_production": "PORT=3036 REACT_APP_CHAIN=production react-scripts start",
-    "build_dev": "CI=false REACT_APP_CHAIN=production react-scripts build",
+    "build_dev": "CI=false REACT_APP_CHAIN=development react-scripts build",
     "build_production": "CI=false REACT_APP_CHAIN=production react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
