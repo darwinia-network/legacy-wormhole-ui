@@ -102,7 +102,8 @@
     "Deposit ID": "Deposit ID",
     "Approve": "Approve",
     "No Deposits": "No Deposits",
-    "Approving": "Approving..."
+    "Approving": "Approving...",
+    "Crosschain transfer fee. {{fee}} RING. (Account Balance. {{ring}} RING)": "Crosschain transfer fee: {{fee}} RING. (Account Balance: {{ring}} RING)"
   },
   "crosschain_ethtron": {
     "claim": "Cross-chain Transfer",

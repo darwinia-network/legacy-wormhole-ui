@@ -11,7 +11,7 @@ import {
     connect, sign, formToast, getAirdropData, config, formatBalance, getBuildInGenesisInfo,
     getTokenBalance, buildInGenesis, textTransform, remove0x, convertSS58Address, isMiddleScreen,
     getCringGenesisSwapInfo, redeemToken, redeemDeposit, checkIssuingAllowance, approveRingToIssuing, getEthereumBankDeposit,
-    getEthereumToDarwiniaCrossChainInfo
+    getEthereumToDarwiniaCrossChainInfo, getEthereumToDarwiniaCrossChainFee
 } from './utils'
 import { InputRightWrap } from '../../components/InputRightWrap'
 import { parseChain } from '../../util';
@@ -98,7 +98,8 @@ class Claims extends Component {
             history: null,
             isAllowanceIssuing: false,
             isApproving: false,
-            currentDepositID: null
+            currentDepositID: null,
+            crossChainFee: Web3.utils.toBN(0),
         }
         this.querySubscribe = null
     }
@@ -209,6 +210,7 @@ class Claims extends Component {
 
                     const balances = await getTokenBalance(networkType, this.state.account[networkType]);
                     const isAllowance = await checkIssuingAllowance(this.state.account[networkType]);
+                    const crossChainFee = await getEthereumToDarwiniaCrossChainFee();
                     const getEthereumDeposits = (address) => {
                         return new Promise((resolve, reject) => {
                             getEthereumBankDeposit({
@@ -230,7 +232,8 @@ class Claims extends Component {
                         ktonBalance: Web3.utils.toBN(balances[1]),
                         isAllowanceIssuing: isAllowance,
                         ethereumDeposits: ethereumDeposits,
-                        currentDepositID: ethereumDeposits.length > 0 ? ethereumDeposits[0].deposit_id : null
+                        currentDepositID: ethereumDeposits.length > 0 ? ethereumDeposits[0].deposit_id : null,
+                        crossChainFee: Web3.utils.toBN(crossChainFee)
                     })
 
                     this.setState({
@@ -393,7 +396,6 @@ class Claims extends Component {
                 })
 
                 Promise.all([ethereumGenesisInfo, ethereumToDarwiniaCrosschainInfo]).then(([genesisHistory, crosschainHistory]) => {
-                    console.log(111, genesisHistory, crosschainHistory)
                     this.setState({
                         history: [...crosschainHistory.map((item) => {
                             item.is_crosschain = true;
@@ -662,9 +664,13 @@ class Claims extends Component {
 
     step2 = () => {
         const { t } = this.props
-        const { networkType, account, status, darwiniaAddress, ringBalance, isApproving, ethereumDeposits, ktonBalance, tokenType, crossChainBalanceText, crossChainBalance, isAllowanceIssuing, currentDepositID } = this.state
+        const { networkType, account, status, darwiniaAddress, ringBalance, isApproving, ethereumDeposits, ktonBalance, tokenType, crossChainBalanceText, crossChainBalance, isAllowanceIssuing, currentDepositID,
+            crossChainFee } = this.state
         const explorerUrl = this.renderExplorerUrl()
         const middleScreen = isMiddleScreen()
+
+        const isSufficientFee = ringBalance.gte(crossChainFee);
+
         return (
             <div>
                 {this.renderHeader()}
@@ -710,7 +716,7 @@ class Claims extends Component {
                                 <option value="deposit">{t('crosschain:Deposit')}</option>
                             </Form.Control>
 
-                            {tokenType === 'ring' || tokenType === 'kton' ?
+                            {tokenType === 'kton' || tokenType === 'ring' ?
                                 <>
                                     <Form.Label>{t('crosschain:Amount')}</Form.Label>
                                     <InputRightWrap text={t('crosschain:MAX')} onClick={
@@ -729,6 +735,7 @@ class Claims extends Component {
                             {tokenType === 'deposit' ?
                                 <>
                                     <Form.Label>{t('crosschain:Select Deposit')}</Form.Label>
+
                                     <Dropdown as={ButtonGroup} className={styles.reactSelect} onSelect={(eventKey) => {
                                         this.setState({
                                             currentDepositID: eventKey
@@ -761,10 +768,17 @@ class Claims extends Component {
                                     </Form.Control> */}
                                 </>
                             : null}
+                            <Form.Text muted className={`${styles.feeTip} ${isSufficientFee ? '' : 'text-muted'}`}>
+                                {t(`crosschain:Crosschain transfer fee. {{fee}} RING. (Account Balance. {{ring}} RING)`, {
+                                    fee: formatBalance(crossChainFee, 'ether').toString(),
+                                    ring: formatBalance(this.state[`ringBalance`], 'ether').toString()
+                                })}
+                            </Form.Text>
                         </Form.Group>
+
                         <div className={styles.buttonBox}>
                             { isAllowanceIssuing || tokenType === 'deposit' ?
-                                <Button variant="color" onClick={this.redeemToken}>{t('crosschain:Submit')}</Button> :
+                                <Button disabled={!isSufficientFee} variant="color" onClick={this.redeemToken}>{t('crosschain:Submit')}</Button> :
                                 <Button disabled={isApproving} variant="color" onClick={this.approveRingToIssuing}>{isApproving ? t('crosschain:Approving') : t('crosschain:Approve')}</Button>
                             }
                             <Button variant="outline-purple" onClick={() => this.goBack(1)}>{t('crosschain:Back')}</Button>

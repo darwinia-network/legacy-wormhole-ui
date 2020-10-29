@@ -10,6 +10,7 @@ import _ from 'lodash';
 import genesisData from './genesis';
 import TokenABI from './tokenABI';
 import BankABI from './bankABI';
+import RegistryABI from './registryABI';
 const { ApiPromise, WsProvider } = require('@darwinia/api');
 
 function buf2hex(buffer) { // buffer is an ArrayBuffer
@@ -58,6 +59,18 @@ export async function getEthereumBankDepositByAddress(from) {
     const erc20Contract = new web3js.eth.Contract(BankABI, config.ETHEREUM_DARWINIA_BANK)
     const deposits = await erc20Contract.methods.getDepositIds(from).call()
     return deposits || []
+}
+
+/**
+ * Get fee of crosschain transfer.
+ * @param {*} amount
+ */
+export async function getEthereumToDarwiniaCrossChainFee() {
+    let web3js = new Web3(window.ethereum || window.web3.currentProvider);
+
+    const erc20Contract = new web3js.eth.Contract(RegistryABI, config.REGISTRY_ETH_ADDRESS)
+    const fee = await erc20Contract.methods.uintOf('0x55494e545f4252494447455f4645450000000000000000000000000000000000').call()
+    return fee || 0
 }
 
 function connectEth(accountsChangedCallback, t) {
