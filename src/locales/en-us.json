@@ -80,6 +80,7 @@
     "Crab Confirmed": "Darwinia Crab网络确认",
     "Tron Confirmed": "TRON Confirmed",
     "Darwinia Confirmed": "Darwinia Confirmed",
+    "ChainRelay Confirmed": "ChainRelay Confirmed",
     "In progress": "2020/09/15 - 2020/09/24 16:00（UTC+8）",
     "Connecting node": "Connecting node...",
     "Extrinsic Failed": "Extrinsic Failed",
@@ -97,7 +98,11 @@
     "Select Deposit": "Select Deposit",
     "Detail": "Detail",
     "Chain-Relay Confirmed": "Chain-Relay Confirmed",
-    "Asset": "Asset"
+    "Asset": "Asset",
+    "Deposit ID": "Deposit ID",
+    "Approve": "Approve",
+    "No Deposits": "No Deposits",
+    "Approving": "Approving..."
   },
   "crosschain_ethtron": {
     "claim": "Cross-chain Transfer",

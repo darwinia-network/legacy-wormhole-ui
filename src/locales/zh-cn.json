@@ -80,6 +80,7 @@
     "Crab Confirmed": "Darwinia Crab网络确认",
     "Tron Confirmed": "TRON网络确认",
     "Darwinia Confirmed": "Darwinia网络确认",
+    "ChainRelay Confirmed": "块桥接成功",
     "In progress": "2020/09/15 - 2020/09/24 16:00（UTC+8）",
     "Connecting node": "正在连接节点...",
     "Extrinsic Failed": "交易失败",
@@ -97,7 +98,11 @@
     "Select Deposit": "选择存单",
     "Detail": "详情",
     "Chain-Relay Confirmed": "源区块桥接成功",
-    "Asset": "资产"
+    "Asset": "资产",
+    "Deposit ID": "存单ID",
+    "Approve": "授权",
+    "No Deposits": "无存单",
+    "Approving": "正在授权..."
   },
   "crosschain_ethtron": {
     "claim": "跨链转账",

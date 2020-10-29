@@ -6,6 +6,7 @@ import ConfigJson from './config';
 import Web3 from 'web3';
 import { checkAddress, decodeAddress, encodeAddress, setSS58Format } from '@polkadot/util-crypto';
 import BN from 'bn.js';
+import _ from 'lodash';
 import genesisData from './genesis';
 import TokenABI from './tokenABI';
 import BankABI from './bankABI';
@@ -25,7 +26,7 @@ export async function approveRingToIssuing(account, hashCallback, confirmCallbac
     let web3js = new Web3(window.ethereum || window.web3.currentProvider);
     const contract = new web3js.eth.Contract(TokenABI, config['RING_ETH_ADDRESS']);
 
-    contract.methods.approve(config.ETHEREUM_DARWINIA_ISSUING, '10000000000000000000000').send({ from: account }).on('transactionHash', (hash) => {
+    contract.methods.approve(config.ETHEREUM_DARWINIA_ISSUING, '100000000000000000000000000').send({ from: account }).on('transactionHash', (hash) => {
         hashCallback && hashCallback(hash);
     }).on('confirmation', () => {
         confirmCallback && confirmCallback();
@@ -44,7 +45,19 @@ export async function checkIssuingAllowance(from, amount) {
     const erc20Contract = new web3js.eth.Contract(TokenABI, config.RING_ETH_ADDRESS)
     const allowanceAmount = await erc20Contract.methods.allowance(from, config.ETHEREUM_DARWINIA_ISSUING).call()
     console.log('checkIssuingAllowance-amount', allowanceAmount.toString());
-    return !Web3.utils.toBN(allowanceAmount).lt(Web3.utils.toBN(amount || '5000000000000000000000'))
+    return !Web3.utils.toBN(allowanceAmount).lt(Web3.utils.toBN(amount || '10000000000000000000000000'))
+}
+
+/**
+ * Get deposit by address
+ * @param {*} amount
+ */
+export async function getEthereumBankDepositByAddress(from) {
+    let web3js = new Web3(window.ethereum || window.web3.currentProvider);
+
+    const erc20Contract = new web3js.eth.Contract(BankABI, config.ETHEREUM_DARWINIA_BANK)
+    const deposits = await erc20Contract.methods.getDepositIds(from).call()
+    return deposits || []
 }
 
 function connectEth(accountsChangedCallback, t) {
@@ -415,6 +428,21 @@ export const wxRequest = async (params = {}, url) => {
 
 export const getClaimsInfo = (params) => wxRequest(params, `${config.SUBSCAN_API}/api/other/claims`)
 
+export const getEthereumToDarwiniaCrossChainInfo = async (params, cb, failedcb) => {
+    let json = await wxRequest(params, `${config.DAPP_API}/api/redeem`);
+    if (json.code === 0) {
+        if (json.data.length === 0) {
+            json = {
+                data: []
+            }
+        }
+
+        cb && cb(json.data)
+    } else {
+        failedcb && failedcb()
+    }
+}
+
 export const getBuildInGenesisInfo = async (params, cb, failedcb) => {
     let json = await wxRequest(params, `${config.DAPP_API}/api/ringBurn`);
     if (json.code === 0) {
@@ -454,8 +482,13 @@ export const getEthereumBankDeposit = async (params, cb, failedcb) => {
             cb && cb([])
             return;
         }
+        const depositsOnChain = await getEthereumBankDepositByAddress(params.query.address);
+        const r = _.filter(json.data.list, (item) => {
+            console.log(item)
+            return depositsOnChain.includes(item.deposit_id.toString());
+        });
 
-        cb && cb(json.data.list)
+        cb && cb(r)
     } else {
         failedcb && failedcb()
     }

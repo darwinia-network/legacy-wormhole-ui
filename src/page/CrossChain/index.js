@@ -5,11 +5,13 @@ import { withRouter } from 'react-router-dom';
 import 'react-toastify/dist/ReactToastify.css';
 import dayjs from 'dayjs';
 import Web3 from 'web3';
+import _ from 'lodash';
 import { encodeAddress } from '@polkadot/util-crypto';
 import {
     connect, sign, formToast, getAirdropData, config, formatBalance, getBuildInGenesisInfo,
     getTokenBalance, buildInGenesis, textTransform, remove0x, convertSS58Address, isMiddleScreen,
-    getCringGenesisSwapInfo, redeemToken, redeemDeposit, checkIssuingAllowance, approveRingToIssuing, getEthereumBankDeposit
+    getCringGenesisSwapInfo, redeemToken, redeemDeposit, checkIssuingAllowance, approveRingToIssuing, getEthereumBankDeposit,
+    getEthereumToDarwiniaCrossChainInfo
 } from './utils'
 import { InputRightWrap } from '../../components/InputRightWrap'
 import { parseChain } from '../../util';
@@ -31,11 +33,13 @@ import stepEthereumIcon from './img/tx-step-eth-icon.svg';
 import stepTronIcon from './img/tx-step-tron-icon.svg';
 import stepDarwiniaIcon from './img/tx-step-darwinia-icon.svg';
 import stepCrabIcon from './img/tx-step-crab-icon.svg';
+import stepRelayIcon from './img/tx-step-relay-icon.svg';
 
 import stepInactiveEthereumIcon from './img/tx-step-eth-inactive-icon.svg';
 import stepInactiveTronIcon from './img/tx-step-tron-inactive-icon.svg';
 import stepInactiveDarwiniaIcon from './img/tx-step-darwinia-inactive-icon.svg';
 import stepInactiveCrabIcon from './img/tx-step-crab-inactive-icon.svg';
+import stepInactiveRelayIcon from './img/tx-step-relay-inactive-icon.svg';
 
 import roadmapStatus0 from './img/roadmap-status-0.svg';
 import roadmapStatus1 from './img/roadmap-status-1.svg';
@@ -56,7 +60,10 @@ const txProgressIcon = {
     stepInactiveTronIcon,
 
     stepCrabIcon,
-    stepInactiveCrabIcon
+    stepInactiveCrabIcon,
+
+    stepRelayIcon,
+    stepInactiveRelayIcon
 }
 
 class Claims extends Component {
@@ -315,7 +322,7 @@ class Claims extends Component {
     }
 
     checkForm = (unit = 'ether') => {
-        const { crossChainBalance, crossChainBalanceText, ringBalance, ktonBalance, tokenType } = this.state;
+        const { crossChainBalance, crossChainBalanceText, ringBalance, ktonBalance, tokenType, currentDepositID } = this.state;
         const balance = {
             ringBalance,
             ktonBalance
@@ -323,7 +330,12 @@ class Claims extends Component {
         const { t } = this.props;
 
         if(tokenType === 'deposit') {
-            return true;
+            if(_.isNull(currentDepositID)) {
+                formToast(t(`crosschain:No Deposits`))
+                return false
+            } else {
+                return true;
+            }
         }
 
         try {
@@ -358,18 +370,39 @@ class Claims extends Component {
         switch (networkType) {
             case "eth":
                 address = account[networkType]
-                await getBuildInGenesisInfo({
-                    query: { address: address },
-                    method: "get"
-                }, (data) => {
+                let ethereumGenesisInfo = new Promise((resolve, reject) => {
+                    getBuildInGenesisInfo({
+                        query: { address: address },
+                        method: "get"
+                    }, (data) => {
+                        resolve(data);
+                    }, () => {
+                        resolve([]);
+                    });
+                })
+
+                let ethereumToDarwiniaCrosschainInfo = new Promise((resolve, reject) => {
+                    getEthereumToDarwiniaCrossChainInfo({
+                        query: { address: address },
+                        method: "get"
+                    }, (data) => {
+                        resolve(data);
+                    }, () => {
+                        resolve([]);
+                    });
+                })
+
+                Promise.all([ethereumGenesisInfo, ethereumToDarwiniaCrosschainInfo]).then(([genesisHistory, crosschainHistory]) => {
+                    console.log(111, genesisHistory, crosschainHistory)
                     this.setState({
-                        history: data
+                        history: [...crosschainHistory.map((item) => {
+                            item.is_crosschain = true;
+                            return item;
+                        }), ...genesisHistory]
                     })
-                }, () => {
-                    this.setState({
-                        history: []
-                    })
-                });
+                }).catch((error) => {
+                    console.log('get history error', error);
+                })
                 break;
             case "tron":
                 address = (window.tronWeb && window.tronWeb.address.toHex(account[networkType]))
@@ -495,15 +528,26 @@ class Claims extends Component {
 
     renderDepositItem = (deposit) => {
         const { t } = this.props;
-        if(!deposit) return null;
-        if(Array.isArray(deposit)) {
+        if(!deposit) return <p>{t('crosschain:No Deposits')}</p>;
+        if(Array.isArray(deposit) && deposit.length === 0) return <p>{t('crosschain:No Deposits')}</p>
+        if(Array.isArray(deposit) && deposit.length > 0) {
             deposit = deposit[0]
         }
 
         const depositStartTime = dayjs.unix(deposit.deposit_time);
         const depositEndTime = depositStartTime.add(30 * deposit.duration, 'day');
 
-        return <p>{deposit.amount} RING <span className={styles.depositItem}>({t('Deposit ID')}: {deposit.deposit_id} {t('Time')}: {depositStartTime.format('YYYY/MM/DD')} - {depositEndTime.format('YYYY/MM/DD')})</span></p>;
+        return <p>{deposit.amount} RING <span className={styles.depositItem}>({t('crosschain:Deposit ID')}: {deposit.deposit_id} {t('Time')}: {depositStartTime.format('YYYY/MM/DD')} - {depositEndTime.format('YYYY/MM/DD')})</span></p>;
+    }
+
+    renderDepositHistoryDetail = (amount, deposit) => {
+        const { t } = this.props;
+        if(!deposit) return null;
+
+        const depositStartTime = dayjs.unix(deposit.start);
+        const depositEndTime = depositStartTime.add(30 * deposit.month, 'day');
+
+        return <p>{formatBalance(Web3.utils.toBN(amount), 'ether')} RING ({t('crosschain:Time')}: {depositStartTime.format('YYYY/MM/DD')} - {depositEndTime.format('YYYY/MM/DD')})</p>;
     }
 
     getDepositByID = (id) => {
@@ -663,7 +707,7 @@ class Claims extends Component {
                                 })}>
                                 <option value="ring">RING</option>
                                 <option value="kton">KTON</option>
-                                <option value="deposit">{t('Deposit')}</option>
+                                <option value="deposit">{t('crosschain:Deposit')}</option>
                             </Form.Control>
 
                             {tokenType === 'ring' || tokenType === 'kton' ?
@@ -690,10 +734,10 @@ class Claims extends Component {
                                             currentDepositID: eventKey
                                         })
                                     }}>
-                                        {!ethereumDeposits || ethereumDeposits.length === 0 ?
+                                        {/* {!ethereumDeposits || ethereumDeposits.length === 0 ?
                                             <Dropdown.Toggle id="ethereum-deposit">{t('No Deposits')}</Dropdown.Toggle>
                                             : null
-                                        }
+                                        } */}
                                         <Dropdown.Toggle as="div" className={styles.reactSelectToggle} id="ethereum-deposit-toggle">
                                             {this.renderDepositItem(this.getDepositByID(currentDepositID))}
                                             </Dropdown.Toggle>
@@ -851,6 +895,21 @@ class Claims extends Component {
                 </div>
                 : null}
             {history ? history.map((item) => {
+                let step = 2;
+                const isDeposit = item.currency.toUpperCase() === 'DEPOSIT';
+                let depositInfo = JSON.parse(item.deposit || '{}');
+
+                if(item.is_crosschain) {
+                    if(item.is_relayed) {
+                        step = 3;
+                    }
+                    if(item.is_relayed && item.darwinia_tx !== "") {
+                        step = 4;
+                    }
+                } else {
+                    step = 4;
+                }
+
                 return (<div className={styles.historyItem} key={item.tx}>
                     <div>
                         <h3>{t('crosschain:Time')}</h3>
@@ -860,21 +919,37 @@ class Claims extends Component {
                         <h3>{t('crosschain:Cross-chain direction')}</h3>
                         <p>{textTransform(parseChain(item.chain), 'capitalize')} -> Darwinia MainNet</p>
                     </div>
-                    <div>
-                        <h3>{t('crosschain:Amount')}</h3>
-                        <p>{formatBalance(Web3.utils.toBN(item.amount), 'ether')} {item.currency.toUpperCase()}</p>
-                    </div>
+                    {isDeposit ?
+                        <>
+                            <div>
+                                <h3>{t('crosschain:Asset')}</h3>
+                                <p>{t('crosschain:Deposit ID')}: {depositInfo.deposit_id}</p>
+                            </div>
+                            <div>
+                                <h3>{t('crosschain:Detail')}</h3>
+                                {this.renderDepositHistoryDetail(item.amount, depositInfo)}
+                            </div>
+                        </> :
+                        <div>
+                            <h3>{t('crosschain:Amount')}</h3>
+                            <p>{formatBalance(Web3.utils.toBN(item.amount), 'ether')} {item.currency.toUpperCase()}</p>
+                        </div>
+                    }
                     <div>
                         <h3>{t('crosschain:Destination account')}</h3>
                         <p>{encodeAddress('0x' + item.target, 18)}</p>
                     </div>
                     <div className={styles.line}></div>
-                    {this.renderTransferProgress(item.chain, 'darwinia', 3, {
+                    {this.renderTransferProgress(item.chain, 'darwinia', step, {
                         from: {
                             tx: item.tx,
                             chain: item.chain
+                        },
+                        to: {
+                            tx: item.darwinia_tx,
+                            chain: 'darwinia'
                         }
-                    })}
+                    }, item.is_crosschain)}
                 </div>)
             }) : null}
         </>
@@ -912,7 +987,7 @@ class Claims extends Component {
                         <p>{item.target}</p>
                     </div>
                     <div className={styles.line}></div>
-                    {this.renderTransferProgress('crab', 'darwinia', 3, {
+                    {this.renderTransferProgress('crab', 'darwinia', 4, {
                         from: {
                             tx: item.extrinsic_index,
                             chain: 'crab'
@@ -951,14 +1026,15 @@ class Claims extends Component {
         return isStyle ? styles[className] : className
     }
 
-    renderTransferProgress = (from, to, step, hash) => {
+    renderTransferProgress = (from, to, step, hash, hasRelay = false) => {
         const { t } = this.props
         return (
             <div className={styles.transferProgress}>
                 <div className={styles.iconBox}>
                     <div><img src={stepStartIcon} alt="tx"></img></div>
                     <div className={`${this.renderProgress(step, 3)}`}><img src={txProgressIcon[`step${this.renderProgress(step, 2, false)}${textTransform(from, 'capitalize')}Icon`]} alt="tx"></img></div>
-                    <div className={`${this.renderProgress(step, 3)}`}><img src={txProgressIcon[`step${this.renderProgress(step, 3, false)}${textTransform(to, 'capitalize')}Icon`]} alt="tx"></img></div>
+                    { hasRelay ? <div className={`${this.renderProgress(step, 3)}`}><img src={txProgressIcon[`step${this.renderProgress(step, 3, false)}RelayIcon`]} alt="tx"></img></div> : null}
+                    <div className={`${this.renderProgress(step, 4)}`}><img src={txProgressIcon[`step${this.renderProgress(step, 4, false)}${textTransform(to, 'capitalize')}Icon`]} alt="tx"></img></div>
                 </div>
                 <div className={styles.titleBox}>
                     <div>
@@ -968,8 +1044,12 @@ class Claims extends Component {
                         <p>{t(`crosschain:${textTransform(parseChain(from), 'capitalize')} Confirmed`)}</p>
                         <Button className={styles.hashBtn} variant="outline-purple" target="_blank" href={this.renderExplorerUrl(hash.from.tx, hash.from.chain)}>{t('crosschain:Txhash')}</Button>
                     </div>
-                    <div className={`${this.renderProgress(step, 3)}`}>
+                    { hasRelay ? <div className={`${this.renderProgress(step, 3)}`}>
+                        <p>{t(`crosschain:ChainRelay Confirmed`)}</p>
+                    </div> : null }
+                    <div className={`${this.renderProgress(step, 4)}`}>
                         <p>{t('crosschain:Darwinia Confirmed')}</p>
+                        { step >=4 && hash.to.tx ? <Button className={styles.hashBtn} variant="outline-purple" target="_blank" href={this.renderExplorerUrl(hash.to.tx, hash.to.chain)}>{t('crosschain:Txhash')}</Button> : null}
                     </div>
                 </div>
             </div>
@@ -1007,7 +1087,8 @@ class Claims extends Component {
         const domain = {
             eth: `${config.ETHERSCAN_DOMAIN[lng]}/tx/`,
             tron: `${config.TRONSCAN_DOMAIN}/#transaction/`,
-            crab: `https://crab.subscan.io/extrinsic/`
+            crab: `https://crab.subscan.io/extrinsic/`,
+            darwinia: `https://darwinia-cc1.subscan.io/extrinsic/`,
         }
 
         let urlHash = _hash || txhash;
