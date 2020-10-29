@@ -325,7 +325,7 @@ class Claims extends Component {
     }
 
     checkForm = (unit = 'ether') => {
-        const { crossChainBalance, crossChainBalanceText, ringBalance, ktonBalance, tokenType, currentDepositID } = this.state;
+        const { crossChainBalance, crossChainBalanceText, ringBalance, ktonBalance, tokenType, currentDepositID, crossChainFee } = this.state;
         const balance = {
             ringBalance,
             ktonBalance
@@ -350,6 +350,11 @@ class Claims extends Component {
         }
 
         if (crossChainBalance.gt(balance[`${tokenType}Balance`])) {
+            formToast(t(`The amount exceeds the account available balance`))
+            return false
+        }
+
+        if (tokenType === 'ring' && crossChainBalance.gt(balance[`${tokenType}Balance`].sub(crossChainFee))) {
             formToast(t(`The amount exceeds the account available balance`))
             return false
         }
