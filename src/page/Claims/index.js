@@ -7,7 +7,7 @@ import dayjs from 'dayjs';
 import Web3 from 'web3';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 
-import { connect, sign, formToast, getAirdropData, config, formatBalance, getClaimsInfo, getClaimsInfo1 } from './utils'
+import { connect, sign, formToast, getAirdropData, config, formatBalance, getClaimsInfo } from './utils'
 import { parseChain } from '../../util'
 import { withTranslation } from "react-i18next";
 import i18n from '../../locales/i18n';
@@ -117,12 +117,8 @@ class Claims extends Component {
             query: { address: address },
             method: "post"
         });
-        let json1 = await getClaimsInfo1({
-            query: { address: address },
-            method: "get"
-        });
         if (json.code === 0) {
-            
+
             if (json.data.info.length === 0) {
                 json = {
                     data: {
@@ -134,7 +130,7 @@ class Claims extends Component {
                     }
                 }
             };
-            
+
             this.setState({
                 claimAmount: Web3.utils.toBN(json.data.info[0].amount),
                 claimTarget: json.data.info[0].target,
@@ -148,7 +144,7 @@ class Claims extends Component {
         if(status === 1) {
             this.setState({
                 hasFetched: false
-            }) 
+            })
         }
         this.setState({
             status: status

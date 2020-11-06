@@ -1,16 +1,17 @@
 import React, { Component } from "react";
-import { Button, Form, Spinner } from 'react-bootstrap'
+import { Button, Form, Spinner, Dropdown, ButtonGroup } from 'react-bootstrap'
 import { withRouter } from 'react-router-dom';
 
 import 'react-toastify/dist/ReactToastify.css';
 import dayjs from 'dayjs';
 import Web3 from 'web3';
+import _ from 'lodash';
 import { encodeAddress } from '@polkadot/util-crypto';
-
 import {
     connect, sign, formToast, getAirdropData, config, formatBalance, getBuildInGenesisInfo,
     getTokenBalance, buildInGenesis, textTransform, remove0x, convertSS58Address, isMiddleScreen,
-    getCringGenesisSwapInfo
+    getCringGenesisSwapInfo, redeemToken, redeemDeposit, checkIssuingAllowance, approveRingToIssuing, getEthereumBankDeposit,
+    getEthereumToDarwiniaCrossChainInfo, getEthereumToDarwiniaCrossChainFee
 } from './utils'
 import { InputRightWrap } from '../../components/InputRightWrap'
 import { parseChain } from '../../util';
@@ -25,7 +26,6 @@ import step3open from './img/step-3-open.png';
 import step3close from './img/step-3-close.png';
 import helpLogo from './img/help-icon.png';
 import labelTitleLogo from './img/label-title-logo.png';
-import helpSmall from './img/help-s.png';
 
 import stepStartIcon from './img/tx-step-start-icon.svg';
 
@@ -33,11 +33,17 @@ import stepEthereumIcon from './img/tx-step-eth-icon.svg';
 import stepTronIcon from './img/tx-step-tron-icon.svg';
 import stepDarwiniaIcon from './img/tx-step-darwinia-icon.svg';
 import stepCrabIcon from './img/tx-step-crab-icon.svg';
+import stepRelayIcon from './img/tx-step-relay-icon.svg';
 
 import stepInactiveEthereumIcon from './img/tx-step-eth-inactive-icon.svg';
 import stepInactiveTronIcon from './img/tx-step-tron-inactive-icon.svg';
 import stepInactiveDarwiniaIcon from './img/tx-step-darwinia-inactive-icon.svg';
 import stepInactiveCrabIcon from './img/tx-step-crab-inactive-icon.svg';
+import stepInactiveRelayIcon from './img/tx-step-relay-inactive-icon.svg';
+
+import roadmapStatus0 from './img/roadmap-status-0.svg';
+import roadmapStatus1 from './img/roadmap-status-1.svg';
+import roadmapStatus2 from './img/roadmap-status-2.svg';
 
 import chainMap from './chain';
 
@@ -54,7 +60,10 @@ const txProgressIcon = {
     stepInactiveTronIcon,
 
     stepCrabIcon,
-    stepInactiveCrabIcon
+    stepInactiveCrabIcon,
+
+    stepRelayIcon,
+    stepInactiveRelayIcon
 }
 
 class Claims extends Component {
@@ -87,7 +96,10 @@ class Claims extends Component {
             hash: '',
             txhash: '',
             history: null,
-
+            isAllowanceIssuing: false,
+            isApproving: false,
+            currentDepositID: null,
+            crossChainFee: Web3.utils.toBN(0),
         }
         this.querySubscribe = null
     }
@@ -197,10 +209,33 @@ class Claims extends Component {
                     }
 
                     const balances = await getTokenBalance(networkType, this.state.account[networkType]);
+                    const isAllowance = await checkIssuingAllowance(this.state.account[networkType]);
+                    const crossChainFee = await getEthereumToDarwiniaCrossChainFee();
+                    const getEthereumDeposits = (address) => {
+                        return new Promise((resolve, reject) => {
+                            getEthereumBankDeposit({
+                                query: { address: address },
+                                method: "get"
+                            }, (data) => {
+                                resolve(data);
+                            }, () => {
+                                resolve([])
+                            })
+                        })
+                    }
+
+                    const ethereumDeposits = await getEthereumDeposits(this.state.account[networkType]) || [];
+
+                    console.log('ethereumDeposits', ethereumDeposits)
                     this.setState({
                         ringBalance: Web3.utils.toBN(balances[0]),
-                        ktonBalance: Web3.utils.toBN(balances[1])
+                        ktonBalance: Web3.utils.toBN(balances[1]),
+                        isAllowanceIssuing: isAllowance,
+                        ethereumDeposits: ethereumDeposits,
+                        currentDepositID: ethereumDeposits.length > 0 ? ethereumDeposits[0].deposit_id : null,
+                        crossChainFee: Web3.utils.toBN(crossChainFee)
                     })
+
                     this.setState({
                         account: {
                             ...this.state.account,
@@ -226,6 +261,7 @@ class Claims extends Component {
     buildInGenesis = () => {
         const { networkType, account, darwiniaAddress, crossChainBalance, tokenType } = this.state;
         const { t } = this.props;
+
         if (!this.checkForm(networkType === 'crab' ? 'gwei' : 'ether')) return;
         buildInGenesis(networkType, account[networkType], {
             to: darwiniaAddress,
@@ -239,13 +275,72 @@ class Claims extends Component {
         }, t)
     }
 
+    redeemToken = () => {
+        const { networkType, account, darwiniaAddress, crossChainBalance, tokenType, currentDepositID } = this.state;
+        const { t } = this.props;
+
+        if (!this.checkForm(networkType === 'crab' ? 'gwei' : 'ether', tokenType)) return;
+
+        if(tokenType === 'ring' || tokenType === 'kton') {
+            redeemToken(networkType, account[networkType], {
+                to: darwiniaAddress,
+                value: crossChainBalance,
+                tokenType
+            }, (hash) => {
+                this.setState({
+                    txhash: hash,
+                    status: 3
+                })
+            }, t)
+        } else {
+            redeemDeposit(networkType, account[networkType], {
+                to: darwiniaAddress,
+                tokenType,
+                depositID: currentDepositID
+            }, (hash) => {
+                this.setState({
+                    txhash: hash,
+                    status: 3
+                })
+            }, t)
+        }
+    }
+
+    approveRingToIssuing = () => {
+        const { networkType, account } = this.state;
+
+        approveRingToIssuing(account[networkType], () => {
+            this.setState({
+                isApproving: true
+            })
+        }, async () => {
+            if(!this.state.isAllowanceIssuing) {
+                const isAllowance = await checkIssuingAllowance(account[networkType]);
+                this.setState({
+                    isApproving: false,
+                    isAllowanceIssuing: isAllowance
+                })
+            }
+        } )
+    }
+
     checkForm = (unit = 'ether') => {
-        const { crossChainBalance, crossChainBalanceText, ringBalance, ktonBalance, tokenType } = this.state;
+        const { crossChainBalance, crossChainBalanceText, ringBalance, ktonBalance, tokenType, currentDepositID, crossChainFee } = this.state;
         const balance = {
             ringBalance,
             ktonBalance
         }
         const { t } = this.props;
+
+        if(tokenType === 'deposit') {
+            if(_.isNull(currentDepositID)) {
+                formToast(t(`crosschain:No Deposits`))
+                return false
+            } else {
+                return true;
+            }
+        }
+
         try {
             Web3.utils.toBN(Web3.utils.toWei(crossChainBalanceText, unit))
         } catch (error) {
@@ -255,6 +350,11 @@ class Claims extends Component {
         }
 
         if (crossChainBalance.gt(balance[`${tokenType}Balance`])) {
+            formToast(t(`The amount exceeds the account available balance`))
+            return false
+        }
+
+        if (tokenType === 'ring' && crossChainBalance.gt(balance[`${tokenType}Balance`].sub(crossChainFee))) {
             formToast(t(`The amount exceeds the account available balance`))
             return false
         }
@@ -278,18 +378,38 @@ class Claims extends Component {
         switch (networkType) {
             case "eth":
                 address = account[networkType]
-                await getBuildInGenesisInfo({
-                    query: { address: address },
-                    method: "get"
-                }, (data) => {
+                let ethereumGenesisInfo = new Promise((resolve, reject) => {
+                    getBuildInGenesisInfo({
+                        query: { address: address },
+                        method: "get"
+                    }, (data) => {
+                        resolve(data);
+                    }, () => {
+                        resolve([]);
+                    });
+                })
+
+                let ethereumToDarwiniaCrosschainInfo = new Promise((resolve, reject) => {
+                    getEthereumToDarwiniaCrossChainInfo({
+                        query: { address: address },
+                        method: "get"
+                    }, (data) => {
+                        resolve(data);
+                    }, () => {
+                        resolve([]);
+                    });
+                })
+
+                Promise.all([ethereumGenesisInfo, ethereumToDarwiniaCrosschainInfo]).then(([genesisHistory, crosschainHistory]) => {
                     this.setState({
-                        history: data
+                        history: [...crosschainHistory.map((item) => {
+                            item.is_crosschain = true;
+                            return item;
+                        }), ...genesisHistory]
                     })
-                }, () => {
-                    this.setState({
-                        history: []
-                    })
-                });
+                }).catch((error) => {
+                    console.log('get history error', error);
+                })
                 break;
             case "tron":
                 address = (window.tronWeb && window.tronWeb.address.toHex(account[networkType]))
@@ -413,6 +533,43 @@ class Claims extends Component {
         )
     }
 
+    renderDepositItem = (deposit) => {
+        const { t } = this.props;
+        if(!deposit) return <p>{t('crosschain:No Deposits')}</p>;
+        if(Array.isArray(deposit) && deposit.length === 0) return <p>{t('crosschain:No Deposits')}</p>
+        if(Array.isArray(deposit) && deposit.length > 0) {
+            deposit = deposit[0]
+        }
+
+        const depositStartTime = dayjs.unix(deposit.deposit_time);
+        const depositEndTime = depositStartTime.add(30 * deposit.duration, 'day');
+
+        return <p>{deposit.amount} RING <span className={styles.depositItem}>({t('crosschain:Deposit ID')}: {deposit.deposit_id} {t('Time')}: {depositStartTime.format('YYYY/MM/DD')} - {depositEndTime.format('YYYY/MM/DD')})</span></p>;
+    }
+
+    renderDepositHistoryDetail = (amount, deposit) => {
+        const { t } = this.props;
+        if(!deposit) return null;
+
+        const depositStartTime = dayjs.unix(deposit.start);
+        const depositEndTime = depositStartTime.add(30 * deposit.month, 'day');
+
+        return <p>{formatBalance(Web3.utils.toBN(amount), 'ether')} RING ({t('crosschain:Time')}: {depositStartTime.format('YYYY/MM/DD')} - {depositEndTime.format('YYYY/MM/DD')})</p>;
+    }
+
+    getDepositByID = (id) => {
+        const { ethereumDeposits } = this.state;
+        if(!ethereumDeposits) {
+            return null
+        }
+
+        const r = ethereumDeposits.filter((deposit) => {
+            return deposit.deposit_id === parseInt(id);
+        })
+
+        return r
+    }
+
     checkedBall = (id, e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -448,7 +605,7 @@ class Claims extends Component {
                         </Form.Group>
                         <div className={styles.buttonBox}>
                             <Button variant="outline-purple" onClick={this.toResult}>{t('crosschain:search')}</Button>
-                            <Button disabled variant="outline-purple">{networkType === 'crab' ? t(`crosschain:claimEnd`) : t(`crosschain_ethtron:claimEnd`)}</Button>
+                            <Button variant="outline-purple" disabled={networkType !== 'eth'} onClick={() => this.toClaims(2)}>{networkType === 'eth' ? t(`crosschain:claim`) : t(`crosschain:come soon`)}</Button>
                         </div>
                     </div>
                 </div>
@@ -456,24 +613,24 @@ class Claims extends Component {
                 {networkType === 'crab' ? <div className={styles.formBox}>
                     <div className={styles.stepRoadMap}>
                         <h3>{t('crosschain:Roadmap for cross-chain transfers')}</h3>
-                        <div className={styles.stepRoadMapItem}>
+                        <div className={`${styles.stepRoadMapItem} ${styles.stepRoadMapItemDone}`}>
                             <div>
-                                <p>{t('crosschain:Phase 1')}</p>
+                                <p><img src={roadmapStatus0} alt="end"></img><span>{t('crosschain:Phase 1')}</span></p>
                                 <p>{t('crosschain:In progress')}</p>
                             </div>
                             <p>{t('crosschain:The RING in genesis swaps will arrive after launching the Darwinia mainnet and will be sent to the destination account by Genesis Block.')}</p>
                         </div>
                         <div className={styles.stepRoadMapItem}>
                             <div>
-                                <p>{t('crosschain:Phase 2')}</p>
-                                <p>2020 Q4</p>
+                                <p><img src={roadmapStatus1} alt="start"></img><span>{t('crosschain:Phase 2')}</span></p>
+                                <p>2021</p>
                             </div>
                             <p>{t('crosschain:Cross-chain swaps at this stage will arrive immediately (network delays may occur),but only support One-way swaps to the Darwinia main network.')}</p>
                         </div>
-                        <div className={styles.stepRoadMapItem}>
+                        <div className={`${styles.stepRoadMapItem} ${styles.stepRoadMapItemDone}`}>
                             <div>
-                                <p>{t('crosschain:Phase 3')}</p>
-                                <p>2020 Q4+</p>
+                                <p><img src={roadmapStatus2} alt="start"></img><span>{t('crosschain:Phase 3')}</span></p>
+                                <p>2021</p>
                             </div>
                             <p>{t('crosschain:Cross-chain swaps at this stage will arrive immediately (network delays may occur), and support two-way or multi-way swaps.')}</p>
                         </div>
@@ -483,24 +640,24 @@ class Claims extends Component {
                 {networkType === 'eth' || networkType === 'tron'  ? <div className={styles.formBox}>
                     <div className={styles.stepRoadMap}>
                         <h3>{t('crosschain_ethtron:Roadmap for cross-chain transfers')}</h3>
-                        <div className={styles.stepRoadMapItem}>
+                        <div className={`${styles.stepRoadMapItem} ${styles.stepRoadMapItemDone}`}>
                             <div>
-                                <p>{t('crosschain_ethtron:Phase 1')}</p>
-                            <p>{t('crosschain:In progress')}</p>
+                                <p><img src={roadmapStatus0} alt="end"></img><span>{t('crosschain_ethtron:Phase 1')}</span></p>
+                                <p>{t('crosschain:In progress')}</p>
                             </div>
                             <p>{t('crosschain_ethtron:The cross-chain transfers at this stage will arrive after launching the Darwinia mainnet and will be sent to the destination account by Genesis Block')}</p>
                         </div>
                         <div className={styles.stepRoadMapItem}>
                             <div>
-                                <p>{t('crosschain_ethtron:Phase 2')}</p>
-                                <p>2020 Q4</p>
+                                <p><img src={roadmapStatus1} alt="start"></img><span>{t('crosschain_ethtron:Phase 2')}</span></p>
+                                <p>{networkType === 'tron' ? '2021' : '2020 Q4'}</p>
                             </div>
                             <p>{t('crosschain_ethtron:Cross-chain transfers at this stage will arrive immediately (network delays may occur),but only support One-way transfers to the Darwinia main network')}</p>
                         </div>
-                        <div className={styles.stepRoadMapItem}>
+                        <div className={`${styles.stepRoadMapItem} ${styles.stepRoadMapItemDone}`}>
                             <div>
-                                <p>{t('crosschain_ethtron:Phase 3')}</p>
-                                <p>2020 Q4+</p>
+                                <p><img src={roadmapStatus2} alt="start"></img><span>{t('crosschain_ethtron:Phase 3')}</span></p>
+                                <p>{networkType === 'tron' ? '2021' : '2020 Q4'}</p>
                             </div>
                             <p>{t('crosschain_ethtron:Cross-chain transfers at this stage will arrive immediately (network delays may occur), and support two-way or multi-way transfers')}</p>
                         </div>
@@ -512,9 +669,13 @@ class Claims extends Component {
 
     step2 = () => {
         const { t } = this.props
-        const { networkType, account, status, darwiniaAddress, ringBalance, ktonBalance, tokenType, crossChainBalanceText, crossChainBalance } = this.state
+        const { networkType, account, status, darwiniaAddress, ringBalance, isApproving, ethereumDeposits, ktonBalance, tokenType, crossChainBalanceText, crossChainBalance, isAllowanceIssuing, currentDepositID,
+            crossChainFee } = this.state
         const explorerUrl = this.renderExplorerUrl()
         const middleScreen = isMiddleScreen()
+
+        const isSufficientFee = ringBalance.gte(crossChainFee);
+
         return (
             <div>
                 {this.renderHeader()}
@@ -527,8 +688,10 @@ class Claims extends Component {
                         {status === 3 ? <>
                             <h1><img alt="" src={labelTitleLogo} /><span>{t('crosschain:Darwinia Network account')}：</span></h1>
                             <p>{darwiniaAddress}</p>
-                            <h1><img alt="" src={labelTitleLogo} /><span>{t('crosschain:Amount')}：</span></h1>
-                            <p>{`${formatBalance(crossChainBalance, 'ether')} ${tokenType.toUpperCase()}`}</p>
+                            <h1><img alt="" src={labelTitleLogo} /><span>{t('crosschain:Detail')}：</span></h1>
+                            {tokenType === 'ring' || tokenType === 'kton' ? <p>{`${formatBalance(crossChainBalance, 'ether')} ${tokenType.toUpperCase()}`}</p> : null}
+                            {tokenType === 'deposit' ? this.renderDepositItem(this.getDepositByID(currentDepositID)) : null}
+
                         </> : null}
                     </div>
                 </div> : null}
@@ -546,7 +709,7 @@ class Claims extends Component {
                                 {t('crosschain:Please be sure to fill in the real Darwinia mainnet account, and keep the account recovery files such as mnemonic properly.')}
                             </Form.Text>
 
-                            <Form.Label>{t('crosschain:Cross-chain transfer token')}</Form.Label>
+                            <Form.Label>{t('crosschain:Asset Types')}</Form.Label>
                             <Form.Control as="select" value={tokenType}
                                 onChange={(value) => this.setValue('tokenType', value, null, () => {
                                     this.setState({
@@ -555,22 +718,90 @@ class Claims extends Component {
                                 })}>
                                 <option value="ring">RING</option>
                                 <option value="kton">KTON</option>
+                                <option value="deposit">{t('crosschain:Deposit')}</option>
                             </Form.Control>
 
-                            <Form.Label>{t('crosschain:Amount')}</Form.Label>
-                            <InputRightWrap text={t('crosschain:MAX')} onClick={
-                                () => {
-                                    this.setValue('crossChainBalance', {target: {value: formatBalance(this.state[`${tokenType}Balance`], 'ether')}}, this.toWeiBNMiddleware, this.setBNValue)
-                                }
-                            }>
-                                <Form.Control type="number" placeholder={`${t('crosschain:Balance')} : ${formatBalance(this.state[`${tokenType}Balance`], 'ether')}`}
-                                    autoComplete="off"
-                                    value={crossChainBalanceText}
-                                    onChange={(value) => this.setValue('crossChainBalance', value, this.toWeiBNMiddleware, this.setBNValue)} />
-                            </InputRightWrap>
+                            {tokenType === 'ring' ?
+                                <>
+                                    <Form.Label>{t('crosschain:Amount')}</Form.Label>
+                                    <InputRightWrap text={t('crosschain:MAX')} onClick={
+                                        () => {
+                                            this.setValue('crossChainBalance', {target: {value: formatBalance(ringBalance.gt(crossChainFee) ? ringBalance.sub(crossChainFee) : Web3.utils.toBN(0), 'ether')}}, this.toWeiBNMiddleware, this.setBNValue)
+                                        }
+                                    }>
+                                        <Form.Control type="number" placeholder={`${t('crosschain:Balance')} : ${formatBalance(this.state[`${tokenType}Balance`], 'ether')}`}
+                                            autoComplete="off"
+                                            value={crossChainBalanceText}
+                                            onChange={(value) => this.setValue('crossChainBalance', value, this.toWeiBNMiddleware, this.setBNValue)} />
+                                    </InputRightWrap>
+                                </>
+                            : null}
+
+                            {tokenType === 'kton' ?
+                                <>
+                                    <Form.Label>{t('crosschain:Amount')}</Form.Label>
+                                    <InputRightWrap text={t('crosschain:MAX')} onClick={
+                                        () => {
+                                            this.setValue('crossChainBalance', {target: {value: formatBalance(this.state[`${tokenType}Balance`], 'ether')}}, this.toWeiBNMiddleware, this.setBNValue)
+                                        }
+                                    }>
+                                        <Form.Control type="number" placeholder={`${t('crosschain:Balance')} : ${formatBalance(this.state[`${tokenType}Balance`], 'ether')}`}
+                                            autoComplete="off"
+                                            value={crossChainBalanceText}
+                                            onChange={(value) => this.setValue('crossChainBalance', value, this.toWeiBNMiddleware, this.setBNValue)} />
+                                    </InputRightWrap>
+                                </>
+                            : null}
+
+                            {tokenType === 'deposit' ?
+                                <>
+                                    <Form.Label>{t('crosschain:Select Deposit')}</Form.Label>
+
+                                    <Dropdown as={ButtonGroup} className={styles.reactSelect} onSelect={(eventKey) => {
+                                        this.setState({
+                                            currentDepositID: eventKey
+                                        })
+                                    }}>
+                                        {/* {!ethereumDeposits || ethereumDeposits.length === 0 ?
+                                            <Dropdown.Toggle id="ethereum-deposit">{t('No Deposits')}</Dropdown.Toggle>
+                                            : null
+                                        } */}
+                                        <Dropdown.Toggle as="div" className={styles.reactSelectToggle} id="ethereum-deposit-toggle">
+                                            {this.renderDepositItem(this.getDepositByID(currentDepositID))}
+                                            </Dropdown.Toggle>
+                                        <Dropdown.Menu className="super-colors">
+                                        {ethereumDeposits && ethereumDeposits.length > 0 && ethereumDeposits.map((item) => {
+                                            return <Dropdown.Item active={item.deposit_id === currentDepositID} key={item.deposit_id} eventKey={item.deposit_id}>{this.renderDepositItem(item)}</Dropdown.Item>
+                                        })}
+                                        </Dropdown.Menu>
+                                    </Dropdown>
+                                    {/* <Form.Control as="select" value={currentDepositID}
+                                        onChange={(value) => this.setValue('currentDepositID', value, null, () => {
+
+                                        })}>
+                                        {!ethereumDeposits || ethereumDeposits.length === 0 ?
+                                            <option value="">{t('No Deposits')}</option>
+                                            : null
+                                        }
+                                        {ethereumDeposits && ethereumDeposits.length > 0 && ethereumDeposits.map((item) => {
+                                            return <option key={item.deposit_id} value={item.deposit_id}>{this.renderDepositItem(item)}</option>
+                                        })}
+                                    </Form.Control> */}
+                                </>
+                            : null}
+                            {tokenType === 'ring' || tokenType ==='kton' ? <Form.Text muted className={`${styles.feeTip} ${isSufficientFee ? '' : 'text-muted'}`}>
+                                {t(`crosschain:Crosschain transfer fee. {{fee}} RING. (Account Balance. {{ring}} RING)`, {
+                                    fee: formatBalance(crossChainFee, 'ether').toString(),
+                                    ring: formatBalance(this.state[`ringBalance`], 'ether').toString()
+                                })}
+                            </Form.Text> : null}
                         </Form.Group>
+
                         <div className={styles.buttonBox}>
-                            <Button variant="color" onClick={this.buildInGenesis}>{t('crosschain:Submit')}</Button>
+                            { isAllowanceIssuing || tokenType === 'deposit' ?
+                                <Button disabled={!isSufficientFee} variant="color" onClick={this.redeemToken}>{t('crosschain:Submit')}</Button> :
+                                <Button disabled={isApproving} variant="color" onClick={this.approveRingToIssuing}>{isApproving ? t('crosschain:Approving') : t('crosschain:Approve')}</Button>
+                            }
                             <Button variant="outline-purple" onClick={() => this.goBack(1)}>{t('crosschain:Back')}</Button>
                         </div>
                     </div>
@@ -634,7 +865,7 @@ class Claims extends Component {
                 {status === 3 ? <div className={styles.formBox}>
                     <div className={`${styles.networkBox} ${styles.hashBox} claims-network-box`}>
                         <Form.Group controlId="signatureGroup">
-                            <Form.Label>{t('crosschain:Confirmed！After Darwinia mainnet launched, you will receive this cross-chain transfer.')}</Form.Label>
+                            <Form.Label>{t('crosschain:The transaction has been sent, please check the transfer progress in the cross-chain history.')}</Form.Label>
                             <a href={explorerUrl} target="_blank" rel="noopener noreferrer">{explorerUrl}</a>
                         </Form.Group>
                         <div className={styles.buttonBox}>
@@ -699,6 +930,21 @@ class Claims extends Component {
                 </div>
                 : null}
             {history ? history.map((item) => {
+                let step = 2;
+                const isDeposit = item.currency.toUpperCase() === 'DEPOSIT';
+                let depositInfo = JSON.parse(item.deposit || '{}');
+
+                if(item.is_crosschain) {
+                    if(item.is_relayed) {
+                        step = 3;
+                    }
+                    if(item.is_relayed && item.darwinia_tx !== "") {
+                        step = 4;
+                    }
+                } else {
+                    step = 4;
+                }
+
                 return (<div className={styles.historyItem} key={item.tx}>
                     <div>
                         <h3>{t('crosschain:Time')}</h3>
@@ -708,21 +954,37 @@ class Claims extends Component {
                         <h3>{t('crosschain:Cross-chain direction')}</h3>
                         <p>{textTransform(parseChain(item.chain), 'capitalize')} -> Darwinia MainNet</p>
                     </div>
-                    <div>
-                        <h3>{t('crosschain:Amount')}</h3>
-                        <p>{formatBalance(Web3.utils.toBN(item.amount), 'ether')} {item.currency.toUpperCase()}</p>
-                    </div>
+                    {isDeposit ?
+                        <>
+                            <div>
+                                <h3>{t('crosschain:Asset')}</h3>
+                                <p>{t('crosschain:Deposit ID')}: {depositInfo.deposit_id}</p>
+                            </div>
+                            <div>
+                                <h3>{t('crosschain:Detail')}</h3>
+                                {this.renderDepositHistoryDetail(item.amount, depositInfo)}
+                            </div>
+                        </> :
+                        <div>
+                            <h3>{t('crosschain:Amount')}</h3>
+                            <p>{formatBalance(Web3.utils.toBN(item.amount), 'ether')} {item.currency.toUpperCase()}</p>
+                        </div>
+                    }
                     <div>
                         <h3>{t('crosschain:Destination account')}</h3>
                         <p>{encodeAddress('0x' + item.target, 18)}</p>
                     </div>
                     <div className={styles.line}></div>
-                    {this.renderTransferProgress(item.chain, 'darwinia', 3, {
+                    {this.renderTransferProgress(item.chain, 'darwinia', step, {
                         from: {
                             tx: item.tx,
                             chain: item.chain
+                        },
+                        to: {
+                            tx: item.darwinia_tx,
+                            chain: 'darwinia'
                         }
-                    })}
+                    }, item.is_crosschain)}
                 </div>)
             }) : null}
         </>
@@ -760,7 +1022,7 @@ class Claims extends Component {
                         <p>{item.target}</p>
                     </div>
                     <div className={styles.line}></div>
-                    {this.renderTransferProgress('crab', 'darwinia', 3, {
+                    {this.renderTransferProgress('crab', 'darwinia', 4, {
                         from: {
                             tx: item.extrinsic_index,
                             chain: 'crab'
@@ -799,14 +1061,15 @@ class Claims extends Component {
         return isStyle ? styles[className] : className
     }
 
-    renderTransferProgress = (from, to, step, hash) => {
+    renderTransferProgress = (from, to, step, hash, hasRelay = false) => {
         const { t } = this.props
         return (
             <div className={styles.transferProgress}>
                 <div className={styles.iconBox}>
                     <div><img src={stepStartIcon} alt="tx"></img></div>
                     <div className={`${this.renderProgress(step, 3)}`}><img src={txProgressIcon[`step${this.renderProgress(step, 2, false)}${textTransform(from, 'capitalize')}Icon`]} alt="tx"></img></div>
-                    <div className={`${this.renderProgress(step, 3)}`}><img src={txProgressIcon[`step${this.renderProgress(step, 3, false)}${textTransform(to, 'capitalize')}Icon`]} alt="tx"></img></div>
+                    { hasRelay ? <div className={`${this.renderProgress(step, 3)}`}><img src={txProgressIcon[`step${this.renderProgress(step, 3, false)}RelayIcon`]} alt="tx"></img></div> : null}
+                    <div className={`${this.renderProgress(step, 4)}`}><img src={txProgressIcon[`step${this.renderProgress(step, 4, false)}${textTransform(to, 'capitalize')}Icon`]} alt="tx"></img></div>
                 </div>
                 <div className={styles.titleBox}>
                     <div>
@@ -816,8 +1079,12 @@ class Claims extends Component {
                         <p>{t(`crosschain:${textTransform(parseChain(from), 'capitalize')} Confirmed`)}</p>
                         <Button className={styles.hashBtn} variant="outline-purple" target="_blank" href={this.renderExplorerUrl(hash.from.tx, hash.from.chain)}>{t('crosschain:Txhash')}</Button>
                     </div>
-                    <div className={`${this.renderProgress(step, 3)}`}>
+                    { hasRelay ? <div className={`${this.renderProgress(step, 3)}`}>
+                        <p>{t(`crosschain:ChainRelay Confirmed`)}</p>
+                    </div> : null }
+                    <div className={`${this.renderProgress(step, 4)}`}>
                         <p>{t('crosschain:Darwinia Confirmed')}</p>
+                        { step >=4 && hash.to.tx ? <Button className={styles.hashBtn} variant="outline-purple" target="_blank" href={this.renderExplorerUrl(hash.to.tx, hash.to.chain)}>{t('crosschain:Txhash')}</Button> : null}
                     </div>
                 </div>
             </div>
@@ -855,7 +1122,8 @@ class Claims extends Component {
         const domain = {
             eth: `${config.ETHERSCAN_DOMAIN[lng]}/tx/`,
             tron: `${config.TRONSCAN_DOMAIN}/#transaction/`,
-            crab: `https://crab.subscan.io/extrinsic/`
+            crab: `https://crab.subscan.io/extrinsic/`,
+            darwinia: `https://darwinia-cc1.subscan.io/extrinsic/`,
         }
 
         let urlHash = _hash || txhash;

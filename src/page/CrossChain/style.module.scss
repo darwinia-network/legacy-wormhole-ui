@@ -1,5 +1,45 @@
 @import "../../style/index";
 
+.reactSelect {
+   display: flex;
+   -webkit-border-radius: 2px;
+   background: url('./img/select-bg.png') center right no-repeat;
+   background-size: 40px 40px;
+   display: block;
+   width: 100%;
+   height: calc(1.5em + .75rem + 2px);
+   padding: .375rem .75rem;
+   font-size: 1rem;
+   font-weight: 400;
+   line-height: 1.5;
+   color: #495057;
+   background-color: #fff;
+   background-clip: padding-box;
+   border: 1px solid #2a2635;
+   border-radius: 2px;
+   transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+   p{
+     margin-bottom: 0;
+   }
+   a{
+     text-align: left;
+   }
+   div:last-child:not(:first-child) {
+    width: 100%;
+    margin-left: -13px;
+   }
+
+}
+
+.reactSelectToggle {
+  display: flex;
+
+}
+
+.reactSelectToggle::after {
+  display: none;
+}
+
 .faq {
   text-align: left;
   padding: 60px 0 100px 0;
@@ -141,6 +181,10 @@
     word-break: break-word;
   }
 
+  .depositItem {
+    color: #95939B;
+  }
+
   .connectAccountBox {
     padding: 15px;
     margin-bottom: 15px;
@@ -172,6 +216,7 @@
   .connectInfoBox {
     background: #F5F4F7;
     padding: 20px;
+    border-radius: 4px;
     h1 {
       font-size: 14px;
       font-weight: normal;
@@ -253,6 +298,10 @@
   }
 }
 
+.feeTip {
+  font-size: 14px;
+}
+
 .transferProgress {
   display: flex;
   flex-direction: column;
@@ -321,12 +370,12 @@
     color: #333;
     margin-bottom: 20px;
   }
-  img{
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-    margin-left: 10px;
-  }
+  // img{
+  //   width: 20px;
+  //   height: 20px;
+  //   cursor: pointer;
+  //   margin-left: 10px;
+  // }
   .stepRoadMapItem {
     margin-bottom: 8px;
     div{
@@ -338,14 +387,38 @@
         font-size: 16px;
         margin-bottom: 0;
         word-break: break-all;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+          img {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+          }
+          span {
+            position: relative;
+            top: 2px;
+          }
       }
       p:first-child{
         font-weight: bold;
       }
     }
     p{
-      color: $crosschain-text-normal;
+      color: $crosschain-text-main;
       font-size: 14px;
+    }
+  }
+
+  .stepRoadMapItemDone {
+    div {
+      p {
+        color: $crosschain-text-disabled;
+      }
+    }
+
+    p {
+      color: $crosschain-text-disabled;
     }
   }
 }

@@ -6,8 +6,11 @@ import ConfigJson from './config';
 import Web3 from 'web3';
 import { checkAddress, decodeAddress, encodeAddress, setSS58Format } from '@polkadot/util-crypto';
 import BN from 'bn.js';
+import _ from 'lodash';
 import genesisData from './genesis';
 import TokenABI from './tokenABI';
+import BankABI from './bankABI';
+import RegistryABI from './registryABI';
 const { ApiPromise, WsProvider } = require('@darwinia/api');
 
 function buf2hex(buffer) { // buffer is an ArrayBuffer
@@ -15,6 +18,60 @@ function buf2hex(buffer) { // buffer is an ArrayBuffer
 }
 
 export const config = ConfigJson[process.env.REACT_APP_CHAIN];
+
+/**
+ * Ethereum Function, Approve Ring to Issuing
+ * @param {*} callback
+ */
+export async function approveRingToIssuing(account, hashCallback, confirmCallback) {
+    let web3js = new Web3(window.ethereum || window.web3.currentProvider);
+    const contract = new web3js.eth.Contract(TokenABI, config['RING_ETH_ADDRESS']);
+
+    contract.methods.approve(config.ETHEREUM_DARWINIA_ISSUING, '100000000000000000000000000').send({ from: account }).on('transactionHash', (hash) => {
+        hashCallback && hashCallback(hash);
+    }).on('confirmation', () => {
+        confirmCallback && confirmCallback();
+    }).catch((e) => {
+        console.log(e)
+    })
+}
+
+/**
+ * Check if Issuing has sufficient transfer authority
+ * @param {*} amount
+ */
+export async function checkIssuingAllowance(from, amount) {
+    let web3js = new Web3(window.ethereum || window.web3.currentProvider);
+
+    const erc20Contract = new web3js.eth.Contract(TokenABI, config.RING_ETH_ADDRESS)
+    const allowanceAmount = await erc20Contract.methods.allowance(from, config.ETHEREUM_DARWINIA_ISSUING).call()
+    console.log('checkIssuingAllowance-amount', allowanceAmount.toString());
+    return !Web3.utils.toBN(allowanceAmount).lt(Web3.utils.toBN(amount || '10000000000000000000000000'))
+}
+
+/**
+ * Get deposit by address
+ * @param {*} amount
+ */
+export async function getEthereumBankDepositByAddress(from) {
+    let web3js = new Web3(window.ethereum || window.web3.currentProvider);
+
+    const erc20Contract = new web3js.eth.Contract(BankABI, config.ETHEREUM_DARWINIA_BANK)
+    const deposits = await erc20Contract.methods.getDepositIds(from).call()
+    return deposits || []
+}
+
+/**
+ * Get fee of crosschain transfer.
+ * @param {*} amount
+ */
+export async function getEthereumToDarwiniaCrossChainFee() {
+    let web3js = new Web3(window.ethereum || window.web3.currentProvider);
+
+    const erc20Contract = new web3js.eth.Contract(RegistryABI, config.REGISTRY_ETH_ADDRESS)
+    const fee = await erc20Contract.methods.uintOf('0x55494e545f4252494447455f4645450000000000000000000000000000000000').call()
+    return fee || 0
+}
 
 function connectEth(accountsChangedCallback, t) {
     if (typeof window.ethereum !== 'undefined' || typeof window.web3 !== 'undefined') {
@@ -143,6 +200,32 @@ function buildInGenesisEth(account, params, callback) {
     })
 }
 
+function redeemTokenEth(account, params, callback) {
+    let web3js = new Web3(window.ethereum || window.web3.currentProvider);
+    const contract = new web3js.eth.Contract(TokenABI, config[`${params.tokenType.toUpperCase()}_ETH_ADDRESS`]);
+
+    contract.methods.transferFrom(account, config['ETHEREUM_DARWINIA_ISSUING'], params.value, params.toHex).send({ from: account }).on('transactionHash', (hash) => {
+        callback && callback(hash)
+    }).on('confirmation', () => {
+
+    }).catch((e) => {
+        console.log(e)
+    })
+}
+
+function redeemDepositEth(account, params, callback) {
+    let web3js = new Web3(window.ethereum || window.web3.currentProvider);
+    const contract = new web3js.eth.Contract(BankABI, config[`ETHEREUM_DARWINIA_BANK`]);
+
+    contract.methods.burnAndRedeem(params.depositID, params.toHex).send({ from: account }).on('transactionHash', (hash) => {
+        callback && callback(hash)
+    }).on('confirmation', () => {
+
+    }).catch((e) => {
+        console.log(e)
+    })
+}
+
 async function buildInGenesisTron(account, params, callback) {
     const tronwebjs = window.tronWeb
     let contract = await tronwebjs.contract().at(config[`${params.tokenType.toUpperCase()}_TRON_ADDRESS`])
@@ -257,6 +340,55 @@ export function buildInGenesis(type, account, params, callback, t) {
     }
 }
 
+export function redeemToken(type, account, params, callback, t) {
+    const checkResult = checkAddress(params.to, config.S58_PREFIX);
+    console.log('redeemToken', checkResult, params, config.S58_PREFIX);
+    if (!checkResult[0]) {
+        formToast(t(`crosschain:The entered {{account}} account is incorrect`, {
+            replace: {
+                account: config.NETWORK_NAME,
+            }
+        }))
+        return
+    }
+
+    if (params.value.eq(new BN(0))) {
+        formToast(t(`crosschain:The transfer amount cannot be 0`))
+        return
+    }
+
+    const decodedAddress = buf2hex(decodeAddress(params.to, false, config.S58_PREFIX).buffer)
+    params.toHex = '0x' + decodedAddress
+
+    if (type === 'eth' && (params.tokenType === 'ring' || params.tokenType === 'kton')) {
+        redeemTokenEth(account, params, callback)
+    }
+
+    if (type === 'eth' && (params.tokenType === 'deposit')) {
+        redeemDepositEth(account, params, callback)
+    }
+}
+
+export function redeemDeposit(type, account, params, callback, t) {
+    const checkResult = checkAddress(params.to, config.S58_PREFIX);
+    console.log('redeemToken', checkResult, params, config.S58_PREFIX);
+    if (!checkResult[0]) {
+        formToast(t(`crosschain:The entered {{account}} account is incorrect`, {
+            replace: {
+                account: config.NETWORK_NAME,
+            }
+        }))
+        return
+    }
+
+    const decodedAddress = buf2hex(decodeAddress(params.to, false, config.S58_PREFIX).buffer)
+    params.toHex = '0x' + decodedAddress
+
+    if (type === 'eth' && (params.tokenType === 'deposit')) {
+        redeemDepositEth(account, params, callback)
+    }
+}
+
 export const formToast = (text) => {
     toast.info(text, {
         position: toast.POSITION.TOP_RIGHT,
@@ -309,6 +441,21 @@ export const wxRequest = async (params = {}, url) => {
 
 export const getClaimsInfo = (params) => wxRequest(params, `${config.SUBSCAN_API}/api/other/claims`)
 
+export const getEthereumToDarwiniaCrossChainInfo = async (params, cb, failedcb) => {
+    let json = await wxRequest(params, `${config.DAPP_API}/api/redeem`);
+    if (json.code === 0) {
+        if (json.data.length === 0) {
+            json = {
+                data: []
+            }
+        }
+
+        cb && cb(json.data)
+    } else {
+        failedcb && failedcb()
+    }
+}
+
 export const getBuildInGenesisInfo = async (params, cb, failedcb) => {
     let json = await wxRequest(params, `${config.DAPP_API}/api/ringBurn`);
     if (json.code === 0) {
@@ -336,6 +483,25 @@ export const getCringGenesisSwapInfo = async (params, cb, failedcb) => {
             item.target = encodeAddress(params.query.address, config.S58_PREFIX);
             return item;
         }))
+    } else {
+        failedcb && failedcb()
+    }
+}
+
+export const getEthereumBankDeposit = async (params, cb, failedcb) => {
+    let json = await wxRequest(params, `${config.EVOLUTION_LAND_DOMAIN}/api/bank/gringotts`)
+    if (json.code === 0) {
+        if (!json.data.list || json.data.list.length === 0) {
+            cb && cb([])
+            return;
+        }
+        const depositsOnChain = await getEthereumBankDepositByAddress(params.query.address);
+        const r = _.filter(json.data.list, (item) => {
+            console.log(item)
+            return depositsOnChain.includes(item.deposit_id.toString());
+        });
+
+        cb && cb(r)
     } else {
         failedcb && failedcb()
     }
