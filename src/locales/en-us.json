@@ -32,7 +32,7 @@
     "step_3": "Success",
     "Select Chain": "Please confirm the network and connect to the wallet:",
     "search": "Cross-chain History",
-    "claim": "Cross-chain Swap",
+    "claim": "Cross-chain Transfer",
     "claimEnd": "Phase 1: Genesis swap has been closed",
     "Roadmap for cross-chain transfers": "Roadmap for cross-chain transfers:",
     "Phase 1":"Phase 1: Genesis swap",
