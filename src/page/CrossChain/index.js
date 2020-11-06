@@ -675,7 +675,6 @@ class Claims extends Component {
         const middleScreen = isMiddleScreen()
 
         const isSufficientFee = ringBalance.gte(crossChainFee);
-
         return (
             <div>
                 {this.renderHeader()}
@@ -799,7 +798,7 @@ class Claims extends Component {
 
                         <div className={styles.buttonBox}>
                             { isAllowanceIssuing || tokenType === 'deposit' ?
-                                <Button disabled={!isSufficientFee} variant="color" onClick={this.redeemToken}>{t('crosschain:Submit')}</Button> :
+                                <Button disabled={!isSufficientFee && (tokenType !== 'deposit')} variant="color" onClick={this.redeemToken}>{t('crosschain:Submit')}</Button> :
                                 <Button disabled={isApproving} variant="color" onClick={this.approveRingToIssuing}>{isApproving ? t('crosschain:Approving') : t('crosschain:Approve')}</Button>
                             }
                             <Button variant="outline-purple" onClick={() => this.goBack(1)}>{t('crosschain:Back')}</Button>
