@@ -30,7 +30,7 @@
     "web3": "^1.2.6",
     "animejs": "3.2.0",
     "@polkadot/extension-dapp": "^0.33.4",
-    "@darwinia/api": "^0.3.0-beta.12"
+    "@darwinia/api": "^1.0.2"
   },
   "scripts": {
     "start_dev": "PORT=3036 REACT_APP_CHAIN=development react-scripts start",

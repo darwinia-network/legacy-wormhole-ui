@@ -172,7 +172,7 @@ const chainIcons = {
 
 const lineConfig = [
     [1, 2, false, true],
-    [3, 1, true, false],
+    [3, 1, true, true],
     [3, 2, true, false],
     [3, 4, true, false],
     [2, 4, true, false],
@@ -582,6 +582,7 @@ class Claims extends Component {
     }
 
     onChangePath = (path) => {
+        console.log(path);
         this.setState(path)
     }
 

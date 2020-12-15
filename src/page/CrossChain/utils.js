@@ -7,10 +7,10 @@ import Web3 from 'web3';
 import { checkAddress, decodeAddress, encodeAddress, setSS58Format } from '@polkadot/util-crypto';
 import BN from 'bn.js';
 import _ from 'lodash';
-import genesisData from './genesis';
 import TokenABI from './tokenABI';
 import BankABI from './bankABI';
 import RegistryABI from './registryABI';
+import { pangolinType, darwiniaType } from '../../util/polkadotjsType';
 const { ApiPromise, WsProvider } = require('@darwinia/api');
 
 function buf2hex(buffer) { // buffer is an ArrayBuffer
@@ -71,6 +71,21 @@ export async function getEthereumToDarwiniaCrossChainFee() {
     const erc20Contract = new web3js.eth.Contract(RegistryABI, config.REGISTRY_ETH_ADDRESS)
     const fee = await erc20Contract.methods.uintOf('0x55494e545f4252494447455f4645450000000000000000000000000000000000').call()
     return fee || 0
+}
+
+/**
+ * Get fee of crosschain transfer.
+ * @param {*} amount
+ */
+export async function getDarwiniaToEthereumCrossChainFee() {
+    try {
+        await window.darwiniaApi.isReady;
+        const crosschainFee = await window.darwiniaApi.consts.ethereumBacking.advancedFee();
+        return crosschainFee;
+    } catch (error) {
+        console.log(error);
+        return Web3.utils.toBN(50000000000);
+    }
 }
 
 function connectEth(accountsChangedCallback, t) {
@@ -139,9 +154,39 @@ function connectTron(accountsChangedCallback, t) {
     }
 }
 
+function getWssProvideType (type) {
+    switch (type) {
+        case 'pangolin':
+            return pangolinType;
+            break;
+        case 'darwinia':
+            return darwiniaType;
+            break;
+        default:
+            return {};
+            break;
+    }
+}
+
+async function connectNodeProvider(wss, type = 'darwinia') {
+    try{
+        if (!window.darwiniaApi) {
+            const provider = new WsProvider(wss);
+            const typeJson = getWssProvideType(type);
+            console.log(typeJson)
+            // Create the API and wait until ready
+            window.darwiniaApi = new ApiPromise({ provider , types: typeJson });
+            await window.darwiniaApi.isReady;
+        }
+    }catch (error) {
+        console.log(error);
+    }
+}
+
 async function connectSubstrate(accountsChangedCallback, t, networkType) {
     const allInjected = await web3Enable('wormhole.darwinia.network');
     const allAccounts = await web3Accounts();
+
     if (!allInjected || allInjected.length === 0) {
         formToast(t('common:Please install Polkadot Extension'));
         return;
@@ -150,6 +195,17 @@ async function connectSubstrate(accountsChangedCallback, t, networkType) {
     if (!allAccounts || allAccounts.length === 0) {
         formToast(t('common:Polkadot Extension has no account'));
         return;
+    }
+
+    switch (networkType) {
+        case 'crab':
+            await connectNodeProvider('wss://crab.darwinia.network', 'crab');
+            break;
+        case 'darwinia':
+            // connectNodeProvider('wss://cc1.darwinia.network');
+            await connectNodeProvider('ws://t1.hkg.itering.com:9944', 'darwinia');
+        default:
+            break;
     }
 
     accountsChangedCallback && accountsChangedCallback(networkType, allAccounts);
@@ -257,11 +313,27 @@ export function isMiddleScreen() {
 async function buildInGenesisCrab(account, params, callback, t) {
     try {
         console.log('buildInGenesisCrab', { account, params, callback }, params.value.toString())
-        if (window.crabApi) {
-            await window.crabApi.isReady;
+        if (window.darwiniaApi) {
+            await window.darwiniaApi.isReady;
             const injector = await web3FromAddress(account);
-            window.crabApi.setSigner(injector.signer);
-            const hash = await window.crabApi.tx.crabIssuing.swapAndBurnToGenesis(params.value)
+            window.darwiniaApi.setSigner(injector.signer);
+            const hash = await window.darwiniaApi.tx.crabIssuing.swapAndBurnToGenesis(params.value)
+            .signAndSend(account);
+            callback && callback(hash);
+        }
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+async function ethereumBackingLockDarwinia(account, params, callback, t) {
+    try {
+        console.log('ethereumBackingLock', { account, params, callback }, params.ring.toString(), params.kton.toString())
+        if (window.darwiniaApi) {
+            await window.darwiniaApi.isReady;
+            const injector = await web3FromAddress(account);
+            window.darwiniaApi.setSigner(injector.signer);
+            const hash = await window.darwiniaApi.tx.ethereumBacking.lock(params.ring, params.kton, params.to)
             .signAndSend(account);
             callback && callback(hash);
         }
@@ -271,16 +343,21 @@ async function buildInGenesisCrab(account, params, callback, t) {
 }
 
 export function connect(type, callback, t) {
-    if (type === 'tron') {
-        connectTron(callback, t)
-    }
-
-    if (type === 'eth') {
-        connectEth(callback, t)
-    }
-
-    if (type === 'crab') {
-        connectSubstrate(callback, t, 'crab')
+    switch (type) {
+        case 'tron':
+            connectTron(callback, t)
+            break;
+        case 'eth':
+            connectEth(callback, t)
+            break;
+        case 'crab':
+            connectSubstrate(callback, t, 'crab')
+            break;
+        case 'darwinia':
+            connectSubstrate(callback, t, 'darwinia')
+            break;
+        default:
+            break;
     }
 }
 
@@ -305,6 +382,13 @@ export function sign(type, account, text, callback, t) {
     if (type === 'eth') {
         signEth(account, decodedAddress, callback)
     }
+}
+
+export function crossChainFromDarwiniaToEthereum(
+    account, params, callback, t
+) {
+    console.log(111, account, params)
+    ethereumBackingLockDarwinia(account, params, callback, t);
 }
 
 export function buildInGenesis(type, account, params, callback, t) {
@@ -394,21 +478,6 @@ export const formToast = (text) => {
         position: toast.POSITION.TOP_RIGHT,
         className: 'darwinia-toast'
     });
-}
-
-
-export function getAirdropData(type, account) {
-    if (!account) return Web3.utils.toBN(0);
-
-    if (type === 'tron') {
-        return Web3.utils.toBN(genesisData.tron[window.tronWeb.address.toHex(account)] || 0);
-    }
-
-    if (type === 'eth') {
-        const dotAirdropNumber = Web3.utils.toBN(genesisData.dot[account] || 0);
-        const ethAirdropNumber = Web3.utils.toBN(genesisData.eth[account] || 0);
-        return dotAirdropNumber.add(ethAirdropNumber);
-    }
 }
 
 export function formatBalance(bn = Web3.utils.toBN(0), unit = 'gwei') {
@@ -583,18 +652,14 @@ export async function getTokenBalanceTron(account = '') {
     }
 }
 
-export async function getTokenBalanceCrab(account = '') {
-    try {
-        if (!window.crabApi) {
-            const provider = new WsProvider('wss://crab.darwinia.network');
 
-            // Create the API and wait until ready
-            window.crabApi = new ApiPromise({ provider });
-            await window.crabApi.isReady;
-        }
-        await window.crabApi.isReady;
-        const usableBalance = await window.crabApi.rpc.balances.usableBalance(0, account);
-        return [usableBalance.usableBalance.toString(), '0'];
+export async function getTokenBalanceDarwinia(account = '') {
+    try {
+        await window.darwiniaApi.isReady;
+        // type = 0 query ring balance.  type = 1 query kton balance.
+        const ringUsableBalance = await window.darwiniaApi.rpc.balances.usableBalance(0, account);
+        const ktonUsableBalance = await window.darwiniaApi.rpc.balances.usableBalance(1, account);
+        return [ringUsableBalance.usableBalance.toString(), ktonUsableBalance.usableBalance.toString()];
     } catch (error) {
         console.log(error);
         return ['0', '0']
@@ -608,8 +673,8 @@ export function getTokenBalance(networkType, account) {
     if (networkType === 'tron') {
         return getTokenBalanceTron(account)
     }
-    if (networkType === 'crab') {
-        return getTokenBalanceCrab(account)
+    if (networkType === 'crab' || networkType === 'darwinia') {
+        return getTokenBalanceDarwinia(account)
     }
 
     return ['0', '0']
