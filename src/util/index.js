@@ -1,5 +1,7 @@
 
 export function parseChain(chain, transform) {
+  if(!chain) return '';
+
   const _chain = chain.toLowerCase();
   const map = {
       'eth': 'ethereum',

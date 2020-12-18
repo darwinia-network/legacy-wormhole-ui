@@ -387,7 +387,6 @@ export function sign(type, account, text, callback, t) {
 export function crossChainFromDarwiniaToEthereum(
     account, params, callback, t
 ) {
-    console.log(111, account, params)
     ethereumBackingLockDarwinia(account, params, callback, t);
 }
 
@@ -540,6 +539,21 @@ export const getBuildInGenesisInfo = async (params, cb, failedcb) => {
     }
 }
 
+export const getDarwiniaToEthereumGenesisSwapInfo = async (params, cb, failedcb) => {
+    let json = await wxRequest(params, `${config.DAPP_API}/api/ethereumBacking/locks`)
+
+    if (json.code === 0) {
+        if (!json.data.list || json.data.list.length === 0) {
+            cb && cb([])
+            return;
+        }
+
+        cb && cb(json.data.list)
+    } else {
+        failedcb && failedcb()
+    }
+}
+
 export const getCringGenesisSwapInfo = async (params, cb, failedcb) => {
     let json = await wxRequest(params, `${config.SUBSCAN_API}/api/other/crabissuing`)
     if (json.code === 0) {
@@ -681,6 +695,8 @@ export function getTokenBalance(networkType, account) {
 }
 
 export function textTransform(text, type) {
+    if(!text) return '';
+
     if (type === 'capitalize') {
         return text.charAt(0).toUpperCase() + text.slice(1)
     }
@@ -699,4 +715,8 @@ export function remove0x(text) {
         return text.slice(2)
     }
     return text;
+}
+
+export function substrateAddressToPublicKey(address) {
+    return buf2hex(decodeAddress(address, false, config.S58_PREFIX).buffer);
 }

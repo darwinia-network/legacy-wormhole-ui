@@ -11,7 +11,8 @@ import {
     connect, sign, formToast, config, formatBalance, getBuildInGenesisInfo,
     getTokenBalance, buildInGenesis, textTransform, remove0x, convertSS58Address, isMiddleScreen,
     getCringGenesisSwapInfo, redeemToken, redeemDeposit, checkIssuingAllowance, approveRingToIssuing, getEthereumBankDeposit,
-    getEthereumToDarwiniaCrossChainInfo, getEthereumToDarwiniaCrossChainFee, crossChainFromDarwiniaToEthereum, getDarwiniaToEthereumCrossChainFee
+    getEthereumToDarwiniaCrossChainInfo, getEthereumToDarwiniaCrossChainFee, crossChainFromDarwiniaToEthereum, getDarwiniaToEthereumCrossChainFee,
+    getDarwiniaToEthereumGenesisSwapInfo, substrateAddressToPublicKey
 } from './utils'
 import { InputRightWrap } from '../../components/InputRightWrap'
 import { parseChain } from '../../util';
@@ -288,12 +289,46 @@ class Claims extends Component {
                     })
                 }, t);
                 break;
+            case 'tron':
+            case 'crab':
+                connect(networkType, (_networkType, _account, subscribe) => {
+                    let initAccount = ''
+
+                    // this.querySubscribe && this.querySubscribe();
+                    // this.querySubscribe = subscribe;
+                    if (Array.isArray(_account) && _account.length > 0) {
+                        initAccount = _account[0].address
+                    } else {
+                        initAccount = _account
+                    }
+
+                    this.setState({
+                        history: null,
+                        account: {
+                            ...account,
+                            [_networkType]: initAccount,
+                            [`${_networkType}List`]: _account,
+                            isReady: false,
+                            crossChainFee: Web3.utils.toBN(0),
+                        }
+                    }, async () => {
+                        if (this.state.account[_networkType]) {
+                            this.setState({
+                                status: status
+                            })
+                            if (status === 4) {
+                                this.queryClaims()
+                                return;
+                            }
+                        }
+                    })
+                }, t);
+                break;
             case 'darwinia':
                 this.setState({
                     account: {
                         ...account,
                         isReady: false,
-
                     },
                     status
                 }, () => {
@@ -582,6 +617,25 @@ class Claims extends Component {
                 await getCringGenesisSwapInfo({
                     query: { address: address },
                     method: "post"
+                }, (data) => {
+                    this.setState({
+                        history: data
+                    })
+                }, () => {
+                    this.setState({
+                        history: []
+                    })
+                });
+                break;
+            case "darwinia":
+                address = account[networkType]
+                await getDarwiniaToEthereumGenesisSwapInfo({
+                    query: {
+                        address: substrateAddressToPublicKey(address),
+                        row: 10,
+                        page: 0
+                    },
+                    method: "get"
                 }, (data) => {
                     this.setState({
                         history: data
@@ -1168,9 +1222,9 @@ class Claims extends Component {
                     <div className={`${styles.connectAccountBox} claims-network-box`}>
                         <h1><img alt="" src={labelTitleLogo} /><span>{t('crosschain:Connected to')}：</span></h1>
                         <p>{account[networkType]}</p>
-                        {networkType === 'crab' ? <Form.Group controlId="darwinaAddressGroup">
+                        {networkType === 'crab' || networkType === 'darwinia' ? <Form.Group controlId="darwinaAddressGroup">
                             <Form.Control as="select" value={account[networkType]}
-                                onChange={(value) => this.setCurrentAccount('crab', value, async (account) => {
+                                onChange={(value) => this.setCurrentAccount(networkType, value, async (account) => {
                                     // const balances = await getTokenBalance('crab', account);
                                     // this.setState({
                                     //     ringBalance: Web3.utils.toBN(balances[0]),
@@ -1186,7 +1240,9 @@ class Claims extends Component {
                         </Form.Group> : null}
                     </div>
                     {networkType === 'eth' || networkType === 'tron' ? this.renderEthereumTronHistory(history) : null}
+                    {networkType === 'darwinia' ? this.renderDarwiniaToEthereumHistory(history) : null}
                     {networkType === 'crab' ? this.renderCrabHistory(history) : null}
+
                     <div className={styles.buttonBox}>
                         <Button variant="outline-gray" onClick={() => this.goBack(1)}>{t('crosschain:Back')}</Button>
                     </div>
@@ -1205,7 +1261,7 @@ class Claims extends Component {
                 : null}
             {history && history.length === 0 ?
                 <div className={styles.historyEmpty}>
-                    <p>{t('No Cross-chain transfer history')}</p>
+                    <p>{t('crosschain:No Cross-chain transfer history')}</p>
                 </div>
                 : null}
             {history ? history.map((item) => {
@@ -1269,6 +1325,67 @@ class Claims extends Component {
         </>
     }
 
+    renderDarwiniaToEthereumHistory = (history) => {
+        const { t } = this.props;
+
+        return <>
+            {!history ?
+                <div className="d-flex flex-wrap justify-content-center pb-4">
+                    <Spinner animation="border" />
+                </div>
+                : null}
+            {history && history.length === 0 ?
+                <div className={styles.historyEmpty}>
+                    <p>{t('crosschain:No Cross-chain transfer history')}</p>
+                </div>
+                : null}
+            {history ? history.map((item) => {
+                let step = 2;
+
+                if (item.is_crosschain) {
+                    if (item.is_relayed) {
+                        step = 3;
+                    }
+                    if (item.is_relayed && item.ethereum_tx !== "") {
+                        step = 4;
+                    }
+                } else {
+                    step = 4;
+                }
+
+                return (<div className={styles.historyItem} key={item.tx}>
+                    <div>
+                        <h3>{t('crosschain:Time')}</h3>
+                        <p>{dayjs.unix(item.block_timestamp).format('YYYY-MM-DD HH:mm:ss ZZ')}</p>
+                    </div>
+                    <div>
+                        <h3>{t('crosschain:Cross-chain direction')}</h3>
+                        <p>Darwinia Mainnet -> Ethereum</p>
+                    </div>
+                    <div>
+                        <h3>{t('crosschain:Amount')}</h3>
+                        <p>{formatBalance(Web3.utils.toBN(item.ring_value), 'gwei')} RING{item.kton_value != '0' ? (' / ' + formatBalance(Web3.utils.toBN(item.kton_value), 'gwei') + ' KTON'): "" }</p>
+                    </div>
+                    <div>
+                        <h3>{t('crosschain:Destination account')}</h3>
+                        <p>{item.target}</p>
+                    </div>
+                    <div className={styles.line}></div>
+                    {this.renderTransferProgress('darwinia', 'eth', step, {
+                        from: {
+                            tx: item.extrinsic_index,
+                            chain: 'darwinia'
+                        },
+                        to: {
+                            tx: '',
+                            chain: 'eth'
+                        }
+                    }, true)}
+                </div>)
+            }) : null}
+        </>
+    }
+
     renderCrabHistory = (history) => {
         const { t } = this.props;
         return <>
@@ -1279,7 +1396,7 @@ class Claims extends Component {
                 : null}
             {history && history.length === 0 ?
                 <div className={styles.historyEmpty}>
-                    <p>{t('No Cross-chain transfer history')}</p>
+                    <p>{t('crosschain:No Cross-chain transfer history')}</p>
                 </div>
                 : null}
             {history ? history.map((item) => {
@@ -1306,7 +1423,8 @@ class Claims extends Component {
                             tx: item.extrinsic_index,
                             chain: 'crab'
                         }
-                    })}
+                    }, false)}
+
                 </div>)
             }) : null}
         </>
@@ -1362,8 +1480,8 @@ class Claims extends Component {
                         <p>{t(`crosschain:ChainRelay Confirmed`)}</p>
                     </div> : null}
                     <div className={`${this.renderProgress(step, 4)}`}>
-                        <p>{t('crosschain:Darwinia Confirmed')}</p>
-                        {step >= 4 && hash.to.tx ? <Button className={styles.hashBtn} variant="outline-purple" target="_blank" href={this.renderExplorerUrl(hash.to.tx, hash.to.chain)}>{t('crosschain:Txhash')}</Button> : null}
+                        <p>{t(`crosschain:${textTransform(parseChain(to), 'capitalize')} Confirmed`)}</p>
+                        {step >= 4 && hash.to && hash.to.tx ? <Button className={styles.hashBtn} variant="outline-purple" target="_blank" href={this.renderExplorerUrl(hash.to.tx, hash.to.chain)}>{t('crosschain:Txhash')}</Button> : null}
                     </div>
                 </div>
             </div>
