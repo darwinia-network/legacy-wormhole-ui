@@ -9,9 +9,15 @@ import BN from 'bn.js';
 import _ from 'lodash';
 import TokenABI from './tokenABI';
 import BankABI from './bankABI';
+// import DarwiniaToEthereumRelayABI from './abi/Relay'
+import DarwiniaToEthereumTokenIssuingABI from './abi/TokenIssuing'
 import RegistryABI from './registryABI';
 import { pangolinType, darwiniaType } from '../../util/polkadotjsType';
-const { ApiPromise, WsProvider } = require('@darwinia/api');
+import { ApiPromise, WsProvider } from '@darwinia/api';
+import {convert} from '../../util/mmrConvert/ckb_merkle_mountain_range_bg';
+import { hexToU8a } from '@polkadot/util';
+
+import { TypeRegistry } from '@polkadot/types';
 
 function buf2hex(buffer) { // buffer is an ArrayBuffer
     return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('');
@@ -100,13 +106,13 @@ function connectEth(accountsChangedCallback, t) {
                         formToast(t('common:Ethereum network type does not match'));
                         return;
                     }
-                    if (window.ethereum.on) {
-                        subscribe = window.ethereum.on('accountsChanged', (accounts) => {
-                            if (accounts.length > 0) {
-                                accountsChangedCallback && accountsChangedCallback('eth', accounts[0].toLowerCase());
-                            }
-                        })
-                    }
+                    // if (window.ethereum.on) {
+                    //     subscribe = window.ethereum.on('accountsChanged', (accounts) => {
+                    //         if (accounts.length > 0) {
+                    //             accountsChangedCallback && accountsChangedCallback('eth', accounts[0].toLowerCase());
+                    //         }
+                    //     })
+                    // }
 
                     if (account.length > 0) {
                         accountsChangedCallback && accountsChangedCallback('eth', account[0].toLowerCase(), subscribe);
@@ -204,6 +210,7 @@ async function connectSubstrate(accountsChangedCallback, t, networkType) {
         case 'darwinia':
             // connectNodeProvider('wss://cc1.darwinia.network');
             await connectNodeProvider('ws://t1.hkg.itering.com:9944', 'darwinia');
+            break;
         default:
             break;
     }
@@ -548,7 +555,7 @@ export const getDarwiniaToEthereumGenesisSwapInfo = async (params, cb, failedcb)
             return;
         }
 
-        cb && cb(json.data.list)
+        cb && cb(json.data.list, json.data)
     } else {
         failedcb && failedcb()
     }
@@ -720,3 +727,145 @@ export function remove0x(text) {
 export function substrateAddressToPublicKey(address) {
     return buf2hex(decodeAddress(address, false, config.S58_PREFIX).buffer);
 }
+
+export function encodeBlockHeader(blockHeaderStr) {
+    const blockHeaderObj = JSON.parse(blockHeaderStr);
+    const registry = new TypeRegistry();
+    return registry.createType('Header',{
+        "parentHash": blockHeaderObj.parent_hash,
+        "number": blockHeaderObj.block_number,
+        "stateRoot": blockHeaderObj.state_root,
+        "extrinsicsRoot": blockHeaderObj.extrinsics_root,
+        "digest": {
+            logs: blockHeaderObj.digest
+        }
+    });
+}
+
+export async function getMPTProof(hash = '') {
+    if(window.darwiniaApi) {
+        const proof = await window.darwiniaApi.rpc.state.getReadProof(['0xf8860dda3d08046cf2706b92bf7202eaae7a79191c90e76297e0895605b8b457'], hash);
+        const registry = new TypeRegistry();
+
+        return registry.createType('Vec<Bytes>',proof.proof.toJSON());
+    }
+}
+
+function trimSpace(s){
+    return s.replace(/(^\s*)|(\s*$)/g, "");
+}
+
+export async function getMMRProof(blockNumber, mmrBlockNumber, blockHash) {
+    console.log('getMMRProof', {blockNumber, mmrBlockNumber, blockHash})
+    if(window.darwiniaApi) {
+        const proof = await window.darwiniaApi.rpc.headerMMR.genProof(blockNumber, mmrBlockNumber);
+
+        const proofStr = proof.proof.substring(1, proof.proof.length - 1);
+
+        const proofHexStr = proofStr.split(',').map((item) => {
+            return remove0x(trimSpace(item))
+        });
+
+        const encodeProof = proofHexStr.join('');
+
+        console.log(blockNumber, mmrBlockNumber, encodeProof, blockHash )
+
+        const mmrProof = [
+            // eslint-disable-next-line no-undef
+            BigInt(blockNumber), BigInt(proof.mmrSize), hexToU8a('0x' + encodeProof), hexToU8a(blockHash)
+        ]
+
+        const mmrProofConverted = convert(...mmrProof);
+        console.log(mmrProofConverted)
+
+        // parse wasm ouput
+        const [mmrSize, peaksStr, siblingsStr] = mmrProofConverted.split('|');
+        const peaks = peaksStr.split(',');
+        const siblings = siblingsStr.split(',');
+
+        return {
+            mmrSize,
+            peaks,
+            siblings
+        }
+    }
+}
+
+function encodeMMRRootMessage(networkPrefix, mmrIndex, mmrRoot) {
+    const registry = new TypeRegistry();
+    return registry.createType('{"prefix": "Vec<u8>", "index": "Compact<u32>", "root": "H256"}', {
+        prefix: networkPrefix,
+        index: mmrIndex,
+        root: mmrRoot
+    })
+}
+
+export async function ClaimTokenFromD2E({ networkPrefix, mmrIndex, mmrRoot, mmrSignatures, blockNumber, blockHeaderStr, blockHash} , callback, t ) {
+    connect('eth', async(_networkType, _account, subscribe) => {
+
+        const mmrRootMessage = encodeMMRRootMessage(networkPrefix, mmrIndex, mmrRoot);
+        const blockHeader = encodeBlockHeader(blockHeaderStr);
+        const mmrProof = await getMMRProof(blockNumber, mmrIndex, blockHash);
+        const eventsProof = await getMPTProof(blockHash);
+
+        appendRootAndVerifyProof(_account, {
+            message: mmrRootMessage.toHex(),
+            signatures: mmrSignatures.split(','),
+            root: mmrRoot,
+            MMRIndex: mmrIndex,
+            blockNumber: blockNumber,
+            blockHeader: blockHeader.toHex(),
+            peaks: mmrProof.peaks,
+            siblings: mmrProof.siblings,
+            eventsProofStr: eventsProof.toHex()
+        }, (result) => {
+            console.log('appendRootAndVerifyProof', result)
+            callback && callback(result);
+        });
+    })
+}
+
+export async function appendRootAndVerifyProof(account, {
+    message,
+    signatures,
+    root,
+    MMRIndex,
+    blockNumber,
+    blockHeader,
+    peaks,
+    siblings,
+    eventsProofStr
+}, callback) {
+    let web3js = new Web3(window.ethereum || window.web3.currentProvider);
+    const contract = new web3js.eth.Contract(DarwiniaToEthereumTokenIssuingABI, config.DARWINIA_ETHEREUM_TOKEN_ISSUING);
+
+
+    // bytes memory message,
+    // bytes[] memory signatures,
+    // bytes32 root,
+    // uint32 MMRIndex,
+    // uint32 blockNumber,
+    // bytes memory blockHeader,
+    // bytes32[] memory peaks,
+    // bytes32[] memory siblings,
+    // bytes memory eventsProofStr
+    contract.methods.appendRootAndVerifyProof(
+        message,
+        signatures,
+        root,
+        MMRIndex,
+        blockNumber,
+        blockHeader,
+        peaks,
+        siblings,
+        eventsProofStr).send({ from: account }).on('transactionHash', (hash) => {
+        callback && callback(hash)
+    }).on('confirmation', () => {
+
+    }).catch((e) => {
+        console.log(e)
+    })
+}
+
+
+

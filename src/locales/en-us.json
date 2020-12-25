@@ -109,7 +109,12 @@
     "Please make sure to fill in an Ethereum network account that does not belong to the exchange": "Please make sure to fill in an Ethereum network account that does not belong to the exchange.",
     "Please enter the destination account of Ethereum Network": "Please enter the destination account of Ethereum Network",
     "{{token}} Amount": "{{token}} amount",
-    "Ethereum account": "Ethereum account"
+    "Ethereum account": "Ethereum account",
+    "Close": "Close",
+    "The transaction has been sent, the transaction results can be tracked through the block explorer. No need to send the transaction repeatedly before the transaction result comes out.": "The transaction has been sent, the transaction results can be tracked through the block explorer. No need to send the transaction repeatedly before the transaction result comes out.",
+    "Transaction feedback": "Transaction feedback",
+    "View on etherscan": "View on etherscan",
+    "Claim": "Claim"
   },
   "crosschain_ethtron": {
     "claim": "Cross-chain Transfer",

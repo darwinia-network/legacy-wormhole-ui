@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Button, Form, Spinner, Dropdown, ButtonGroup } from 'react-bootstrap'
+import { Button, Form, Spinner, Dropdown, ButtonGroup, Modal } from 'react-bootstrap'
 import { withRouter } from 'react-router-dom';
 
 import 'react-toastify/dist/ReactToastify.css';
@@ -12,7 +12,7 @@ import {
     getTokenBalance, buildInGenesis, textTransform, remove0x, convertSS58Address, isMiddleScreen,
     getCringGenesisSwapInfo, redeemToken, redeemDeposit, checkIssuingAllowance, approveRingToIssuing, getEthereumBankDeposit,
     getEthereumToDarwiniaCrossChainInfo, getEthereumToDarwiniaCrossChainFee, crossChainFromDarwiniaToEthereum, getDarwiniaToEthereumCrossChainFee,
-    getDarwiniaToEthereumGenesisSwapInfo, substrateAddressToPublicKey
+    getDarwiniaToEthereumGenesisSwapInfo, substrateAddressToPublicKey, ClaimTokenFromD2E
 } from './utils'
 import { InputRightWrap } from '../../components/InputRightWrap'
 import { parseChain } from '../../util';
@@ -67,7 +67,7 @@ const txProgressIcon = {
     stepInactiveRelayIcon
 }
 
-class Claims extends Component {
+class CrossChain extends Component {
     constructor(props, context) {
         super(props, context);
         this.state = {
@@ -105,6 +105,10 @@ class Claims extends Component {
             isApproving: false,
             currentDepositID: null,
             crossChainFee: Web3.utils.toBN(0),
+            d2eModalData: {
+                isShow: false,
+                hash: ''
+            }
         }
         this.querySubscribe = null
     }
@@ -116,7 +120,6 @@ class Claims extends Component {
     routerHandle = (location) => {
         const { hash } = location || this.props.location;
         const { onChangePath } = this.props;
-        console.log(1111)
         if (hash === '#tron') {
             this.setState({
                 networkType: 'tron',
@@ -194,6 +197,24 @@ class Claims extends Component {
                 [networkType]: event.target.value
             }
         }, cb.bind(this, event.target.value))
+    }
+
+    setModalShow = (status) => {
+        this.setState({
+            d2eModalData: {
+                ...this.state.d2eModalData,
+                isShow: status
+            }
+        })
+    }
+
+    setModalHash = (hash) => {
+        this.setState({
+            d2eModalData: {
+                ...this.state.d2eModalData,
+                hash
+            }
+        })
     }
 
     toWeiBNMiddleware = (num = 0, unit = 'ether') => {
@@ -325,7 +346,9 @@ class Claims extends Component {
                 }, t);
                 break;
             case 'darwinia':
+
                 this.setState({
+                    history: null,
                     account: {
                         ...account,
                         isReady: false,
@@ -373,8 +396,6 @@ class Claims extends Component {
                         })
                     }, t);
                 })
-
-
                 break;
             default:
                 break;
@@ -560,7 +581,6 @@ class Claims extends Component {
     async queryClaims() {
         const { networkType, account } = this.state;
         let address = ''
-
         switch (networkType) {
             case "eth":
                 address = account[networkType]
@@ -631,8 +651,8 @@ class Claims extends Component {
                 address = account[networkType]
                 await getDarwiniaToEthereumGenesisSwapInfo({
                     query: {
-                        address: substrateAddressToPublicKey(address),
-                        row: 10,
+                        address: '0x' + substrateAddressToPublicKey(address),
+                        row: 200,
                         page: 0
                     },
                     method: "get"
@@ -1084,7 +1104,7 @@ class Claims extends Component {
                                     })
                                     this.setState({
                                         from: networkType[0],
-                                        to: networkType[1]
+                                        to: networkType[1],
                                     })
                                     onChangePath({
                                         from: parseChain(networkType[0]),
@@ -1133,7 +1153,34 @@ class Claims extends Component {
                     </div>
                 </div> : null}
 
-                {networkType === 'eth' || networkType === 'tron' ? <div className={styles.formBox}>
+                {networkType === 'eth' || networkType === 'darwinia' ? <div className={styles.formBox}>
+                    <div className={styles.stepRoadMap}>
+                        <h3>{t('crosschain_ethtron:Roadmap for cross-chain transfers')}</h3>
+                        <div className={`${styles.stepRoadMapItem} ${styles.stepRoadMapItemDone}`}>
+                            <div>
+                                <p><img src={roadmapStatus0} alt="end"></img><span>{t('crosschain_ethtron:Phase 1')}</span></p>
+                                <p>{t('crosschain:In progress')}</p>
+                            </div>
+                            <p>{t('crosschain_ethtron:The cross-chain transfers at this stage will arrive after launching the Darwinia mainnet and will be sent to the destination account by Genesis Block')}</p>
+                        </div>
+                        <div className={`${styles.stepRoadMapItem} ${styles.stepRoadMapItemDone}`}>
+                            <div>
+                                <p><img src={roadmapStatus0} alt="start"></img><span>{t('crosschain_ethtron:Phase 2')}</span></p>
+                                <p>{'2020 Q4'}</p>
+                            </div>
+                            <p>{t('crosschain_ethtron:Cross-chain transfers at this stage will arrive immediately (network delays may occur),but only support One-way transfers to the Darwinia main network')}</p>
+                        </div>
+                        <div className={`${styles.stepRoadMapItem} ${styles.stepRoadMapItemDone}`}>
+                            <div>
+                                <p><img src={roadmapStatus0} alt="start"></img><span>{t('crosschain_ethtron:Phase 3')}</span></p>
+                                <p>{'2020 Q4'}</p>
+                            </div>
+                            <p>{t('crosschain_ethtron:Cross-chain transfers at this stage will arrive immediately (network delays may occur), and support two-way or multi-way transfers')}</p>
+                        </div>
+                    </div>
+                </div> : null}
+
+                {networkType === 'tron' ? <div className={styles.formBox}>
                     <div className={styles.stepRoadMap}>
                         <h3>{t('crosschain_ethtron:Roadmap for cross-chain transfers')}</h3>
                         <div className={`${styles.stepRoadMapItem} ${styles.stepRoadMapItemDone}`}>
@@ -1342,14 +1389,10 @@ class Claims extends Component {
             {history ? history.map((item) => {
                 let step = 2;
 
-                if (item.is_crosschain) {
-                    if (item.is_relayed) {
-                        step = 3;
-                    }
-                    if (item.is_relayed && item.ethereum_tx !== "") {
-                        step = 4;
-                    }
-                } else {
+                if (item.signatures) {
+                    step = 3;
+                }
+                if (item.signatures && item.tx !== "") {
                     step = 4;
                 }
 
@@ -1377,10 +1420,25 @@ class Claims extends Component {
                             chain: 'darwinia'
                         },
                         to: {
-                            tx: '',
+                            tx: item.tx,
                             chain: 'eth'
-                        }
-                    }, true)}
+                        },
+                    }, true, () =>
+                    item.signatures || !item.tx ? <Button variant="outline-purple"  className={styles.hashBtn} onClick={() => {
+                            ClaimTokenFromD2E({
+                                networkPrefix: config.D2E_NETWORK_PREFIX,
+                                mmrIndex: item.mmr_index,
+                                mmrRoot: item.mmr_root,
+                                mmrSignatures: item.signatures,
+                                blockNumber: item.block_num,
+                                blockHeaderStr: item.block_header,
+                                blockHash: item.block_hash
+                            }, (result) => {
+                                this.setModalHash(result);
+                                this.setModalShow(true);
+                            } , t);
+                        }} >{t('crosschain:Claim')}</Button> : null
+                    )}
                 </div>)
             }) : null}
         </>
@@ -1458,8 +1516,10 @@ class Claims extends Component {
         return isStyle ? styles[className] : className
     }
 
-    renderTransferProgress = (from, to, step, hash, hasRelay = false) => {
-        const { t } = this.props
+    renderTransferProgress = (from, to, step, hash, hasRelay = false, relayButton = null) => {
+        const RelayButton = relayButton && relayButton();
+        const { t } = this.props;
+
         return (
             <div className={styles.transferProgress}>
                 <div className={styles.iconBox}>
@@ -1478,6 +1538,7 @@ class Claims extends Component {
                     </div>
                     {hasRelay ? <div className={`${this.renderProgress(step, 3)}`}>
                         <p>{t(`crosschain:ChainRelay Confirmed`)}</p>
+                        { RelayButton ? RelayButton : null}
                     </div> : null}
                     <div className={`${this.renderProgress(step, 4)}`}>
                         <p>{t(`crosschain:${textTransform(parseChain(to), 'capitalize')} Confirmed`)}</p>
@@ -1531,7 +1592,8 @@ class Claims extends Component {
     }
 
     render() {
-        const { status } = this.state
+        const { status, d2eModalData } = this.state
+        const { t } = this.props
         return (
             <div>
                 <div className={styles.claimBox}>
@@ -1539,9 +1601,31 @@ class Claims extends Component {
                     {status === 2 || status === 3 ? this.step2() : null}
                     {status === 4 ? this.step4() : null}
                 </div>
+
+                <Modal
+                    show={d2eModalData.isShow}
+                    onHide={() => this.setModalShow(false)}
+                    aria-labelledby="contained-modal-title-vcenter"
+                    centered
+                    >
+                    <Modal.Header closeButton>
+                        <Modal.Title id="contained-modal-title-vcenter">
+                            {t('crosschain:Transaction feedback')}
+                        </Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <p>
+                            {t('crosschain:The transaction has been sent, the transaction results can be tracked through the block explorer. No need to send the transaction repeatedly before the transaction result comes out.')}
+                            <a href={this.renderExplorerUrl(d2eModalData.hash, 'eth')}>{t('crosschain:View on etherscan')}</a>
+                        </p>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="purple" onClick={() => this.setModalShow(false)}>{t('crosschain:Close')}</Button>
+                    </Modal.Footer>
+                    </Modal>
             </div>
         );
     }
 }
 
-export default withRouter(withTranslation()(Claims));
+export default withRouter(withTranslation()(CrossChain));

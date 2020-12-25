@@ -109,7 +109,12 @@
     "Please make sure to fill in an Ethereum network account that does not belong to the exchange": "请务必填写一个非交易所的以太坊接收地址",
     "Please enter the destination account of Ethereum Network": "请填写跨链接收的以太坊地址",
     "{{token}} Amount": "{{token}} 跨链转账数量",
-    "Ethereum account": "以太坊账号"
+    "Ethereum account": "以太坊账号",
+    "Close": "关闭",
+    "The transaction has been sent, the transaction results can be tracked through the block explorer. No need to send the transaction repeatedly before the transaction result comes out.": "交易已经广播，可以通过区块链浏览器查看结果。在交易确认前，无需重复发送交易。",
+    "Transaction feedback": "交易反馈",
+    "View on etherscan": "去Etherscan.io查看",
+    "Claim": "领取"
   },
   "crosschain_ethtron": {
     "claim": "跨链转账",

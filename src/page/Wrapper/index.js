@@ -187,13 +187,12 @@ const PathConfig = [
     [5, 7, true, false]
 ]
 
-class Claims extends Component {
+class Wrapper extends Component {
     constructor(props, context) {
         super(props, context);
         this.debounceLineFn = null;
         this.state = {
             status: 0,
-            networkType: 'eth',
             tokenType: 'ring',
             account: {
                 eth: '',
@@ -733,4 +732,4 @@ class Claims extends Component {
     }
 }
 
-export default withRouter(withTranslation()(Claims));
+export default withRouter(withTranslation()(Wrapper));
