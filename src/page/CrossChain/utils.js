@@ -168,6 +168,9 @@ function getWssProvideType (type) {
         case 'darwinia':
             return darwiniaType;
             break;
+        case 'crab':
+            return darwiniaType;
+            break;
         default:
             return {};
             break;
@@ -209,7 +212,8 @@ async function connectSubstrate(accountsChangedCallback, t, networkType) {
             break;
         case 'darwinia':
             // connectNodeProvider('wss://cc1.darwinia.network');
-            await connectNodeProvider('ws://t1.hkg.itering.com:9944', 'darwinia');
+            // await connectNodeProvider('ws://t1.hkg.itering.com:9944', 'darwinia');
+            await connectNodeProvider('wss://crab.darwinia.network', 'crab');
             break;
         default:
             break;
@@ -758,8 +762,9 @@ function trimSpace(s){
 export async function getMMRProof(blockNumber, mmrBlockNumber, blockHash) {
     console.log('getMMRProof', {blockNumber, mmrBlockNumber, blockHash})
     if(window.darwiniaApi) {
+        console.log(blockNumber, mmrBlockNumber)
         const proof = await window.darwiniaApi.rpc.headerMMR.genProof(blockNumber, mmrBlockNumber);
-
+        console.log(proof)
         const proofStr = proof.proof.substring(1, proof.proof.length - 1);
 
         const proofHexStr = proofStr.split(',').map((item) => {
@@ -768,7 +773,7 @@ export async function getMMRProof(blockNumber, mmrBlockNumber, blockHash) {
 
         const encodeProof = proofHexStr.join('');
 
-        console.log(blockNumber, mmrBlockNumber, encodeProof, blockHash )
+        console.log(blockNumber, proof.mmrSize.toString(), encodeProof, blockHash )
 
         const mmrProof = [
             // eslint-disable-next-line no-undef
