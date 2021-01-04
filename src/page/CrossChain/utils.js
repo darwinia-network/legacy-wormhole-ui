@@ -213,7 +213,7 @@ async function connectSubstrate(accountsChangedCallback, t, networkType) {
         case 'darwinia':
             // connectNodeProvider('wss://cc1.darwinia.network');
             // await connectNodeProvider('ws://t1.hkg.itering.com:9944', 'darwinia');
-            await connectNodeProvider('ws://107.167.190.243:9944', 'crab');
+            await connectNodeProvider('wss://crab.darwinia.network', 'crab');
             break;
         default:
             break;
