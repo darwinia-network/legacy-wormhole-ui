@@ -40,8 +40,14 @@ code {
 .btn-purple {
     background-color: #3A30DD;
     border-color: #3A30DD;
-    color: #3A30DD;
+    color: #fff;
     font-size: 14px;
+}
+
+
+.btn-purple:hover {
+    color: #fff;
+    text-decoration: none;
 }
 
 .btn-gray:hover {

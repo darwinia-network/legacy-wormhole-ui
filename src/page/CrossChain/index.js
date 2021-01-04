@@ -1424,7 +1424,7 @@ class CrossChain extends Component {
                             chain: 'eth'
                         },
                     }, true, () =>
-                    item.signatures || !item.tx ? <Button variant="outline-purple"  className={styles.hashBtn} onClick={() => {
+                    item.signatures && !item.tx ? <Button variant="outline-purple"  className={styles.hashBtn} onClick={() => {
                             ClaimTokenFromD2E({
                                 networkPrefix: config.D2E_NETWORK_PREFIX,
                                 mmrIndex: item.mmr_index,
@@ -1616,7 +1616,7 @@ class CrossChain extends Component {
                     <Modal.Body>
                         <p>
                             {t('crosschain:The transaction has been sent, the transaction results can be tracked through the block explorer. No need to send the transaction repeatedly before the transaction result comes out.')}
-                            <a href={this.renderExplorerUrl(d2eModalData.hash, 'eth')}>{t('crosschain:View on etherscan')}</a>
+                            <a rel="noopener noreferrer" target="_blank" href={this.renderExplorerUrl(d2eModalData.hash, 'eth')}>{t('crosschain:View on etherscan')}</a>
                         </p>
                     </Modal.Body>
                     <Modal.Footer>

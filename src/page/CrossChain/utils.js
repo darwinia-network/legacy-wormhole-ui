@@ -213,7 +213,7 @@ async function connectSubstrate(accountsChangedCallback, t, networkType) {
         case 'darwinia':
             // connectNodeProvider('wss://cc1.darwinia.network');
             // await connectNodeProvider('ws://t1.hkg.itering.com:9944', 'darwinia');
-            await connectNodeProvider('wss://crab.darwinia.network', 'crab');
+            await connectNodeProvider('ws://107.167.190.243:9944', 'crab');
             break;
         default:
             break;
@@ -812,7 +812,17 @@ export async function ClaimTokenFromD2E({ networkPrefix, mmrIndex, mmrRoot, mmrS
         const blockHeader = encodeBlockHeader(blockHeaderStr);
         const mmrProof = await getMMRProof(blockNumber, mmrIndex, blockHash);
         const eventsProof = await getMPTProof(blockHash);
-
+        console.log('ClaimTokenFromD2E', {
+            message: mmrRootMessage.toHex(),
+            signatures: mmrSignatures.split(','),
+            root: mmrRoot,
+            MMRIndex: mmrIndex,
+            blockNumber: blockNumber,
+            blockHeader: blockHeader.toHex(),
+            peaks: mmrProof.peaks,
+            siblings: mmrProof.siblings,
+            eventsProofStr: eventsProof.toHex()
+        })
         appendRootAndVerifyProof(_account, {
             message: mmrRootMessage.toHex(),
             signatures: mmrSignatures.split(','),
