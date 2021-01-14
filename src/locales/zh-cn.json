@@ -52,7 +52,7 @@
     "Destination account":"接收账号",
     "Please enter the destination account of Darwinia mainnet":"请输入 Darwinia 主网接收账号",
     "Please select Darwinia mainnet destination account":"请选择Darwinia 主网接收账号",
-    "Please select Darwinia mainnet sender account":"请选择Darwinia 主网发送账号",
+    "Please select Darwinia mainnet sender account":"请选择「 Darwinia 主网 」发送账号",
     "Darwinia Network account":"Darwinia 主网账号",
     "Txhash": "查看交易",
     "Airdrop Is Coming": "空投来袭",
@@ -107,14 +107,15 @@
     "Approving": "正在授权...",
     "Crosschain transfer fee. {{fee}} RING. (Account Balance. {{ring}} RING)": "跨链转账手续费：{{fee}} RING （当前账户余额：{{ring}} RING）",
     "Please make sure to fill in an Ethereum network account that does not belong to the exchange": "请务必填写一个非交易所的以太坊接收地址",
-    "Please enter the destination account of Ethereum Network": "请填写跨链接收的以太坊地址",
+    "Please enter the destination account of Ethereum Network": "请选择「 Ethereum 主网 」接收账号",
     "{{token}} Amount": "{{token}} 跨链转账数量",
     "Ethereum account": "以太坊账号",
     "Close": "关闭",
     "The transaction has been sent, the transaction results can be tracked through the block explorer. No need to send the transaction repeatedly before the transaction result comes out.": "交易已经广播，可以通过区块链浏览器查看结果。在交易确认前，无需重复发送交易。",
     "Transaction feedback": "交易反馈",
     "View on etherscan": "去Etherscan.io查看",
-    "Claim": "领取"
+    "Claim": "领取",
+    "Token for cross-chain transfer": "跨链转账数量"
   },
   "crosschain_ethtron": {
     "claim": "跨链转账",

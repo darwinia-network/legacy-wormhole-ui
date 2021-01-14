@@ -299,7 +299,9 @@
 }
 
 .feeTip {
+  margin-top: 10px;
   font-size: 14px;
+  text-align: right;
 }
 
 .transferProgress {
@@ -382,6 +384,7 @@
       display: flex;
       justify-content: space-between;
       margin-bottom: 5px;
+      flex-wrap: wrap;
       p{
         color: $crosschain-text-main;
         font-size: 16px;

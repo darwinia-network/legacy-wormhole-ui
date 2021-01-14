@@ -555,7 +555,7 @@ export const getDarwiniaToEthereumGenesisSwapInfo = async (params, cb, failedcb)
 
     if (json.code === 0) {
         if (!json.data.list || json.data.list.length === 0) {
-            cb && cb([])
+            cb && cb([], {})
             return;
         }
 
@@ -805,42 +805,74 @@ function encodeMMRRootMessage(networkPrefix, mmrIndex, mmrRoot) {
     })
 }
 
-export async function ClaimTokenFromD2E({ networkPrefix, mmrIndex, mmrRoot, mmrSignatures, blockNumber, blockHeaderStr, blockHash} , callback, t ) {
+export async function ClaimTokenFromD2E({ networkPrefix, mmrIndex, mmrRoot, mmrSignatures, blockNumber, blockHeaderStr, blockHash, historyMeta} , callback, t ) {
     connect('eth', async(_networkType, _account, subscribe) => {
 
-        const mmrRootMessage = encodeMMRRootMessage(networkPrefix, mmrIndex, mmrRoot);
-        const blockHeader = encodeBlockHeader(blockHeaderStr);
-        const mmrProof = await getMMRProof(blockNumber, mmrIndex, blockHash);
-        const eventsProof = await getMPTProof(blockHash);
-        console.log('ClaimTokenFromD2E', {
-            message: mmrRootMessage.toHex(),
-            signatures: mmrSignatures.split(','),
-            root: mmrRoot,
-            MMRIndex: mmrIndex,
-            blockNumber: blockNumber,
-            blockHeader: blockHeader.toHex(),
-            peaks: mmrProof.peaks,
-            siblings: mmrProof.siblings,
-            eventsProofStr: eventsProof.toHex()
-        })
-        appendRootAndVerifyProof(_account, {
-            message: mmrRootMessage.toHex(),
-            signatures: mmrSignatures.split(','),
-            root: mmrRoot,
-            MMRIndex: mmrIndex,
-            blockNumber: blockNumber,
-            blockHeader: blockHeader.toHex(),
-            peaks: mmrProof.peaks,
-            siblings: mmrProof.siblings,
-            eventsProofStr: eventsProof.toHex()
-        }, (result) => {
-            console.log('appendRootAndVerifyProof', result)
-            callback && callback(result);
-        });
+        if(historyMeta.mmrRoot && historyMeta.best && historyMeta.best > blockNumber) {
+
+            const blockHeader = encodeBlockHeader(blockHeaderStr);
+            const mmrProof = await getMMRProof(blockNumber, historyMeta.best, blockHash);
+            const eventsProof = await getMPTProof(blockHash);
+
+            console.log('ClaimTokenFromD2E - darwiniaToEthereumVerifyProof', {
+                root: '0x' + historyMeta.mmrRoot,
+                MMRIndex: historyMeta.best,
+                blockNumber: blockNumber,
+                blockHeader: blockHeader.toHex(),
+                peaks: mmrProof.peaks,
+                siblings: mmrProof.siblings,
+                eventsProofStr: eventsProof.toHex()
+            })
+
+            darwiniaToEthereumVerifyProof(_account, {
+                root: '0x' + historyMeta.mmrRoot,
+                MMRIndex: historyMeta.best,
+                blockNumber: blockNumber,
+                blockHeader: blockHeader.toHex(),
+                peaks: mmrProof.peaks,
+                siblings: mmrProof.siblings,
+                eventsProofStr: eventsProof.toHex()
+            }, (result) => {
+                console.log('darwiniaToEthereumVerifyProof', result)
+                callback && callback(result);
+            });
+        } else {
+            const mmrRootMessage = encodeMMRRootMessage(networkPrefix, mmrIndex, mmrRoot);
+            const blockHeader = encodeBlockHeader(blockHeaderStr);
+            const mmrProof = await getMMRProof(blockNumber, mmrIndex, blockHash);
+            const eventsProof = await getMPTProof(blockHash);
+
+            console.log('ClaimTokenFromD2E - darwiniaToEthereumAppendRootAndVerifyProof', {
+                message: mmrRootMessage.toHex(),
+                signatures: mmrSignatures.split(','),
+                root: mmrRoot,
+                MMRIndex: mmrIndex,
+                blockNumber: blockNumber,
+                blockHeader: blockHeader.toHex(),
+                peaks: mmrProof.peaks,
+                siblings: mmrProof.siblings,
+                eventsProofStr: eventsProof.toHex()
+            })
+
+            darwiniaToEthereumAppendRootAndVerifyProof(_account, {
+                message: mmrRootMessage.toHex(),
+                signatures: mmrSignatures.split(','),
+                root: mmrRoot,
+                MMRIndex: mmrIndex,
+                blockNumber: blockNumber,
+                blockHeader: blockHeader.toHex(),
+                peaks: mmrProof.peaks,
+                siblings: mmrProof.siblings,
+                eventsProofStr: eventsProof.toHex()
+            }, (result) => {
+                console.log('appendRootAndVerifyProof', result)
+                callback && callback(result);
+            });
+        }
     })
 }
 
-export async function appendRootAndVerifyProof(account, {
+export async function darwiniaToEthereumAppendRootAndVerifyProof(account, {
     message,
     signatures,
     root,
@@ -853,7 +885,6 @@ export async function appendRootAndVerifyProof(account, {
 }, callback) {
     let web3js = new Web3(window.ethereum || window.web3.currentProvider);
     const contract = new web3js.eth.Contract(DarwiniaToEthereumTokenIssuingABI, config.DARWINIA_ETHEREUM_TOKEN_ISSUING);
-
 
     // bytes memory message,
     // bytes[] memory signatures,
@@ -873,14 +904,48 @@ export async function appendRootAndVerifyProof(account, {
         blockHeader,
         peaks,
         siblings,
-        eventsProofStr).send({ from: account }).on('transactionHash', (hash) => {
-        callback && callback(hash)
-    }).on('confirmation', () => {
-
-    }).catch((e) => {
-        console.log(e)
-    })
+        eventsProofStr).send({ from: account }, function(error, transactionHash) {
+            if(error) {
+               console.log(error);
+               return;
+            }
+            callback && callback(transactionHash);
+        })
 }
 
+export async function darwiniaToEthereumVerifyProof(account, {
+    root,
+    MMRIndex,
+    blockNumber,
+    blockHeader,
+    peaks,
+    siblings,
+    eventsProofStr
+}, callback) {
+    let web3js = new Web3(window.ethereum || window.web3.currentProvider);
+    const contract = new web3js.eth.Contract(DarwiniaToEthereumTokenIssuingABI, config.DARWINIA_ETHEREUM_TOKEN_ISSUING);
+
+    // bytes32 root,
+    // uint32 MMRIndex,
+    // uint32 blockNumber,
+    // bytes memory blockHeader,
+    // bytes32[] memory peaks,
+    // bytes32[] memory siblings,
+    // bytes memory eventsProofStr
+    contract.methods.verifyProof(
+        root,
+        MMRIndex,
+        blockNumber,
+        blockHeader,
+        peaks,
+        siblings,
+        eventsProofStr).send({ from: account }, function(error, transactionHash) {
+            if(error) {
+               console.log(error);
+               return;
+            }
+            callback && callback(transactionHash)
+        })
+}
 
 
