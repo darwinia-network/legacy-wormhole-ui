@@ -106,8 +106,8 @@
     "No Deposits": "无存单",
     "Approving": "正在授权...",
     "Crosschain transfer fee. {{fee}} RING. (Account Balance. {{ring}} RING)": "跨链转账手续费：{{fee}} RING （当前账户余额：{{ring}} RING）",
-    "Please make sure to fill in an Ethereum network account that does not belong to the exchange": "请务必填写一个非交易所的以太坊接收地址",
-    "Please enter the destination account of Ethereum Network": "请选择「 Ethereum 主网 」接收账号",
+    "Please make sure to fill in an Ethereum network account that does not belong to the exchange": "交易确认后，将无法更改账户；请不要填写交易所账户。",
+    "Please enter the destination account of Ethereum Network": "请填写「 Ethereum 主网 」接收账号",
     "{{token}} Amount": "{{token}} 跨链转账数量",
     "Ethereum account": "以太坊账号",
     "Close": "关闭",
@@ -115,7 +115,7 @@
     "Transaction feedback": "交易反馈",
     "View on etherscan": "去Etherscan.io查看",
     "Claim": "领取",
-    "Token for cross-chain transfer": "跨链转账数量"
+    "Token for cross-chain transfer": "跨链转账通证"
   },
   "crosschain_ethtron": {
     "claim": "跨链转账",
