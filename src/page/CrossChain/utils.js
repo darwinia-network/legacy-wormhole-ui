@@ -796,10 +796,11 @@ export async function getMMRProof(blockNumber, mmrBlockNumber, blockHash) {
     }
 }
 
-function encodeMMRRootMessage(networkPrefix, mmrIndex, mmrRoot) {
+function encodeMMRRootMessage(networkPrefix, methodID, mmrIndex, mmrRoot) {
     const registry = new TypeRegistry();
-    return registry.createType('{"prefix": "Vec<u8>", "index": "Compact<u32>", "root": "H256"}', {
+    return registry.createType('{"prefix": "Vec<u8>", "methodID": "[u8; 4; methodID]", "index": "Compact<u32>", "root": "H256"}', {
         prefix: networkPrefix,
+        methodID: methodID,
         index: mmrIndex,
         root: mmrRoot
     })
@@ -837,7 +838,8 @@ export async function ClaimTokenFromD2E({ networkPrefix, mmrIndex, mmrRoot, mmrS
                 callback && callback(result);
             });
         } else {
-            const mmrRootMessage = encodeMMRRootMessage(networkPrefix, mmrIndex, mmrRoot);
+
+            const mmrRootMessage = encodeMMRRootMessage(networkPrefix, '0x479fbdf9', mmrIndex, mmrRoot);
             const blockHeader = encodeBlockHeader(blockHeaderStr);
             const mmrProof = await getMMRProof(blockNumber, mmrIndex, blockHash);
             const eventsProof = await getMPTProof(blockHash);
