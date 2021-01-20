@@ -902,7 +902,6 @@ export async function darwiniaToEthereumAppendRootAndVerifyProof(account, {
         signatures,
         root,
         MMRIndex,
-        blockNumber,
         blockHeader,
         peaks,
         siblings,
@@ -937,7 +936,6 @@ export async function darwiniaToEthereumVerifyProof(account, {
     contract.methods.verifyProof(
         root,
         MMRIndex,
-        blockNumber,
         blockHeader,
         peaks,
         siblings,

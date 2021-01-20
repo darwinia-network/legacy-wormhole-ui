@@ -1413,7 +1413,7 @@ class CrossChain extends Component {
                     step = 4;
                 }
 
-                return (<div className={styles.historyItem} key={item.tx}>
+                return (<div className={styles.historyItem} key={item.extrinsic_index}>
                     <div>
                         <h3>{t('crosschain:Time')}</h3>
                         <p>{dayjs.unix(item.block_timestamp).format('YYYY-MM-DD HH:mm:ss ZZ')}</p>
