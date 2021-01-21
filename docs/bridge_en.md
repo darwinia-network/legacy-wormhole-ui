@@ -1,3 +1,4 @@
+[中文](./bridge.md)
 ### Intruduction
 Wormhole is a web application, it provide some tools to help users to do cross-chain operations. Users select bridgers and by using their own wallet to transfer their token from one chain to another. And the tool displays transfer process and its history in real time. Each operation is decentralized, and all the data can be found on the chain.
 People can transfer token from Darwinia network to Ethereum network by using wormhole on Chrome. And it requires Polkadot and Metamask wallet plugin.
