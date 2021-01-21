@@ -44,6 +44,7 @@ import stepInactiveCrabIcon from './img/tx-step-crab-inactive-icon.svg';
 import stepInactiveRelayIcon from './img/tx-step-relay-inactive-icon.svg';
 
 import roadmapStatus0 from './img/roadmap-status-0.svg';
+import roadmapStatusActive0 from './img/roadmap-status-0-active.svg';
 import roadmapStatus1 from './img/roadmap-status-1.svg';
 import roadmapStatus2 from './img/roadmap-status-2.svg';
 
@@ -1179,17 +1180,17 @@ class CrossChain extends Component {
                             </div>
                             <p>{t('crosschain_ethtron:The cross-chain transfers at this stage will arrive after launching the Darwinia mainnet and will be sent to the destination account by Genesis Block')}</p>
                         </div>
-                        <div className={`${styles.stepRoadMapItem}`}>
+                        <div className={`${styles.stepRoadMapItem}  ${styles.stepRoadMapItemDone}`}>
                             <div>
-                                <p><img src={roadmapStatus1} alt="start"></img><span>{t('crosschain_ethtron:Phase 2')}</span></p>
+                                <p><img src={roadmapStatus0} alt="end"></img><span>{t('crosschain_ethtron:Phase 2')}</span></p>
                                 <p>{'2020 Q4'}</p>
                             </div>
                             <p>{t('crosschain_ethtron:Cross-chain transfers at this stage will arrive immediately (network delays may occur),but only support One-way transfers to the Darwinia main network')}</p>
                         </div>
                         <div className={`${styles.stepRoadMapItem}`}>
                             <div>
-                                <p><img src={roadmapStatus1} alt="start"></img><span>{t('crosschain_ethtron:Phase 3')}</span></p>
-                                <p>{'2020 Q4'}</p>
+                                <p><img src={roadmapStatusActive0} alt="end"></img><span>{t('crosschain_ethtron:Phase 3')}</span></p>
+                                <p>{'2021 Q1'}</p>
                             </div>
                             <p>{t('crosschain_ethtron:Cross-chain transfers at this stage will arrive immediately (network delays may occur), and support two-way or multi-way transfers')}</p>
                         </div>

@@ -86,8 +86,8 @@ export async function getEthereumToDarwiniaCrossChainFee() {
 export async function getDarwiniaToEthereumCrossChainFee() {
     try {
         await window.darwiniaApi.isReady;
-        const crosschainFee = await window.darwiniaApi.consts.ethereumBacking.advancedFee();
-        return crosschainFee;
+        const crosschainFee = window.darwiniaApi.consts.ethereumBacking.advancedFee.toString();
+        return Web3.utils.toBN(crosschainFee);
     } catch (error) {
         console.log(error);
         return Web3.utils.toBN(50000000000);
@@ -211,9 +211,9 @@ async function connectSubstrate(accountsChangedCallback, t, networkType) {
             await connectNodeProvider('wss://crab.darwinia.network', 'crab');
             break;
         case 'darwinia':
-            // connectNodeProvider('wss://cc1.darwinia.network');
+            connectNodeProvider('wss://cc1.darwinia.network', 'darwinia');
             // await connectNodeProvider('ws://t1.hkg.itering.com:9944', 'darwinia');
-            await connectNodeProvider('wss://crab.darwinia.network', 'crab');
+            // await connectNodeProvider('wss://crab.darwinia.network', 'crab');
             break;
         default:
             break;
@@ -871,7 +871,7 @@ export async function ClaimTokenFromD2E({ networkPrefix, mmrIndex, mmrRoot, mmrS
                 callback && callback(result);
             });
         }
-    })
+    }, t)
 }
 
 export async function darwiniaToEthereumAppendRootAndVerifyProof(account, {

@@ -2007,30 +2007,30 @@
   resolved "https://registry.yarnpkg.com/@csstools/normalize.css/-/normalize.css-10.1.0.tgz#f0950bba18819512d42f7197e56c518aa491cf18"
   integrity sha512-ij4wRiunFfaJxjB0BdrYHIH8FxBJpOwNPhhAcunlmPdXudL1WQV1qoP9un6JsEBAgQH+7UXyyjh0g7jTxXK6tg==
 
-"@darwinia/api-options@^1.0.5":
-  version "1.0.5"
-  resolved "https://registry.npmjs.org/@darwinia/api-options/-/api-options-1.0.5.tgz#9a872b1a436e3b8a3e25ef3f03e34770f6c2b465"
-  integrity sha512-ci2Lt64NaNbc5g5hRcX0/4ithKfL4Wm6MlNKUu9oT2mNiKk1hFBwL1H5bNXlF7Bf22qg+abDgSaiDjw2AlCc3w==
+"@darwinia/api-options@^1.0.9":
+  version "1.0.9"
+  resolved "https://registry.npmjs.org/@darwinia/api-options/-/api-options-1.0.9.tgz#7de8f749c163d0a1e1bc392117b254f4fbb5436b"
+  integrity sha512-+gKXq+FZW63q6ZxJV1PmTKC4jBoEKlrSPVTCrmU/GHWMUTunjq3jZRLUa42QcjSACRoQRgcj1yxYRWrb8RXqbw==
   dependencies:
     "@babel/runtime" "^7.11.2"
-    "@darwinia/types" "^1.0.5"
+    "@darwinia/types" "^1.0.9"
     "@polkadot/api" "1.35.0-beta.19"
 
-"@darwinia/api@^1.0.5":
-  version "1.0.5"
-  resolved "https://registry.npmjs.org/@darwinia/api/-/api-1.0.5.tgz#f875574bc7662f7bef6ccacd727bf47ea981f707"
-  integrity sha512-/cWWkZToEpPKS8fmacbdPqnF+kD9+HsW4WK+V+F3IfoRrRtWG/kjzH3VbHG2mNcuN+nsP7gEX2b/haO2NvBWDw==
+"@darwinia/api@^1.0.9":
+  version "1.0.9"
+  resolved "https://registry.npmjs.org/@darwinia/api/-/api-1.0.9.tgz#ac38e6d8c1c0a27e00e6fd0b7c13cf9b1c2ceaf6"
+  integrity sha512-spvMKj0Swccg3trdXSU4NYhyG5da1T5//NLil19cfuR3VMtZ3sxxyIANUPBHeFxhai4ffk/nxr9EKWncbU3RAA==
   dependencies:
     "@babel/runtime" "^7.11.2"
-    "@darwinia/api-options" "^1.0.5"
+    "@darwinia/api-options" "^1.0.9"
     "@polkadot/api" "1.35.0-beta.19"
     "@polkadot/keyring" "^3.5.1"
     "@polkadot/rpc-provider" "1.35.0-beta.19"
 
-"@darwinia/types@^1.0.5":
-  version "1.0.5"
-  resolved "https://registry.npmjs.org/@darwinia/types/-/types-1.0.5.tgz#cd29d9dc1e5c5914d09e7a449dcbe71c587c7a38"
-  integrity sha512-NjwxDcSqqxSyw9fRrUIEfj0ozdq7+ctZPT3lTeQSI/bl9fi/4b9WazvV0juELE7W4GxgN8AXeiFcIvoEYEhhLA==
+"@darwinia/types@^1.0.9":
+  version "1.0.9"
+  resolved "https://registry.npmjs.org/@darwinia/types/-/types-1.0.9.tgz#7aad094e9523f1ffce75f2538b714383c7974631"
+  integrity sha512-eXIzHmaoN4DRXS6B0peMLp0yzHIR228hljSamM3N15i+N+ZZF53CC78QMXoJrRc93qORAfXNo+1uN0alc7ao9A==
   dependencies:
     "@babel/runtime" "^7.11.2"
     "@polkadot/metadata" "1.35.0-beta.19"
