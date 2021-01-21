@@ -1,3 +1,4 @@
+[English](./bridge_en.md)
 ### 基本功能
 虫洞是一个web-app，提供通过darwinia跨链桥用户转账的操作工具，用户根据自己的需要选择跨链桥，并使用自己的钱包向网络发送转账交易，工具实时显示账户的转账进度以及历史记录。所有操作都是去中心化的，数据在链上可查。
 目前虫洞支持 Ethereum <=> Darwinia 网络之间的双向转账，在网页端使用Chrome浏览器，需要安装Polkadot以及metamask钱包
@@ -21,13 +22,3 @@
 * 点击领取按钮，在弹出的Metamask钱包确认发送交易领取Ethereum上的Token
 * 等待交易确认后，至此完成了所有的跨链转账过程，此时可以在跨链记录中查看各个阶段的状态以及交易链接
 ![转账完成](./assets/finish.png)
-
-#### 跨链流程
-* 用户确认跨链转账后，资产通过交易被锁定在Darwinia网络，此时虫洞显示Darwinia网络已经确认
-* authorities收到转账事件后，对高于转账交易所在区块的某个区块的MMR_ROOT做联合签名，当签名达到设定门限后，用户可以向Darwinia请求签名以及区块的MMR_PROOF和交易的Merkle_proof，此时虫洞显示待领取状态。
-* 用户点击领取按钮，将交易的proof和mmr_root签名一同发向Ethereum网络提取转账资产。
-
-整个流程实际完成三件事
-* 用户锁定Darwinia上的资产
-* authorities向Ethereum证明锁定资产交易所在区块的有效性
-* 用户向Ethereum证明交易的有效性并提取资产
