@@ -526,12 +526,12 @@ class CrossChain extends Component {
         }
 
         if (crossChainBalance.gt(balance[`${tokenType}Balance`])) {
-            formToast(t(`The amount exceeds the account available balance`))
+            formToast(t(`crosschain:The amount exceeds the account available balance`))
             return false
         }
 
         if (tokenType === 'ring' && crossChainBalance.gt(balance[`${tokenType}Balance`].sub(crossChainFee))) {
-            formToast(t(`The amount exceeds the account available balance`))
+            formToast(t(`crosschain:The amount exceeds the account available balance`))
             return false
         }
 
@@ -546,7 +546,7 @@ class CrossChain extends Component {
 
 
         if(!Web3.utils.isAddress(recipientAddress)) {
-            formToast(t(`The entered recipient account is incorrect`))
+            formToast(t(`crosschain:The entered recipient account is incorrect`))
             return false
         }
 
@@ -559,17 +559,17 @@ class CrossChain extends Component {
             }
         } catch (error) {
             console.log('check form error:', error)
-            formToast(t(`Amount is wrong`))
+            formToast(t(`crosschain:Amount is wrong`))
             return false
         }
 
         if (crossChainBalance.gt(ringBalance)) {
-            formToast(t(`The amount exceeds the account available balance`))
+            formToast(t(`crosschain:The amount exceeds the account available balance`))
             return false
         }
 
         if (crossChainKtonBalance.gt(ktonBalance)) {
-            formToast(t(`The amount exceeds the account available balance`))
+            formToast(t(`crosschain:The amount exceeds the account available balance`))
             return false
         }
 

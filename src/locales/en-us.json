@@ -115,7 +115,10 @@
     "Transaction feedback": "Transaction feedback",
     "View on etherscan": "View on etherscan",
     "Claim": "Claim",
-    "Token for cross-chain transfer": "Token for cross-chain transfer"
+    "Token for cross-chain transfer": "Token for cross-chain transfer",
+    "Amount is wrong": "Amount is wrong",
+    "The amount exceeds the account available balance": "The amount exceeds the account available balance",
+    "The entered recipient account is incorrect": "The entered recipient account is incorrect"
   },
   "crosschain_ethtron": {
     "claim": "Cross-chain Transfer",
