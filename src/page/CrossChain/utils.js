@@ -211,7 +211,7 @@ async function connectSubstrate(accountsChangedCallback, t, networkType) {
             await connectNodeProvider('wss://crab.darwinia.network', 'crab');
             break;
         case 'darwinia':
-            connectNodeProvider('wss://cc1.darwinia.network', 'darwinia');
+            connectNodeProvider(config.DARWINIA_ETHEREUM_FROM_WSS, 'darwinia');
             // await connectNodeProvider('ws://t1.hkg.itering.com:9944', 'darwinia');
             // await connectNodeProvider('wss://crab.darwinia.network', 'crab');
             break;
@@ -309,6 +309,9 @@ async function buildInGenesisTron(account, params, callback) {
 }
 
 export function convertSS58Address(text, isShort = false) {
+    if(!text) {
+        return '';
+    }
     let address = encodeAddress(text, config.S58_PREFIX)
     const length = 8
     if(isShort) {

@@ -238,6 +238,10 @@ class CrossChain extends Component {
         })
     }
 
+    useQuery = () => {
+        return new URLSearchParams(this.props.location.search);
+    }
+
     toClaims = (status = 2) => {
         const { networkType, account } = this.state;
         const { t } = this.props;
@@ -363,7 +367,14 @@ class CrossChain extends Component {
 
                         // this.querySubscribe && this.querySubscribe();
                         // this.querySubscribe = subscribe;
-                        if (Array.isArray(_account) && _account.length > 0) {
+                        const searchQuery = this.useQuery();
+                        const addressParams = searchQuery.get('address')
+
+                        if (addressParams && _.find(_account, {address: addressParams})) {
+                            initAccount = addressParams;
+                        } else if (this.state.account[_networkType] && _.find(_account, {address: this.state.account[_networkType]})) {
+                            initAccount = this.state.account[_networkType]
+                        } else if (Array.isArray(_account) && _account.length > 0) {
                             initAccount = _account[0].address
                         } else {
                             initAccount = _account
@@ -685,6 +696,9 @@ class CrossChain extends Component {
 
     goBack = (status = 1) => {
         if (status === 1) {
+            const {hash} = this.props.location;
+            this.props.history.replace({hash: hash})
+
             this.setState({
                 hasFetched: false
             })
@@ -837,7 +851,7 @@ class CrossChain extends Component {
                         <div className={styles.formBox}>
                             <div className={`${styles.networkBox} claims-network-box`}>
                                 <Form.Group controlId="darwinaAddressGroup">
-                                    <Form.Label>{t('crosschain:Please enter the destination account of Ethereum mainnet')} <a href={this.renderHelpUrl()} target="_blank"
+                                    <Form.Label>{t('crosschain:Please enter the destination account of Darwinia mainnet')} <a href={this.renderHelpUrl()} target="_blank"
                                         rel="noopener noreferrer"><img alt=""
                                             className={styles.labelIcon} src={helpLogo} /></a> </Form.Label>
                                     <Form.Control type="text" autoComplete="off" placeholder={t('crosschain:Darwinia Network account')} value={darwiniaAddress}
@@ -1279,14 +1293,18 @@ class CrossChain extends Component {
         const { t } = this.props
         const { networkType, account, history } = this.state
         const middleScreen = isMiddleScreen()
+
         return (
             <div>
                 {this.renderHeader()}
                 <div className={styles.formBox}>
                     <div className={`${styles.connectAccountBox} claims-network-box`}>
                         <h1><img alt="" src={labelTitleLogo} /><span>{t('crosschain:Connected to')}：</span></h1>
-                        <p>{account[networkType]}</p>
-                        {networkType === 'crab' || networkType === 'darwinia' ? <Form.Group controlId="darwinaAddressGroup">
+
+                        {networkType === 'crab' || networkType === 'darwinia' ?
+                        <>
+                        <p>{convertSS58Address(account[networkType])}</p>
+                        <Form.Group controlId="darwinaAddressGroup">
                             <Form.Control as="select" value={account[networkType]}
                                 onChange={(value) => this.setCurrentAccount(networkType, value, async (account) => {
                                     // const balances = await getTokenBalance('crab', account);
@@ -1294,6 +1312,16 @@ class CrossChain extends Component {
                                     //     ringBalance: Web3.utils.toBN(balances[0]),
                                     //     darwiniaAddress: convertSS58Address(account)
                                     // })
+                                    const params = new URLSearchParams()
+                                    const {hash} = this.props.location;
+
+                                    if (account) {
+                                        params.append("address", account)
+                                    } else {
+                                        params.delete("address")
+                                    }
+                                    this.props.history.replace({hash: hash, search: params.toString()})
+
                                     this.queryClaims()
                                 })}>
                                 {account[`${networkType}List`]?.map((item, index) => {
@@ -1301,7 +1329,7 @@ class CrossChain extends Component {
                                 })
                                 }
                             </Form.Control>
-                        </Form.Group> : null}
+                        </Form.Group></> : <p>{account[networkType]}</p>}
                     </div>
                     {networkType === 'eth' || networkType === 'tron' ? this.renderEthereumTronHistory(history) : null}
                     {networkType === 'darwinia' ? this.renderDarwiniaToEthereumHistory(history) : null}
