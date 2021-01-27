@@ -7,6 +7,7 @@
 ### Darwinia Mainnet => Ethereum
 #### 操作过程
 1、 打开虫洞主页 https://wormhole.darwinia.network.com
+
 2、 点击悬浮球`Darwinia`，此时悬浮球`Ethereum`下方会显示`跨链转账按钮`，然后点击`跨链转账`按钮进入转账页面。
 ![虫洞主页](./assets/wormhole.png)
 3、 进入转账页面后，第一步需要选择正确的网络，下拉框选择网络为 `Darwinia MainNet -> Ethereum`，点击`跨链转账`按钮，进入账号设置页面。
