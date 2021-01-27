@@ -186,7 +186,6 @@
   }
 
   .connectAccountBox {
-    padding-top: 15px;
     padding-bottom: 15px;
 
     h1 {
@@ -274,7 +273,7 @@
 .historyItem {
   background-color: #F4F4F5;
   padding: 20px;
-  margin-bottom: 20px;
+  margin-bottom: 4rem;
   >div{
     display: flex;
     justify-content: space-between;
@@ -301,6 +300,7 @@
 
 .feeTip {
   margin-top: 10px;
+  margin-bottom: 3rem;
   font-size: 14px;
   text-align: right;
 }
