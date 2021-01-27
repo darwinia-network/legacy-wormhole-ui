@@ -551,7 +551,7 @@ class CrossChain extends Component {
 
     checkFormDarwiniaToEthereum = (unit = 'ether') => {
         const { crossChainBalance, crossChainKtonBalance, crossChainBalanceText, recipientAddress,
-            crossChainKtonBalanceText, ringBalance, ktonBalance } = this.state;
+            crossChainKtonBalanceText, ringBalance, ktonBalance, crossChainFee } = this.state;
 
         const { t } = this.props;
 
@@ -574,7 +574,7 @@ class CrossChain extends Component {
             return false
         }
 
-        if (crossChainBalance.gt(ringBalance)) {
+        if ((crossChainBalance.add(crossChainFee).add(Web3.utils.toBN(2000000000))).gt(ringBalance)) {
             formToast(t(`crosschain:The amount exceeds the account available balance`))
             return false
         }
@@ -995,7 +995,7 @@ class CrossChain extends Component {
                                     <Form.Label>{t('crosschain:Token for cross-chain transfer', { token: 'RING' })}</Form.Label>
                                     <InputWrapWithCheck text={t('crosschain:MAX')} onClick={
                                         () => {
-                                            this.setValue('crossChainBalance', { target: { value: formatBalance(ringBalance.gte(Web3.utils.toBN(2000000000)) ? ringBalance.sub(Web3.utils.toBN(2000000000)) : Web3.utils.toBN(0), 'gwei') } }, (value) => this.toWeiBNMiddleware(value, 'gwei'), this.setRingBalanceText)
+                                            this.setValue('crossChainBalance', { target: { value: formatBalance(ringBalance.gte(Web3.utils.toBN(2000000000).add(crossChainFee)) ? ringBalance.sub(Web3.utils.toBN(2000000000)).sub(crossChainFee) : Web3.utils.toBN(0), 'gwei') } }, (value) => this.toWeiBNMiddleware(value, 'gwei'), this.setRingBalanceText)
                                         }
                                     } label="RING" inputText={crossChainBalanceText} placeholder={`${t('crosschain:Balance')} : ${formatBalance(ringBalance, 'gwei')} RING`}  onChange={(value) => this.setValue('crossChainBalance', value, (value) => this.toWeiBNMiddleware(value, 'gwei'), this.setRingBalanceText)}
                                     defaultIsDisable={false}>
