@@ -7,11 +7,17 @@ import Web3 from 'web3';
 import { checkAddress, decodeAddress, encodeAddress, setSS58Format } from '@polkadot/util-crypto';
 import BN from 'bn.js';
 import _ from 'lodash';
-import genesisData from './genesis';
 import TokenABI from './tokenABI';
 import BankABI from './bankABI';
+// import DarwiniaToEthereumRelayABI from './abi/Relay'
+import DarwiniaToEthereumTokenIssuingABI from './abi/TokenIssuing'
 import RegistryABI from './registryABI';
-const { ApiPromise, WsProvider } = require('@darwinia/api');
+import { pangolinType, darwiniaType } from '../../util/polkadotjsType';
+import { ApiPromise, WsProvider } from '@darwinia/api';
+import {convert} from '../../util/mmrConvert/ckb_merkle_mountain_range_bg';
+import { hexToU8a } from '@polkadot/util';
+
+import { TypeRegistry } from '@polkadot/types';
 
 function buf2hex(buffer) { // buffer is an ArrayBuffer
     return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('');
@@ -73,6 +79,21 @@ export async function getEthereumToDarwiniaCrossChainFee() {
     return fee || 0
 }
 
+/**
+ * Get fee of crosschain transfer.
+ * @param {*} amount
+ */
+export async function getDarwiniaToEthereumCrossChainFee() {
+    try {
+        await window.darwiniaApi.isReady;
+        const crosschainFee = window.darwiniaApi.consts.ethereumBacking.advancedFee.toString();
+        return Web3.utils.toBN(crosschainFee);
+    } catch (error) {
+        console.log(error);
+        return Web3.utils.toBN(50000000000);
+    }
+}
+
 function connectEth(accountsChangedCallback, t) {
     if (typeof window.ethereum !== 'undefined' || typeof window.web3 !== 'undefined') {
         let web3js = new Web3(window.ethereum || window.web3.currentProvider);
@@ -85,13 +106,13 @@ function connectEth(accountsChangedCallback, t) {
                         formToast(t('common:Ethereum network type does not match'));
                         return;
                     }
-                    if (window.ethereum.on) {
-                        subscribe = window.ethereum.on('accountsChanged', (accounts) => {
-                            if (accounts.length > 0) {
-                                accountsChangedCallback && accountsChangedCallback('eth', accounts[0].toLowerCase());
-                            }
-                        })
-                    }
+                    // if (window.ethereum.on) {
+                    //     subscribe = window.ethereum.on('accountsChanged', (accounts) => {
+                    //         if (accounts.length > 0) {
+                    //             accountsChangedCallback && accountsChangedCallback('eth', accounts[0].toLowerCase());
+                    //         }
+                    //     })
+                    // }
 
                     if (account.length > 0) {
                         accountsChangedCallback && accountsChangedCallback('eth', account[0].toLowerCase(), subscribe);
@@ -139,9 +160,42 @@ function connectTron(accountsChangedCallback, t) {
     }
 }
 
+function getWssProvideType (type) {
+    switch (type) {
+        case 'pangolin':
+            return pangolinType;
+            break;
+        case 'darwinia':
+            return darwiniaType;
+            break;
+        case 'crab':
+            return darwiniaType;
+            break;
+        default:
+            return {};
+            break;
+    }
+}
+
+async function connectNodeProvider(wss, type = 'darwinia') {
+    try{
+        if (!window.darwiniaApi) {
+            const provider = new WsProvider(wss);
+            const typeJson = getWssProvideType(type);
+            console.log(typeJson)
+            // Create the API and wait until ready
+            window.darwiniaApi = new ApiPromise({ provider , types: typeJson });
+            await window.darwiniaApi.isReady;
+        }
+    }catch (error) {
+        console.log(error);
+    }
+}
+
 async function connectSubstrate(accountsChangedCallback, t, networkType) {
     const allInjected = await web3Enable('wormhole.darwinia.network');
     const allAccounts = await web3Accounts();
+
     if (!allInjected || allInjected.length === 0) {
         formToast(t('common:Please install Polkadot Extension'));
         return;
@@ -150,6 +204,19 @@ async function connectSubstrate(accountsChangedCallback, t, networkType) {
     if (!allAccounts || allAccounts.length === 0) {
         formToast(t('common:Polkadot Extension has no account'));
         return;
+    }
+
+    switch (networkType) {
+        case 'crab':
+            await connectNodeProvider('wss://crab.darwinia.network', 'crab');
+            break;
+        case 'darwinia':
+            connectNodeProvider(config.DARWINIA_ETHEREUM_FROM_WSS, 'darwinia');
+            // await connectNodeProvider('ws://t1.hkg.itering.com:9944', 'darwinia');
+            // await connectNodeProvider('wss://crab.darwinia.network', 'crab');
+            break;
+        default:
+            break;
     }
 
     accountsChangedCallback && accountsChangedCallback(networkType, allAccounts);
@@ -242,6 +309,9 @@ async function buildInGenesisTron(account, params, callback) {
 }
 
 export function convertSS58Address(text, isShort = false) {
+    if(!text) {
+        return '';
+    }
     let address = encodeAddress(text, config.S58_PREFIX)
     const length = 8
     if(isShort) {
@@ -257,11 +327,27 @@ export function isMiddleScreen() {
 async function buildInGenesisCrab(account, params, callback, t) {
     try {
         console.log('buildInGenesisCrab', { account, params, callback }, params.value.toString())
-        if (window.crabApi) {
-            await window.crabApi.isReady;
+        if (window.darwiniaApi) {
+            await window.darwiniaApi.isReady;
             const injector = await web3FromAddress(account);
-            window.crabApi.setSigner(injector.signer);
-            const hash = await window.crabApi.tx.crabIssuing.swapAndBurnToGenesis(params.value)
+            window.darwiniaApi.setSigner(injector.signer);
+            const hash = await window.darwiniaApi.tx.crabIssuing.swapAndBurnToGenesis(params.value)
+            .signAndSend(account);
+            callback && callback(hash);
+        }
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+async function ethereumBackingLockDarwinia(account, params, callback, t) {
+    try {
+        console.log('ethereumBackingLock', { account, params, callback }, params.ring.toString(), params.kton.toString())
+        if (window.darwiniaApi) {
+            await window.darwiniaApi.isReady;
+            const injector = await web3FromAddress(account);
+            window.darwiniaApi.setSigner(injector.signer);
+            const hash = await window.darwiniaApi.tx.ethereumBacking.lock(params.ring, params.kton, params.to)
             .signAndSend(account);
             callback && callback(hash);
         }
@@ -271,16 +357,21 @@ async function buildInGenesisCrab(account, params, callback, t) {
 }
 
 export function connect(type, callback, t) {
-    if (type === 'tron') {
-        connectTron(callback, t)
-    }
-
-    if (type === 'eth') {
-        connectEth(callback, t)
-    }
-
-    if (type === 'crab') {
-        connectSubstrate(callback, t, 'crab')
+    switch (type) {
+        case 'tron':
+            connectTron(callback, t)
+            break;
+        case 'eth':
+            connectEth(callback, t)
+            break;
+        case 'crab':
+            connectSubstrate(callback, t, 'crab')
+            break;
+        case 'darwinia':
+            connectSubstrate(callback, t, 'darwinia')
+            break;
+        default:
+            break;
     }
 }
 
@@ -305,6 +396,12 @@ export function sign(type, account, text, callback, t) {
     if (type === 'eth') {
         signEth(account, decodedAddress, callback)
     }
+}
+
+export function crossChainFromDarwiniaToEthereum(
+    account, params, callback, t
+) {
+    ethereumBackingLockDarwinia(account, params, callback, t);
 }
 
 export function buildInGenesis(type, account, params, callback, t) {
@@ -396,21 +493,6 @@ export const formToast = (text) => {
     });
 }
 
-
-export function getAirdropData(type, account) {
-    if (!account) return Web3.utils.toBN(0);
-
-    if (type === 'tron') {
-        return Web3.utils.toBN(genesisData.tron[window.tronWeb.address.toHex(account)] || 0);
-    }
-
-    if (type === 'eth') {
-        const dotAirdropNumber = Web3.utils.toBN(genesisData.dot[account] || 0);
-        const ethAirdropNumber = Web3.utils.toBN(genesisData.eth[account] || 0);
-        return dotAirdropNumber.add(ethAirdropNumber);
-    }
-}
-
 export function formatBalance(bn = Web3.utils.toBN(0), unit = 'gwei') {
     if (bn.eqn(0)) return '0';
     return Web3.utils.fromWei(bn, unit).toString();
@@ -466,6 +548,21 @@ export const getBuildInGenesisInfo = async (params, cb, failedcb) => {
         }
 
         cb && cb(json.data)
+    } else {
+        failedcb && failedcb()
+    }
+}
+
+export const getDarwiniaToEthereumGenesisSwapInfo = async (params, cb, failedcb) => {
+    let json = await wxRequest(params, `${config.DAPP_API}/api/ethereumBacking/locks`)
+
+    if (json.code === 0) {
+        if (!json.data.list || json.data.list.length === 0) {
+            cb && cb([], {})
+            return;
+        }
+
+        cb && cb(json.data.list, json.data)
     } else {
         failedcb && failedcb()
     }
@@ -583,18 +680,14 @@ export async function getTokenBalanceTron(account = '') {
     }
 }
 
-export async function getTokenBalanceCrab(account = '') {
-    try {
-        if (!window.crabApi) {
-            const provider = new WsProvider('wss://crab.darwinia.network');
 
-            // Create the API and wait until ready
-            window.crabApi = new ApiPromise({ provider });
-            await window.crabApi.isReady;
-        }
-        await window.crabApi.isReady;
-        const usableBalance = await window.crabApi.rpc.balances.usableBalance(0, account);
-        return [usableBalance.usableBalance.toString(), '0'];
+export async function getTokenBalanceDarwinia(account = '') {
+    try {
+        await window.darwiniaApi.isReady;
+        // type = 0 query ring balance.  type = 1 query kton balance.
+        const ringUsableBalance = await window.darwiniaApi.rpc.balances.usableBalance(0, account);
+        const ktonUsableBalance = await window.darwiniaApi.rpc.balances.usableBalance(1, account);
+        return [ringUsableBalance.usableBalance.toString(), ktonUsableBalance.usableBalance.toString()];
     } catch (error) {
         console.log(error);
         return ['0', '0']
@@ -608,14 +701,16 @@ export function getTokenBalance(networkType, account) {
     if (networkType === 'tron') {
         return getTokenBalanceTron(account)
     }
-    if (networkType === 'crab') {
-        return getTokenBalanceCrab(account)
+    if (networkType === 'crab' || networkType === 'darwinia') {
+        return getTokenBalanceDarwinia(account)
     }
 
     return ['0', '0']
 }
 
 export function textTransform(text, type) {
+    if(!text) return '';
+
     if (type === 'capitalize') {
         return text.charAt(0).toUpperCase() + text.slice(1)
     }
@@ -635,3 +730,225 @@ export function remove0x(text) {
     }
     return text;
 }
+
+export function substrateAddressToPublicKey(address) {
+    return buf2hex(decodeAddress(address, false, config.S58_PREFIX).buffer);
+}
+
+export function encodeBlockHeader(blockHeaderStr) {
+    const blockHeaderObj = JSON.parse(blockHeaderStr);
+    const registry = new TypeRegistry();
+    return registry.createType('Header',{
+        "parentHash": blockHeaderObj.parent_hash,
+        "number": blockHeaderObj.block_number,
+        "stateRoot": blockHeaderObj.state_root,
+        "extrinsicsRoot": blockHeaderObj.extrinsics_root,
+        "digest": {
+            logs: blockHeaderObj.digest
+        }
+    });
+}
+
+export async function getMPTProof(hash = '') {
+    if(window.darwiniaApi) {
+        const proof = await window.darwiniaApi.rpc.state.getReadProof(['0xf8860dda3d08046cf2706b92bf7202eaae7a79191c90e76297e0895605b8b457'], hash);
+        const registry = new TypeRegistry();
+
+        return registry.createType('Vec<Bytes>',proof.proof.toJSON());
+    }
+}
+
+function trimSpace(s){
+    return s.replace(/(^\s*)|(\s*$)/g, "");
+}
+
+export async function getMMRProof(blockNumber, mmrBlockNumber, blockHash) {
+    console.log('getMMRProof', {blockNumber, mmrBlockNumber, blockHash})
+    if(window.darwiniaApi) {
+        console.log(blockNumber, mmrBlockNumber)
+        const proof = await window.darwiniaApi.rpc.headerMMR.genProof(blockNumber, mmrBlockNumber);
+        console.log(proof)
+        const proofStr = proof.proof.substring(1, proof.proof.length - 1);
+
+        const proofHexStr = proofStr.split(',').map((item) => {
+            return remove0x(trimSpace(item))
+        });
+
+        const encodeProof = proofHexStr.join('');
+
+        console.log(blockNumber, proof.mmrSize.toString(), encodeProof, blockHash )
+
+        const mmrProof = [
+            // eslint-disable-next-line no-undef
+            BigInt(blockNumber), BigInt(proof.mmrSize), hexToU8a('0x' + encodeProof), hexToU8a(blockHash)
+        ]
+
+        const mmrProofConverted = convert(...mmrProof);
+        console.log(mmrProofConverted)
+
+        // parse wasm ouput
+        const [mmrSize, peaksStr, siblingsStr] = mmrProofConverted.split('|');
+        const peaks = peaksStr.split(',');
+        const siblings = siblingsStr.split(',');
+
+        return {
+            mmrSize,
+            peaks,
+            siblings
+        }
+    }
+}
+
+function encodeMMRRootMessage(networkPrefix, methodID, mmrIndex, mmrRoot) {
+    const registry = new TypeRegistry();
+    return registry.createType('{"prefix": "Vec<u8>", "methodID": "[u8; 4; methodID]", "index": "Compact<u32>", "root": "H256"}', {
+        prefix: networkPrefix,
+        methodID: methodID,
+        index: mmrIndex,
+        root: mmrRoot
+    })
+}
+
+export async function ClaimTokenFromD2E({ networkPrefix, mmrIndex, mmrRoot, mmrSignatures, blockNumber, blockHeaderStr, blockHash, historyMeta} , callback, t ) {
+    connect('eth', async(_networkType, _account, subscribe) => {
+
+        if(historyMeta.mmrRoot && historyMeta.best && historyMeta.best > blockNumber) {
+
+            const blockHeader = encodeBlockHeader(blockHeaderStr);
+            const mmrProof = await getMMRProof(blockNumber, historyMeta.best, blockHash);
+            const eventsProof = await getMPTProof(blockHash);
+
+            console.log('ClaimTokenFromD2E - darwiniaToEthereumVerifyProof', {
+                root: '0x' + historyMeta.mmrRoot,
+                MMRIndex: historyMeta.best,
+                blockNumber: blockNumber,
+                blockHeader: blockHeader.toHex(),
+                peaks: mmrProof.peaks,
+                siblings: mmrProof.siblings,
+                eventsProofStr: eventsProof.toHex()
+            })
+
+            darwiniaToEthereumVerifyProof(_account, {
+                root: '0x' + historyMeta.mmrRoot,
+                MMRIndex: historyMeta.best,
+                blockNumber: blockNumber,
+                blockHeader: blockHeader.toHex(),
+                peaks: mmrProof.peaks,
+                siblings: mmrProof.siblings,
+                eventsProofStr: eventsProof.toHex()
+            }, (result) => {
+                console.log('darwiniaToEthereumVerifyProof', result)
+                callback && callback(result);
+            });
+        } else {
+
+            const mmrRootMessage = encodeMMRRootMessage(networkPrefix, '0x479fbdf9', mmrIndex, mmrRoot);
+            const blockHeader = encodeBlockHeader(blockHeaderStr);
+            const mmrProof = await getMMRProof(blockNumber, mmrIndex, blockHash);
+            const eventsProof = await getMPTProof(blockHash);
+
+            console.log('ClaimTokenFromD2E - darwiniaToEthereumAppendRootAndVerifyProof', {
+                message: mmrRootMessage.toHex(),
+                signatures: mmrSignatures.split(','),
+                root: mmrRoot,
+                MMRIndex: mmrIndex,
+                blockNumber: blockNumber,
+                blockHeader: blockHeader.toHex(),
+                peaks: mmrProof.peaks,
+                siblings: mmrProof.siblings,
+                eventsProofStr: eventsProof.toHex()
+            })
+
+            darwiniaToEthereumAppendRootAndVerifyProof(_account, {
+                message: mmrRootMessage.toHex(),
+                signatures: mmrSignatures.split(','),
+                root: mmrRoot,
+                MMRIndex: mmrIndex,
+                blockNumber: blockNumber,
+                blockHeader: blockHeader.toHex(),
+                peaks: mmrProof.peaks,
+                siblings: mmrProof.siblings,
+                eventsProofStr: eventsProof.toHex()
+            }, (result) => {
+                console.log('appendRootAndVerifyProof', result)
+                callback && callback(result);
+            });
+        }
+    }, t)
+}
+
+export async function darwiniaToEthereumAppendRootAndVerifyProof(account, {
+    message,
+    signatures,
+    root,
+    MMRIndex,
+    blockNumber,
+    blockHeader,
+    peaks,
+    siblings,
+    eventsProofStr
+}, callback) {
+    let web3js = new Web3(window.ethereum || window.web3.currentProvider);
+    const contract = new web3js.eth.Contract(DarwiniaToEthereumTokenIssuingABI, config.DARWINIA_ETHEREUM_TOKEN_ISSUING);
+
+    // bytes memory message,
+    // bytes[] memory signatures,
+    // bytes32 root,
+    // uint32 MMRIndex,
+    // uint32 blockNumber,
+    // bytes memory blockHeader,
+    // bytes32[] memory peaks,
+    // bytes32[] memory siblings,
+    // bytes memory eventsProofStr
+    contract.methods.appendRootAndVerifyProof(
+        message,
+        signatures,
+        root,
+        MMRIndex,
+        blockHeader,
+        peaks,
+        siblings,
+        eventsProofStr).send({ from: account }, function(error, transactionHash) {
+            if(error) {
+               console.log(error);
+               return;
+            }
+            callback && callback(transactionHash);
+        })
+}
+
+export async function darwiniaToEthereumVerifyProof(account, {
+    root,
+    MMRIndex,
+    blockNumber,
+    blockHeader,
+    peaks,
+    siblings,
+    eventsProofStr
+}, callback) {
+    let web3js = new Web3(window.ethereum || window.web3.currentProvider);
+    const contract = new web3js.eth.Contract(DarwiniaToEthereumTokenIssuingABI, config.DARWINIA_ETHEREUM_TOKEN_ISSUING);
+
+    // bytes32 root,
+    // uint32 MMRIndex,
+    // uint32 blockNumber,
+    // bytes memory blockHeader,
+    // bytes32[] memory peaks,
+    // bytes32[] memory siblings,
+    // bytes memory eventsProofStr
+    contract.methods.verifyProof(
+        root,
+        MMRIndex,
+        blockHeader,
+        peaks,
+        siblings,
+        eventsProofStr).send({ from: account }, function(error, transactionHash) {
+            if(error) {
+               console.log(error);
+               return;
+            }
+            callback && callback(transactionHash)
+        })
+}
+
+

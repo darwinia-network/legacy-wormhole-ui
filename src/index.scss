@@ -40,8 +40,14 @@ code {
 .btn-purple {
     background-color: #3A30DD;
     border-color: #3A30DD;
-    color: #3A30DD;
+    color: #fff;
     font-size: 14px;
+}
+
+
+.btn-purple:hover {
+    color: #fff;
+    text-decoration: none;
 }
 
 .btn-gray:hover {
@@ -87,4 +93,34 @@ code {
 div.darwinia-toast {
     background: #e1e1e1;
     color: #2a2635;
+}
+
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+
+.noselect {
+
+    -webkit-touch-callout: none; /* iOS Safari */
+
+    -webkit-user-select: none; /* Chrome/Safari/Opera */
+
+    -khtml-user-select: none; /* Konqueror */
+
+    -moz-user-select: none; /* Firefox */
+
+    -ms-user-select: none; /* Internet Explorer/Edge */
+
+    user-select: none; /* Non-prefixed version, currently
+
+    not supported by any browser */
 }

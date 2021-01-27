@@ -1,0 +1,21 @@
+{
+  "name": "ckb-merkle-mountain-range",
+  "collaborators": [
+    "Nervos Core Dev <dev@nervos.org>"
+  ],
+  "description": "A generalized merkle mountain range implementation",
+  "version": "0.3.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nervosnetwork/merkle-mountain-range"
+  },
+  "files": [
+    "ckb_merkle_mountain_range_bg.wasm",
+    "ckb_merkle_mountain_range.js",
+    "ckb_merkle_mountain_range.d.ts"
+  ],
+  "module": "ckb_merkle_mountain_range.js",
+  "types": "ckb_merkle_mountain_range.d.ts",
+  "sideEffects": false
+}

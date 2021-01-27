@@ -186,8 +186,8 @@
   }
 
   .connectAccountBox {
-    padding: 15px;
-    margin-bottom: 15px;
+    padding-bottom: 15px;
+
     h1 {
       font-size: 14px;
       font-weight: normal;
@@ -273,7 +273,7 @@
 .historyItem {
   background-color: #F4F4F5;
   padding: 20px;
-  margin-bottom: 20px;
+  margin-bottom: 4rem;
   >div{
     display: flex;
     justify-content: space-between;
@@ -283,7 +283,7 @@
       font-weight: normal;
       flex-grow: 0;
       flex-shrink: 0;
-      flex-basis: 100px;
+      flex-basis: 150px;
     }
     p{
       word-break: break-all;
@@ -299,7 +299,10 @@
 }
 
 .feeTip {
+  margin-top: 10px;
+  margin-bottom: 3rem;
   font-size: 14px;
+  text-align: right;
 }
 
 .transferProgress {
@@ -382,6 +385,7 @@
       display: flex;
       justify-content: space-between;
       margin-bottom: 5px;
+      flex-wrap: wrap;
       p{
         color: $crosschain-text-main;
         font-size: 16px;

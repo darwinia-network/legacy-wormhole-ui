@@ -2,9 +2,12 @@
   "ethereum": ["crab", "darwinia"],
   "tron": ["crab", "darwinia"],
   "crab": ["darwinia"],
+  "darwinia": ["ethereum"],
+
   "ethereum_crab": ["airdrop"],
   "ethereum_darwinia": ["crosschain"],
   "tron_crab": ["airdrop"],
   "tron_darwinia": ["crosschain"],
-  "crab_darwinia": ["crosschain"]
+  "crab_darwinia": ["crosschain"],
+  "darwinia_ethereum": ["crosschain"]
 }

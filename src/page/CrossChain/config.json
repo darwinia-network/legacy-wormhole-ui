@@ -23,16 +23,20 @@
     "TRON_DARWINIA_CROSSCHAIN": "4128DC76871AEBDCDFB6E7A6A6E805BBA304B0D433",
     "ETHEREUM_DARWINIA_ISSUING": "0x49262B932E439271d05634c32978294C7Ea15d0C",
     "ETHEREUM_DARWINIA_BANK": "0x6EF538314829EfA8386Fc43386cB13B4e0A67D1e",
-    "EVOLUTION_LAND_DOMAIN": "https://alpha.evolution.land"
+    "EVOLUTION_LAND_DOMAIN": "https://alpha.evolution.land",
+    "D2E_NETWORK_PREFIX": "Crab",
+    "DARWINIA_ETHEREUM_RELAY":"0xd374292D512281b56198F0401b149370D680b89F",
+    "DARWINIA_ETHEREUM_TOKEN_ISSUING":"0x38401F8b484834Da8237fcbf94ee0689b7f4dca5",
+    "DARWINIA_ETHEREUM_FROM_WSS": "wss://crab.darwinia.network"
   },
   "production": {
     "ETHEREUM_NETWORK": 1,
     "TRON_NETWORK_SYMBOL": "api.tron",
-    "SIGN_PREFIX": "Pay RINGs to the Crab account:",
+    "SIGN_PREFIX": "Pay RINGs to the Darwinia account:",
     "S58_PREFIX": 18,
     "NETWORK_NAME": "Darwinia MainNet",
     "SNAPSHOT_TIMESTAMP": 1584683400,
-    "SUBSCAN_API": "https://crab.subscan.io",
+    "SUBSCAN_API": "https://darwinia-cc1.subscan.io",
     "SUBSCAN_API_DARWINIA": "https://darwinia-cc1.subscan.io",
     "DAPP_API": "https://api.darwinia.network",
     "ETHERSCAN_DOMAIN": {
@@ -49,6 +53,10 @@
     "TRON_DARWINIA_CROSSCHAIN": "4123EBB7D42979212A85AB1FD98175DF4DFA776B30",
     "ETHEREUM_DARWINIA_ISSUING": "0xea7938985898af7fd945b03b7bc2e405e744e913",
     "ETHEREUM_DARWINIA_BANK": "0x649fdf6ee483a96e020b889571e93700fbd82d88",
-    "EVOLUTION_LAND_DOMAIN": "https://www.evolution.land"
+    "EVOLUTION_LAND_DOMAIN": "https://www.evolution.land",
+    "D2E_NETWORK_PREFIX": "Darwinia",
+    "DARWINIA_ETHEREUM_RELAY":"0x5cde5Aafeb8E06Ce9e4F94c2406d3B6CB7098E49",
+    "DARWINIA_ETHEREUM_TOKEN_ISSUING":"0x5f44dd8e59f56aa04fe54e95cc690560ae706b18",
+    "DARWINIA_ETHEREUM_FROM_WSS": "wss://cc1.darwinia.network"
   }
 }
