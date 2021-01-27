@@ -2,7 +2,6 @@
 ### 基本功能
 虫洞是一个web-app，提供通过darwinia跨链桥用户转账的操作工具，用户根据自己的需要选择跨链桥，并使用自己的钱包向网络发送转账交易，工具实时显示账户的转账进度以及历史记录。所有操作都是去中心化的，数据在链上可查。
 目前虫洞支持 Ethereum <=> Darwinia 网络之间的双向转账，在网页端使用Chrome浏览器，需要安装Polkadot以及metamask钱包
-进入虫洞主页：https://wormhole.darwinia.network.com/
 
 ### Darwinia Mainnet => Ethereum
 #### 操作过程
