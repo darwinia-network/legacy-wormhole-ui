@@ -1,0 +1,16 @@
+.box{
+    text-align: left;
+    background: #F4F4F5;
+    padding: 20px;
+    p {
+        margin: 0;
+        font-size: 12px;
+        color: #302B3C;
+    }
+}
+
+@media (max-width: 575px) {
+    .box{
+        padding: 15px;
+    }
+}

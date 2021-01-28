@@ -118,7 +118,9 @@
     "Token for cross-chain transfer": "Token for cross-chain transfer",
     "Amount is wrong": "Amount is wrong",
     "The amount exceeds the account available balance": "The amount exceeds the account available balance",
-    "The entered recipient account is incorrect": "The entered recipient account is incorrect"
+    "The entered recipient account is incorrect": "The entered recipient account is incorrect",
+    "d2e crosschain gas tip 1": "· Please initiate a claim transaction of the Ethereum network in the \"Cross-chain transfer history\".",
+    "d2e crosschain gas tip 2": "· Each claim transaction of Ethereum is estimated to use 600,000 Gas."
   },
   "crosschain_ethtron": {
     "claim": "Cross-chain Transfer",
