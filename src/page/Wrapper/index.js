@@ -33,7 +33,8 @@ import Claim from '../Claims';
 const helpUrl = {
     eth_crosschain: 'https://mp.weixin.qq.com/s/c-aVPjDibyfUAHYZo1HW9w',
     tron_crosschain: 'https://mp.weixin.qq.com/s/c-aVPjDibyfUAHYZo1HW9w',
-    crab_crosschain: 'https://medium.com/@DarwiniaNetwork/must-read-darwinia-mainnet-progressive-launch-announcement-ff20a04a8bdd'
+    crab_crosschain: 'https://medium.com/@DarwiniaNetwork/must-read-darwinia-mainnet-progressive-launch-announcement-ff20a04a8bdd',
+    darwinia_crosschain: 'https://docs.darwinia.network/docs/en/wiki-tut-wormhole-d2e'
 }
 
 const THREE = window.THREE;

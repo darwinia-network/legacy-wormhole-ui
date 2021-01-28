@@ -16,6 +16,8 @@ import {
 } from './utils'
 import { InputRightWrap } from '../../components/InputRightWrap'
 import InputWrapWithCheck from '../../components/InputWrapWithCheck'
+import FormTip from '../../components/FormTip'
+
 import { parseChain } from '../../util';
 import { withTranslation } from "react-i18next";
 import i18n from '../../locales/i18n';
@@ -965,7 +967,7 @@ class CrossChain extends Component {
                     return (
                         <div className={styles.formBox}>
                             <div className={`${styles.networkBox} claims-network-box`}>
-                                <Form.Group controlId="darwinaAddressGroup">
+                                <Form.Group controlId="darwinaAddressGroup" className={styles.formInputBox}>
                                     <Form.Label>{t('crosschain:Please select Darwinia mainnet sender account')} <a href={this.renderHelpUrl()} target="_blank"
                                         rel="noopener noreferrer"><img alt=""
                                             className={styles.labelIcon} src={helpLogo} /></a> </Form.Label>
@@ -1032,6 +1034,11 @@ class CrossChain extends Component {
                                             ring: formatBalance(this.state[`ringBalance`], 'gwei').toString()
                                         })}
                                     </Form.Text>
+
+                                    <FormTip text={[
+                                        t(`crosschain:d2e crosschain gas tip 1`),
+                                        t(`crosschain:d2e crosschain gas tip 2`)
+                                    ]}/>
                                 </Form.Group>
                                 <div className={styles.buttonBox}>
                                     <Button variant="color" onClick={this.crossChainFromDarwiniaToEthereum}>{t('crosschain:Submit')}</Button>

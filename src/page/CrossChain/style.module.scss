@@ -165,6 +165,10 @@
     padding-top: 30px;
   }
 
+  .formInputBox {
+    margin-bottom: 3rem;
+  }
+
   .buttonBox {
     display: flex;
     justify-content: space-between;
@@ -300,7 +304,7 @@
 
 .feeTip {
   margin-top: 10px;
-  margin-bottom: 3rem;
+  margin-bottom: 10px;
   font-size: 14px;
   text-align: right;
 }
