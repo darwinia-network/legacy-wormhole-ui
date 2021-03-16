@@ -196,16 +196,6 @@ async function connectSubstrate(accountsChangedCallback, t, networkType) {
     const allInjected = await web3Enable('wormhole.darwinia.network');
     const allAccounts = await web3Accounts();
 
-    if (!allInjected || allInjected.length === 0) {
-        formToast(t('common:Please install Polkadot Extension'));
-        return;
-    }
-
-    if (!allAccounts || allAccounts.length === 0) {
-        formToast(t('common:Polkadot Extension has no account'));
-        return;
-    }
-
     switch (networkType) {
         case 'crab':
             await connectNodeProvider('wss://crab.darwinia.network', 'crab');
@@ -217,6 +207,18 @@ async function connectSubstrate(accountsChangedCallback, t, networkType) {
             break;
         default:
             break;
+    }
+
+    if (!allInjected || allInjected.length === 0) {
+        formToast(t('common:Please install Polkadot Extension'));
+        accountsChangedCallback && accountsChangedCallback(networkType, []);
+        return;
+    }
+
+    if (!allAccounts || allAccounts.length === 0) {
+        formToast(t('common:Polkadot Extension has no account'));
+        accountsChangedCallback && accountsChangedCallback(networkType, []);
+        return;
     }
 
     accountsChangedCallback && accountsChangedCallback(networkType, allAccounts);
@@ -312,12 +314,16 @@ export function convertSS58Address(text, isShort = false) {
     if(!text) {
         return '';
     }
-    let address = encodeAddress(text, config.S58_PREFIX)
-    const length = 8
-    if(isShort) {
-        address = address.substr(0, length) + '...' +address.substr(address.length - length, length)
+    try {
+        let address = encodeAddress(text, config.S58_PREFIX)
+        const length = 8
+        if(isShort) {
+            address = address.substr(0, length) + '...' +address.substr(address.length - length, length)
+        }
+        return address
+    } catch (error) {
+        return ''
     }
-    return address
 }
 
 export function isMiddleScreen() {
@@ -809,72 +815,79 @@ function encodeMMRRootMessage(networkPrefix, methodID, mmrIndex, mmrRoot) {
     })
 }
 
-export async function ClaimTokenFromD2E({ networkPrefix, mmrIndex, mmrRoot, mmrSignatures, blockNumber, blockHeaderStr, blockHash, historyMeta} , callback, t ) {
-    connect('eth', async(_networkType, _account, subscribe) => {
+export async function ClaimTokenFromD2E({ networkPrefix, mmrIndex, mmrRoot, mmrSignatures, blockNumber, blockHeaderStr, blockHash, historyMeta} , callback, fetchingEndCallback, t ) {
+    try {
+        connect('eth', async(_networkType, _account, subscribe) => {
 
-        if(historyMeta.mmrRoot && historyMeta.best && historyMeta.best > blockNumber) {
+            if(historyMeta.mmrRoot && historyMeta.best && historyMeta.best > blockNumber) {
 
-            const blockHeader = encodeBlockHeader(blockHeaderStr);
-            const mmrProof = await getMMRProof(blockNumber, historyMeta.best, blockHash);
-            const eventsProof = await getMPTProof(blockHash);
+                const blockHeader = encodeBlockHeader(blockHeaderStr);
+                const mmrProof = await getMMRProof(blockNumber, historyMeta.best, blockHash);
+                const eventsProof = await getMPTProof(blockHash);
 
-            console.log('ClaimTokenFromD2E - darwiniaToEthereumVerifyProof', {
-                root: '0x' + historyMeta.mmrRoot,
-                MMRIndex: historyMeta.best,
-                blockNumber: blockNumber,
-                blockHeader: blockHeader.toHex(),
-                peaks: mmrProof.peaks,
-                siblings: mmrProof.siblings,
-                eventsProofStr: eventsProof.toHex()
-            })
+                console.log('ClaimTokenFromD2E - darwiniaToEthereumVerifyProof', {
+                    root: '0x' + historyMeta.mmrRoot,
+                    MMRIndex: historyMeta.best,
+                    blockNumber: blockNumber,
+                    blockHeader: blockHeader.toHex(),
+                    peaks: mmrProof.peaks,
+                    siblings: mmrProof.siblings,
+                    eventsProofStr: eventsProof.toHex()
+                })
 
-            darwiniaToEthereumVerifyProof(_account, {
-                root: '0x' + historyMeta.mmrRoot,
-                MMRIndex: historyMeta.best,
-                blockNumber: blockNumber,
-                blockHeader: blockHeader.toHex(),
-                peaks: mmrProof.peaks,
-                siblings: mmrProof.siblings,
-                eventsProofStr: eventsProof.toHex()
-            }, (result) => {
-                console.log('darwiniaToEthereumVerifyProof', result)
-                callback && callback(result);
-            });
-        } else {
+                darwiniaToEthereumVerifyProof(_account, {
+                    root: '0x' + historyMeta.mmrRoot,
+                    MMRIndex: historyMeta.best,
+                    blockNumber: blockNumber,
+                    blockHeader: blockHeader.toHex(),
+                    peaks: mmrProof.peaks,
+                    siblings: mmrProof.siblings,
+                    eventsProofStr: eventsProof.toHex()
+                }, (result) => {
+                    console.log('darwiniaToEthereumVerifyProof', result)
+                    callback && callback(result);
+                });
 
-            const mmrRootMessage = encodeMMRRootMessage(networkPrefix, '0x479fbdf9', mmrIndex, mmrRoot);
-            const blockHeader = encodeBlockHeader(blockHeaderStr);
-            const mmrProof = await getMMRProof(blockNumber, mmrIndex, blockHash);
-            const eventsProof = await getMPTProof(blockHash);
+                fetchingEndCallback && fetchingEndCallback();
+            } else {
 
-            console.log('ClaimTokenFromD2E - darwiniaToEthereumAppendRootAndVerifyProof', {
-                message: mmrRootMessage.toHex(),
-                signatures: mmrSignatures.split(','),
-                root: mmrRoot,
-                MMRIndex: mmrIndex,
-                blockNumber: blockNumber,
-                blockHeader: blockHeader.toHex(),
-                peaks: mmrProof.peaks,
-                siblings: mmrProof.siblings,
-                eventsProofStr: eventsProof.toHex()
-            })
+                const mmrRootMessage = encodeMMRRootMessage(networkPrefix, '0x479fbdf9', mmrIndex, mmrRoot);
+                const blockHeader = encodeBlockHeader(blockHeaderStr);
+                const mmrProof = await getMMRProof(blockNumber, mmrIndex, blockHash);
+                const eventsProof = await getMPTProof(blockHash);
 
-            darwiniaToEthereumAppendRootAndVerifyProof(_account, {
-                message: mmrRootMessage.toHex(),
-                signatures: mmrSignatures.split(','),
-                root: mmrRoot,
-                MMRIndex: mmrIndex,
-                blockNumber: blockNumber,
-                blockHeader: blockHeader.toHex(),
-                peaks: mmrProof.peaks,
-                siblings: mmrProof.siblings,
-                eventsProofStr: eventsProof.toHex()
-            }, (result) => {
-                console.log('appendRootAndVerifyProof', result)
-                callback && callback(result);
-            });
-        }
-    }, t)
+                console.log('ClaimTokenFromD2E - darwiniaToEthereumAppendRootAndVerifyProof', {
+                    message: mmrRootMessage.toHex(),
+                    signatures: mmrSignatures.split(','),
+                    root: mmrRoot,
+                    MMRIndex: mmrIndex,
+                    blockNumber: blockNumber,
+                    blockHeader: blockHeader.toHex(),
+                    peaks: mmrProof.peaks,
+                    siblings: mmrProof.siblings,
+                    eventsProofStr: eventsProof.toHex()
+                })
+
+                darwiniaToEthereumAppendRootAndVerifyProof(_account, {
+                    message: mmrRootMessage.toHex(),
+                    signatures: mmrSignatures.split(','),
+                    root: mmrRoot,
+                    MMRIndex: mmrIndex,
+                    blockNumber: blockNumber,
+                    blockHeader: blockHeader.toHex(),
+                    peaks: mmrProof.peaks,
+                    siblings: mmrProof.siblings,
+                    eventsProofStr: eventsProof.toHex()
+                }, (result) => {
+                    console.log('appendRootAndVerifyProof', result)
+                    callback && callback(result);
+                });
+                fetchingEndCallback && fetchingEndCallback();
+            }
+        }, t)
+    } catch (error) {
+        fetchingEndCallback && fetchingEndCallback();
+    }
 }
 
 export async function darwiniaToEthereumAppendRootAndVerifyProof(account, {

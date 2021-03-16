@@ -9,8 +9,13 @@ createInstance()
 
 const u32CvtShim = new Uint32Array(2);
 
+const bigUintArrayType =
+  typeof window.BigUint64Array === 'function'
+    ? window.BigUint64Array
+    : Uint32Array
+
 // eslint-disable-next-line no-undef
-const uint64CvtShim = new BigUint64Array(u32CvtShim.buffer);
+const uint64CvtShim = new bigUintArrayType(u32CvtShim.buffer);
 
 let cachegetUint8Memory0 = null;
 function getUint8Memory0() {
