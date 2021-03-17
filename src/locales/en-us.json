@@ -23,7 +23,10 @@
     "Destination": "Destination",
     "darwinaPage": "https://darwinia.network/",
     "Claims": "Claimed",
-    "Not claimed": "Not claimed"
+    "Not claimed": "Not claimed",
+    "Extension": "Extension",
+    "Manual": "Manual",
+    "Please input the Darwinia address to be queried": "Please input the Darwinia address to be queried"
   },
   "crosschain": {
     "title": "Cross-chain Transfer",

@@ -120,7 +120,10 @@
     "The amount exceeds the account available balance": "输入数量超过账户可用余额",
     "The entered recipient account is incorrect": "输入的接收账号错误",
     "d2e crosschain gas tip 1": "· 请在「跨链历史交易」中发起以太坊网络的「领取交易」。",
-    "d2e crosschain gas tip 2": "· 每笔以太坊网络的「领取交易」预计消耗 600000 Gas。"
+    "d2e crosschain gas tip 2": "· 每笔以太坊网络的「领取交易」预计消耗 600000 Gas。",
+    "Extension": "从插件获取",
+    "Manual": "手动输入",
+    "Please input the Darwinia address to be queried": "输入需要查询的 Darwinia 账号"
   },
   "crosschain_ethtron": {
     "claim": "跨链转账",

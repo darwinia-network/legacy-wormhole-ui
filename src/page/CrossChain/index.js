@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Button, Form, Spinner, Dropdown, ButtonGroup, Modal } from 'react-bootstrap'
+import { Button, Form, Spinner, Dropdown, ButtonGroup, Modal, Col } from 'react-bootstrap'
 import { withRouter } from 'react-router-dom';
 
 import 'react-toastify/dist/ReactToastify.css';
@@ -113,6 +113,11 @@ class CrossChain extends Component {
             d2eModalData: {
                 isShow: false,
                 hash: ''
+            },
+            crabAndDarwiniaHistory: {
+                isManual: false,
+                address: '',
+                isFetchingClaimParams: false
             }
         }
         this.querySubscribe = null
@@ -258,6 +263,8 @@ class CrossChain extends Component {
                     // this.querySubscribe = subscribe;
                     if (Array.isArray(_account) && _account.length > 0) {
                         initAccount = _account[0].address
+                    } else if (Array.isArray(_account) && _account.length === 0) {
+                        initAccount = ''
                     } else {
                         initAccount = _account
                     }
@@ -272,6 +279,7 @@ class CrossChain extends Component {
                             crossChainFee: Web3.utils.toBN(0),
                         }
                     }, async () => {
+
                         if (this.state.account[_networkType]) {
                             this.setState({
                                 status: status
@@ -315,6 +323,11 @@ class CrossChain extends Component {
                                     isReady: true
                                 }
                             })
+                        } else {
+                            if (status === 4) {
+                                this.queryClaims()
+                                return;
+                            }
                         }
                     })
                 }, t);
@@ -355,7 +368,6 @@ class CrossChain extends Component {
                 }, t);
                 break;
             case 'darwinia':
-
                 this.setState({
                     history: null,
                     account: {
@@ -378,6 +390,8 @@ class CrossChain extends Component {
                             initAccount = this.state.account[_networkType]
                         } else if (Array.isArray(_account) && _account.length > 0) {
                             initAccount = _account[0].address
+                        } else if (Array.isArray(_account) && _account.length === 0) {
+                            initAccount = ''
                         } else {
                             initAccount = _account
                         }
@@ -388,7 +402,12 @@ class CrossChain extends Component {
                                 ...account,
                                 [_networkType]: initAccount,
                                 [`${_networkType}List`]: _account,
-                                isReady: false
+                                isReady: false,
+                            },
+                            crabAndDarwiniaHistory: {
+                                ...this.state.crabAndDarwiniaHistory,
+                                isManual: !initAccount,
+                                address: ''
                             }
                         }, async () => {
                             if (this.state.account[_networkType]) {
@@ -408,6 +427,11 @@ class CrossChain extends Component {
                                         isReady: true
                                     }
                                 })
+                            } else {
+                                if (status === 4) {
+                                    this.queryClaims()
+                                    return;
+                                }
                             }
                         })
                     }, t);
@@ -601,6 +625,10 @@ class CrossChain extends Component {
     async queryClaims() {
         const { networkType, account } = this.state;
         let address = ''
+        this.setState({
+            history: null
+        })
+
         switch (networkType) {
             case "eth":
                 address = account[networkType]
@@ -669,27 +697,35 @@ class CrossChain extends Component {
                 break;
             case "darwinia":
                 address = account[networkType]
-                await getDarwiniaToEthereumGenesisSwapInfo({
-                    query: {
-                        address: '0x' + substrateAddressToPublicKey(address),
-                        row: 200,
-                        page: 0
-                    },
-                    method: "get"
-                }, (list, data) => {
-                    this.setState({
-                        history: list,
-                        historyMeta: {
-                            best: data.best,
-                            mmrRoot: data.MMRRoot
-                        }
-                    })
-                }, () => {
+                try {
+                    await getDarwiniaToEthereumGenesisSwapInfo({
+                        query: {
+                            address: '0x' + substrateAddressToPublicKey(address),
+                            row: 200,
+                            page: 0
+                        },
+                        method: "get"
+                    }, (list, data) => {
+                        this.setState({
+                            history: list,
+                            historyMeta: {
+                                best: data.best,
+                                mmrRoot: data.MMRRoot
+                            }
+                        })
+                    }, () => {
+                        this.setState({
+                            history: [],
+                            historyMeta: {}
+                        })
+                    });
+                } catch (error) {
                     this.setState({
                         history: [],
                         historyMeta: {}
                     })
-                });
+                }
+
                 break;
             default:
                 break;
@@ -1298,7 +1334,7 @@ class CrossChain extends Component {
 
     step4 = () => {
         const { t } = this.props
-        const { networkType, account, history } = this.state
+        const { networkType, account, history, crabAndDarwiniaHistory } = this.state
         const middleScreen = isMiddleScreen()
 
         return (
@@ -1311,32 +1347,78 @@ class CrossChain extends Component {
                         {networkType === 'crab' || networkType === 'darwinia' ?
                         <>
                         <p>{convertSS58Address(account[networkType])}</p>
-                        <Form.Group controlId="darwinaAddressGroup">
-                            <Form.Control as="select" value={account[networkType]}
-                                onChange={(value) => this.setCurrentAccount(networkType, value, async (account) => {
-                                    // const balances = await getTokenBalance('crab', account);
-                                    // this.setState({
-                                    //     ringBalance: Web3.utils.toBN(balances[0]),
-                                    //     darwiniaAddress: convertSS58Address(account)
-                                    // })
-                                    const params = new URLSearchParams()
-                                    const {hash} = this.props.location;
+                        <Form.Row>
+                            {crabAndDarwiniaHistory.isManual ?
+                                <Form.Group as={Col}>
+                                    <Form.Control onChange={(value) => this.setCurrentAccount(networkType, value, async (account) => {
+                                        const params = new URLSearchParams();
+                                        const {hash} = this.props.location;
 
-                                    if (account) {
-                                        params.append("address", account)
-                                    } else {
-                                        params.delete("address")
+                                        if (account) {
+                                            params.append("address", account)
+                                        } else {
+                                            params.delete("address")
+                                        }
+                                        this.props.history.replace({hash: hash, search: params.toString()})
+
+                                        this.queryClaims()
+                                    })} type="text" placeholder={t('crosschain:Please input the Darwinia address to be queried')} />
+                                </Form.Group>
+                                :
+                                <Form.Group as={Col} controlId="darwinaAddressGroup">
+                                    <Form.Control as="select" value={account[networkType]}
+                                    onChange={(value) => this.setCurrentAccount(networkType, value, async (account) => {
+                                        // const balances = await getTokenBalance('crab', account);
+                                        // this.setState({
+                                        //     ringBalance: Web3.utils.toBN(balances[0]),
+                                        //     darwiniaAddress: convertSS58Address(account)
+                                        // })
+                                        const params = new URLSearchParams();
+                                        const {hash} = this.props.location;
+
+                                        if (account) {
+                                            params.append("address", account)
+                                        } else {
+                                            params.delete("address")
+                                        }
+                                        this.props.history.replace({hash: hash, search: params.toString()})
+
+                                        this.queryClaims()
+                                    })}>
+                                    {account[`${networkType}List`]?.map((item, index) => {
+                                        return <option key={item.address} value={item.address}>{convertSS58Address(item.address, middleScreen)} - {item.meta.name}</option>
+                                    })
                                     }
-                                    this.props.history.replace({hash: hash, search: params.toString()})
+                                </Form.Control>
+                                </Form.Group>}
 
-                                    this.queryClaims()
-                                })}>
-                                {account[`${networkType}List`]?.map((item, index) => {
-                                    return <option key={item.address} value={item.address}>{convertSS58Address(item.address, middleScreen)} - {item.meta.name}</option>
-                                })
-                                }
-                            </Form.Control>
-                        </Form.Group></> : <p>{account[networkType]}</p>}
+                                <Form.Group>
+                                    <Button variant="primary" onClick={() => {
+                                        if(crabAndDarwiniaHistory.isManual) {
+                                            account[`${networkType}List`][0] && this.setCurrentAccount(networkType, {target: {value: account[`${networkType}List`][0].address}}, async (account) => {
+                                                const params = new URLSearchParams();
+                                                const {hash} = this.props.location;
+
+                                                if (account) {
+                                                    params.append("address", account)
+                                                } else {
+                                                    params.delete("address")
+                                                }
+                                                this.props.history.replace({hash: hash, search: params.toString()})
+
+                                                this.queryClaims()
+                                            })
+                                        }
+                                        this.setState({crabAndDarwiniaHistory: {
+                                            ...this.state.crabAndDarwiniaHistory,
+                                            isManual: !crabAndDarwiniaHistory.isManual,
+                                            address: ''
+                                        }})
+                                    }
+                                    }>{crabAndDarwiniaHistory.isManual ? t('crosschain:Extension') : t('crosschain:Manual')}</Button>
+                                </Form.Group>
+                        </Form.Row>
+                        </> : <p>{account[networkType]}</p>}
                     </div>
                     {networkType === 'eth' || networkType === 'tron' ? this.renderEthereumTronHistory(history) : null}
                     {networkType === 'darwinia' ? this.renderDarwiniaToEthereumHistory(history) : null}
@@ -1477,7 +1559,13 @@ class CrossChain extends Component {
                             chain: 'eth'
                         },
                     }, true, () =>
-                    item.signatures && !item.tx ? <Button variant="outline-purple"  className={styles.hashBtn} onClick={() => {
+                    item.signatures && !item.tx ? <Button variant="outline-purple" disabled={this.state.crabAndDarwiniaHistory.isFetchingClaimParams} className={styles.hashBtn} onClick={() => {
+                            this.setState({
+                                crabAndDarwiniaHistory: {
+                                    ...this.state.crabAndDarwiniaHistory,
+                                    isFetchingClaimParams: true
+                                }
+                            })
                             ClaimTokenFromD2E({
                                 networkPrefix: config.D2E_NETWORK_PREFIX,
                                 mmrIndex: item.mmr_index,
@@ -1488,9 +1576,23 @@ class CrossChain extends Component {
                                 blockHash: item.block_hash,
                                 historyMeta: historyMeta
                             }, (result) => {
+                                this.setState({
+                                    crabAndDarwiniaHistory: {
+                                        ...this.state.crabAndDarwiniaHistory,
+                                        isFetchingClaimParams: false
+                                    }
+                                })
+
                                 this.setModalHash(result);
                                 this.setModalShow(true);
-                            } , t);
+                            } , () => {
+                                this.setState({
+                                    crabAndDarwiniaHistory: {
+                                        ...this.state.crabAndDarwiniaHistory,
+                                        isFetchingClaimParams: false
+                                    }
+                                })
+                            }, t);
                         }} >{t('crosschain:Claim')}</Button> : null
                     )}
                 </div>)

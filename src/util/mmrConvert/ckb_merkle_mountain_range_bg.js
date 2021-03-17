@@ -7,10 +7,15 @@ createInstance()
     wasm = m;
 });
 
-const u32CvtShim = new Uint32Array(2);
+// const u32CvtShim = new Uint32Array(2);
 
-// eslint-disable-next-line no-undef
-const uint64CvtShim = new BigUint64Array(u32CvtShim.buffer);
+// const bigUintArrayType =
+//   typeof window.BigUint64Array === 'function'
+//     ? window.BigUint64Array
+//     : Float64Array
+
+// // eslint-disable-next-line no-undef
+// const uint64CvtShim = new bigUintArrayType(u32CvtShim.buffer);
 
 let cachegetUint8Memory0 = null;
 function getUint8Memory0() {
@@ -57,12 +62,21 @@ export function convert(block_num, mmr_size, mmr_proof, leaf) {
     try {
         const retptr = wasm.instance.exports.__wbindgen_export_0.value - 16;
         wasm.instance.exports.__wbindgen_export_0.value = retptr;
-        uint64CvtShim[0] = block_num;
-        const low0 = u32CvtShim[0];
-        const high0 = u32CvtShim[1];
-        uint64CvtShim[0] = mmr_size;
-        const low1 = u32CvtShim[0];
-        const high1 = u32CvtShim[1];
+
+        // uint64CvtShim[0] = block_num;
+        // const low0 = u32CvtShim[0];
+        // const high0 = u32CvtShim[1];
+        // uint64CvtShim[0] = mmr_size;
+        // const low1 = u32CvtShim[0];
+        // const high1 = u32CvtShim[1];
+
+        // uint64CvtShim[0] = block_num;
+        const low0 = block_num;
+        const high0 = 0;
+        // uint64CvtShim[0] = mmr_size;
+        const low1 = mmr_size;
+        const high1 = 0;
+
         var ptr2 = passArray8ToWasm0(mmr_proof, wasm.instance.exports.__wbindgen_malloc);
         var len2 = WASM_VECTOR_LEN;
         var ptr3 = passArray8ToWasm0(leaf, wasm.instance.exports.__wbindgen_malloc);
