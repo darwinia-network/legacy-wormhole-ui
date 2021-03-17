@@ -786,7 +786,7 @@ export async function getMMRProof(blockNumber, mmrBlockNumber, blockHash) {
 
         const mmrProof = [
             // eslint-disable-next-line no-undef
-            BigInt(blockNumber), BigInt(proof.mmrSize), hexToU8a('0x' + encodeProof), hexToU8a(blockHash)
+            blockNumber, proof.mmrSize, hexToU8a('0x' + encodeProof), hexToU8a(blockHash)
         ]
 
         const mmrProofConverted = convert(...mmrProof);
