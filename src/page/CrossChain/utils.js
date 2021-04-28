@@ -183,12 +183,12 @@ async function connectSubstrate(accountsChangedCallback, t, networkType) {
 
     switch (networkType) {
         case 'crab':
-            await connectNodeProvider('wss://crab.darwinia.network', 'crab');
+            await connectNodeProvider('wss://crab-rpc.darwinia.network', 'crab');
             break;
         case 'darwinia':
-            // connectNodeProvider(config.DARWINIA_ETHEREUM_FROM_WSS, 'darwinia');
+            connectNodeProvider(config.DARWINIA_ETHEREUM_FROM_WSS, 'darwinia');
             // await connectNodeProvider('ws://t1.hkg.itering.com:9944', 'darwinia');
-            await connectNodeProvider('wss://pangolin-rpc.darwinia.network', 'pangolin');
+            // await connectNodeProvider('wss://pangolin-rpc.darwinia.network', 'pangolin');
             // await connectNodeProvider('wss://crab.darwinia.network', 'crab');
             break;
         default:
