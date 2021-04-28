@@ -85,7 +85,7 @@ export async function getEthereumToDarwiniaCrossChainFee() {
  */
 export async function getDarwiniaToEthereumCrossChainFee() {
     try {
-        await window.darwiniaApi.isReady;
+
         const crosschainFee = window.darwiniaApi.consts.ethereumBacking.advancedFee.toString();
         return Web3.utils.toBN(crosschainFee);
     } catch (error) {
@@ -170,7 +170,7 @@ async function connectNodeProvider(wss, type = 'darwinia') {
                 Pangolin: typesBundleForPolkadot.spec.pangolin,
                 Darwinia: typesBundleForPolkadot.spec.darwinia,
               }}});
-            await window.darwiniaApi.isReady;
+
         }
     }catch (error) {
         console.log(error);
@@ -186,7 +186,7 @@ async function connectSubstrate(accountsChangedCallback, t, networkType) {
             await connectNodeProvider('wss://crab-rpc.darwinia.network', 'crab');
             break;
         case 'darwinia':
-            connectNodeProvider(config.DARWINIA_ETHEREUM_FROM_WSS, 'darwinia');
+            await connectNodeProvider(config.DARWINIA_ETHEREUM_FROM_WSS, 'darwinia');
             // await connectNodeProvider('ws://t1.hkg.itering.com:9944', 'darwinia');
             // await connectNodeProvider('wss://pangolin-rpc.darwinia.network', 'pangolin');
             // await connectNodeProvider('wss://crab.darwinia.network', 'crab');
@@ -288,7 +288,7 @@ async function buildInGenesisCrab(account, params, callback, t) {
     try {
         console.log('buildInGenesisCrab', { account, params, callback }, params.value.toString())
         if (window.darwiniaApi) {
-            await window.darwiniaApi.isReady;
+
             const injector = await web3FromAddress(account);
             window.darwiniaApi.setSigner(injector.signer);
             const hash = await window.darwiniaApi.tx.crabIssuing.swapAndBurnToGenesis(params.value)
@@ -304,7 +304,7 @@ async function ethereumBackingLockDarwinia(account, params, callback, t) {
     try {
         console.log('ethereumBackingLock', { account, params, callback }, params.ring.toString(), params.kton.toString())
         if (window.darwiniaApi) {
-            await window.darwiniaApi.isReady;
+
             const injector = await web3FromAddress(account);
             window.darwiniaApi.setSigner(injector.signer);
             const hash = await window.darwiniaApi.tx.ethereumBacking.lock(params.ring, params.kton, params.to)
@@ -620,7 +620,7 @@ export async function getTokenBalanceTron(account = '') {
 
 export async function getTokenBalanceDarwinia(account = '') {
     try {
-        await window.darwiniaApi.isReady;
+
         // type = 0 query ring balance.  type = 1 query kton balance.
         const ringUsableBalance = await window.darwiniaApi.rpc.balances.usableBalance(0, account);
         const ktonUsableBalance = await window.darwiniaApi.rpc.balances.usableBalance(1, account);
