@@ -2,18 +2,17 @@
   "development": {
     "ETHEREUM_NETWORK": 3,
     "TRON_NETWORK_SYMBOL": "shasta",
-    "SIGN_PREFIX": "Pay RINGs to the Darwinia account:",
-    "S58_PREFIX": 42,
-    "NETWORK_NAME": "Darwinia Crab",
+    "S58_PREFIX": 18,
+    "NETWORK_NAME": "Pangolin",
     "SNAPSHOT_TIMESTAMP": 1584683400,
-    "SUBSCAN_API": "https://crab.subscan.io",
-    "SUBSCAN_API_DARWINIA": "https://darwinia-cc1.subscan.io",
+    "SUBSCAN_API": "https://pangolin.subscan.io",
     "DAPP_API": "https://api.darwinia.network.l2me.com",
     "ETHERSCAN_DOMAIN": {
       "en": "https://ropsten.etherscan.io",
       "zh": "https://ropsten.etherscan.io"
     },
     "TRONSCAN_DOMAIN": "https://shasta.tronscan.io",
+    "SUBSCAN_DARWINIA_DOMAIN": "https://pangolin.subscan.io",
     "RING_ETH_ADDRESS": "0xb52FBE2B925ab79a821b261C82c5Ba0814AAA5e0",
     "KTON_ETH_ADDRESS": "0x1994100c58753793D52c6f457f189aa3ce9cEe94",
     "REGISTRY_ETH_ADDRESS": "0x6982702995b053A21389219c1BFc0b188eB5a372",
@@ -24,26 +23,25 @@
     "ETHEREUM_DARWINIA_ISSUING": "0x49262B932E439271d05634c32978294C7Ea15d0C",
     "ETHEREUM_DARWINIA_BANK": "0x6EF538314829EfA8386Fc43386cB13B4e0A67D1e",
     "EVOLUTION_LAND_DOMAIN": "https://alpha.evolution.land",
-    "D2E_NETWORK_PREFIX": "Crab",
-    "DARWINIA_ETHEREUM_RELAY":"0xd374292D512281b56198F0401b149370D680b89F",
-    "DARWINIA_ETHEREUM_TOKEN_ISSUING":"0x38401F8b484834Da8237fcbf94ee0689b7f4dca5",
-    "DARWINIA_ETHEREUM_FROM_WSS": "wss://crab.darwinia.network"
+    "D2E_NETWORK_PREFIX": "Pangolin",
+    "DARWINIA_ETHEREUM_RELAY":"0xD35Bb6F1bc1C84b53E0995c1830454AB7C4147f1",
+    "DARWINIA_ETHEREUM_TOKEN_ISSUING":"0x98fAE9274562FE131e2CF5771ebFB0bB232aFd25",
+    "DARWINIA_ETHEREUM_FROM_WSS": "wss://pangolin-rpc.darwinia.network"
   },
   "production": {
     "ETHEREUM_NETWORK": 1,
     "TRON_NETWORK_SYMBOL": "api.tron",
-    "SIGN_PREFIX": "Pay RINGs to the Darwinia account:",
     "S58_PREFIX": 18,
     "NETWORK_NAME": "Darwinia MainNet",
     "SNAPSHOT_TIMESTAMP": 1584683400,
-    "SUBSCAN_API": "https://darwinia-cc1.subscan.io",
-    "SUBSCAN_API_DARWINIA": "https://darwinia-cc1.subscan.io",
+    "SUBSCAN_API": "https://darwinia.subscan.io",
     "DAPP_API": "https://api.darwinia.network",
     "ETHERSCAN_DOMAIN": {
       "en": "https://etherscan.io",
       "zh": "https://cn.etherscan.com"
     },
     "TRONSCAN_DOMAIN": "https://tronscan.io",
+    "SUBSCAN_DARWINIA_DOMAIN": "https://darwinia.subscan.io",
     "RING_ETH_ADDRESS": "0x9469d013805bffb7d3debe5e7839237e535ec483",
     "KTON_ETH_ADDRESS": "0x9f284e1337a815fe77d2ff4ae46544645b20c5ff",
     "REGISTRY_ETH_ADDRESS": "0x6B0940772516B69088904564A56d09CFe6Bb3D85",
@@ -57,6 +55,6 @@
     "D2E_NETWORK_PREFIX": "Darwinia",
     "DARWINIA_ETHEREUM_RELAY":"0x5cde5Aafeb8E06Ce9e4F94c2406d3B6CB7098E49",
     "DARWINIA_ETHEREUM_TOKEN_ISSUING":"0x5f44dd8e59f56aa04fe54e95cc690560ae706b18",
-    "DARWINIA_ETHEREUM_FROM_WSS": "wss://cc1.darwinia.network"
+    "DARWINIA_ETHEREUM_FROM_WSS": "wss://rpc.darwinia.network"
   }
 }

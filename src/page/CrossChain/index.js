@@ -8,7 +8,7 @@ import Web3 from 'web3';
 import _ from 'lodash';
 import { encodeAddress } from '@polkadot/util-crypto';
 import {
-    connect, sign, formToast, config, formatBalance, getBuildInGenesisInfo,
+    connect, formToast, config, formatBalance, getBuildInGenesisInfo,
     getTokenBalance, buildInGenesis, textTransform, remove0x, convertSS58Address, isMiddleScreen,
     getCringGenesisSwapInfo, redeemToken, redeemDeposit, checkIssuingAllowance, approveRingToIssuing, getEthereumBankDeposit,
     getEthereumToDarwiniaCrossChainInfo, getEthereumToDarwiniaCrossChainFee, crossChainFromDarwiniaToEthereum, getDarwiniaToEthereumCrossChainFee,
@@ -441,17 +441,6 @@ class CrossChain extends Component {
                 break;
         }
 
-    }
-
-    sign = async () => {
-        const { networkType, account, darwiniaAddress } = this.state;
-        const { t } = this.props;
-        sign(networkType, account[networkType], darwiniaAddress, (signature) => {
-            this.setState({
-                signature: signature,
-                status: 3
-            })
-        }, t)
     }
 
     buildInGenesis = () => {
@@ -1737,7 +1726,8 @@ class CrossChain extends Component {
             eth: `${config.ETHERSCAN_DOMAIN[lng]}/tx/`,
             tron: `${config.TRONSCAN_DOMAIN}/#transaction/`,
             crab: `https://crab.subscan.io/extrinsic/`,
-            darwinia: `https://darwinia-cc1.subscan.io/extrinsic/`,
+            pangolin: `https://pangolin.subscan.io/extrinsic/`,
+            darwinia: `${config.SUBSCAN_DARWINIA_DOMAIN}/extrinsic/`,
         }
 
         let urlHash = _hash || txhash;

@@ -12,8 +12,8 @@ import BankABI from './bankABI';
 // import DarwiniaToEthereumRelayABI from './abi/Relay'
 import DarwiniaToEthereumTokenIssuingABI from './abi/TokenIssuing'
 import RegistryABI from './registryABI';
-import { pangolinType, darwiniaType } from '../../util/polkadotjsType';
-import { ApiPromise, WsProvider } from '@darwinia/api';
+import { ApiPromise, WsProvider } from '@polkadot/api';
+import { typesBundleForPolkadot } from '@darwinia/types/mix';
 import {convert} from '../../util/mmrConvert/ckb_merkle_mountain_range_bg';
 import { hexToU8a } from '@polkadot/util';
 
@@ -160,31 +160,16 @@ function connectTron(accountsChangedCallback, t) {
     }
 }
 
-function getWssProvideType (type) {
-    switch (type) {
-        case 'pangolin':
-            return pangolinType;
-            break;
-        case 'darwinia':
-            return darwiniaType;
-            break;
-        case 'crab':
-            return darwiniaType;
-            break;
-        default:
-            return {};
-            break;
-    }
-}
-
 async function connectNodeProvider(wss, type = 'darwinia') {
     try{
         if (!window.darwiniaApi) {
             const provider = new WsProvider(wss);
-            const typeJson = getWssProvideType(type);
-            console.log(typeJson)
             // Create the API and wait until ready
-            window.darwiniaApi = new ApiPromise({ provider , types: typeJson });
+            window.darwiniaApi = await ApiPromise.create({ provider , typesBundle: {spec: {
+                Crab: typesBundleForPolkadot.spec.crab,
+                Pangolin: typesBundleForPolkadot.spec.pangolin,
+                Darwinia: typesBundleForPolkadot.spec.darwinia,
+              }}});
             await window.darwiniaApi.isReady;
         }
     }catch (error) {
@@ -198,11 +183,12 @@ async function connectSubstrate(accountsChangedCallback, t, networkType) {
 
     switch (networkType) {
         case 'crab':
-            await connectNodeProvider('wss://crab.darwinia.network', 'crab');
+            await connectNodeProvider('wss://crab-rpc.darwinia.network', 'crab');
             break;
         case 'darwinia':
             connectNodeProvider(config.DARWINIA_ETHEREUM_FROM_WSS, 'darwinia');
             // await connectNodeProvider('ws://t1.hkg.itering.com:9944', 'darwinia');
+            // await connectNodeProvider('wss://pangolin-rpc.darwinia.network', 'pangolin');
             // await connectNodeProvider('wss://crab.darwinia.network', 'crab');
             break;
         default:
@@ -222,38 +208,6 @@ async function connectSubstrate(accountsChangedCallback, t, networkType) {
     }
 
     accountsChangedCallback && accountsChangedCallback(networkType, allAccounts);
-}
-
-function getRawData(text) {
-    return config.SIGN_PREFIX + text
-}
-
-function combineFormatSignature(address, msg, sig) {
-    return JSON.stringify({
-        "address": address,
-        "msg": msg,
-        "sig": sig,
-        "version": "3",
-        "signer": "DarwiniaNetworkClaims"
-    })
-}
-
-function signEth(account, text, signCallBack) {
-    let web3js = new Web3(window.ethereum || window.web3.currentProvider);
-    const rawData = getRawData(text);
-    web3js.eth.personal.sign(rawData, account)
-        .then((signature) => {
-            signCallBack && signCallBack(combineFormatSignature(account, rawData, signature));
-        });
-}
-
-function signTron(account, text, signCallBack) {
-    const rawData = getRawData(text);
-    if (typeof window.tronWeb !== 'undefined') {
-        window.tronWeb.trx.sign(Web3.utils.stringToHex(rawData)).then((signature) => {
-            signCallBack && signCallBack(combineFormatSignature(window.tronWeb.address.toHex(account), rawData, signature));
-        })
-    }
 }
 
 function buildInGenesisEth(account, params, callback) {
@@ -378,29 +332,6 @@ export function connect(type, callback, t) {
             break;
         default:
             break;
-    }
-}
-
-export function sign(type, account, text, callback, t) {
-    const checkResult = checkAddress(text, config.S58_PREFIX);
-
-    if (!checkResult[0]) {
-        formToast(t(`crosschain:The entered {{account}} account is incorrect`, {
-            replace: {
-                account: config.NETWORK_NAME,
-            }
-        }))
-        return
-    }
-
-    const decodedAddress = buf2hex(decodeAddress(text, false, config.S58_PREFIX).buffer)
-
-    if (type === 'tron') {
-        signTron(account, decodedAddress, callback)
-    }
-
-    if (type === 'eth') {
-        signEth(account, decodedAddress, callback)
     }
 }
 
