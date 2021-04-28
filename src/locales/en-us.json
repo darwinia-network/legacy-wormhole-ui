@@ -123,7 +123,9 @@
     "The amount exceeds the account available balance": "The amount exceeds the account available balance",
     "The entered recipient account is incorrect": "The entered recipient account is incorrect",
     "d2e crosschain gas tip 1": "· Please initiate a claim transaction of the Ethereum network in the \"Cross-chain transfer history\".",
-    "d2e crosschain gas tip 2": "· Each claim transaction of Ethereum is estimated to use 600,000 Gas."
+    "d2e crosschain gas tip 2": "· Each claim transaction of Ethereum is estimated to use 600,000 Gas.",
+    "register erc20 token": "Register ERC20 token",
+    "Enter the contract address of the token": "Enter the contract address of the token"
   },
   "crosschain_ethtron": {
     "claim": "Cross-chain Transfer",
@@ -144,6 +146,8 @@
     "Please unlock TronLink first": "Please unlock TronLink first",
     "Please install TronLink first": "Please install TronLink first",
     "Please install Polkadot Extension": "Please install Polkadot Extension",
-    "Polkadot Extension has no account": "Polkadot Extension has no account"
+    "Polkadot Extension has no account": "Polkadot Extension has no account",
+    "Confirm": "Confirm",
+    "Cancel": "Cancel"
   }
 }

@@ -123,7 +123,9 @@
     "d2e crosschain gas tip 2": "· 每笔以太坊网络的「领取交易」预计消耗 600000 Gas。",
     "Extension": "从插件获取",
     "Manual": "手动输入",
-    "Please input the Darwinia address to be queried": "输入需要查询的 Darwinia 账号"
+    "Please input the Darwinia address to be queried": "输入需要查询的 Darwinia 账号",
+    "register erc20 token": "注册 ERC20 token",
+    "Enter the contract address of the token": "请输入ERC20 token 的合约地址"
   },
   "crosschain_ethtron": {
     "claim": "跨链转账",
@@ -144,6 +146,8 @@
     "Please unlock TronLink first": "请解锁TronLink",
     "Please install TronLink first": "请安装TronLink",
     "Please install Polkadot Extension": "请安装Polkadot插件",
-    "Polkadot Extension has no account": "Polkadot插件内无账号"
+    "Polkadot Extension has no account": "Polkadot插件内无账号",
+    "Confirm": "确定",
+    "Cancel": "取消"
   }
 }

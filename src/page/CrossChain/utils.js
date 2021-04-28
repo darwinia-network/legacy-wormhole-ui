@@ -1,10 +1,10 @@
 import { toast } from "react-toastify";
-import { web3Accounts, web3Enable, web3FromAddress, web3ListRpcProviders, web3UseRpcProvider } from '@polkadot/extension-dapp';
+import { web3Accounts, web3Enable, web3FromAddress } from '@polkadot/extension-dapp';
 
 import axios from 'axios';
 import ConfigJson from './config';
 import Web3 from 'web3';
-import { checkAddress, decodeAddress, encodeAddress, setSS58Format } from '@polkadot/util-crypto';
+import { checkAddress, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BN from 'bn.js';
 import _ from 'lodash';
 import TokenABI from './tokenABI';
@@ -102,7 +102,7 @@ function connectEth(accountsChangedCallback, t) {
             window.ethereum.enable()
                 .then(async (account) => {
                     const networkid = await web3js.eth.net.getId()
-                    if (config.ETHEREUM_NETWORK != networkid) {
+                    if (config.ETHEREUM_NETWORK !== networkid) {
                         formToast(t('common:Ethereum network type does not match'));
                         return;
                     }
@@ -138,7 +138,7 @@ function connectTron(accountsChangedCallback, t) {
             return
         }
         if (window.tronWeb.fullNode && window.tronWeb.fullNode.host) {
-            if (window.tronWeb.fullNode.host.indexOf(config.TRON_NETWORK_SYMBOL) == -1) {
+            if (window.tronWeb.fullNode.host.indexOf(config.TRON_NETWORK_SYMBOL) === -1) {
                 formToast(t('common:TRON network type does not match'));
                 return
             }
@@ -523,17 +523,14 @@ export const getCringGenesisSwapInfo = async (params, cb, failedcb) => {
 }
 
 export const getEthereumBankDeposit = async (params, cb, failedcb) => {
-    let json = await wxRequest(params, `${config.EVOLUTION_LAND_DOMAIN}/api/bank/gringotts`)
+    const json = await wxRequest(params, `https://www.evolution.land.l2me.com/api/bank/gringotts`)
     if (json.code === 0) {
         if (!json.data.list || json.data.list.length === 0) {
             cb && cb([])
             return;
         }
         const depositsOnChain = await getEthereumBankDepositByAddress(params.query.address);
-        const r = _.filter(json.data.list, (item) => {
-            console.log(item)
-            return depositsOnChain.includes(item.deposit_id.toString());
-        });
+        const r = _.filter(json.data.list, (item) => depositsOnChain.includes(item.deposit_id.toString()));
 
         cb && cb(r)
     } else {
@@ -894,5 +891,3 @@ export async function darwiniaToEthereumVerifyProof(account, {
             callback && callback(transactionHash)
         })
 }
-
-
