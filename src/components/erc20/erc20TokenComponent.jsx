@@ -3,9 +3,11 @@ import { ListGroup, Spinner, Modal, Button, Form } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import Web3 from "web3";
 import "./erc20TokenComponent.scss";
-import { config, toShortAccount } from "../../page/CrossChain/utils";
+import { config, formatBalance, toShortAccount } from "../../page/CrossChain/utils";
 import { getAllTokens } from "../../page/CrossChain/erc20/token";
+import { getTokenName } from '../../page/CrossChain/erc20/token-util';
 import JazzIcon from "../jazzIcon/JazzIconComponent";
+import { getMetamaskActiveAccount } from "../../page/CrossChain/utils";
 
 export default function Erc20Token(props) {
     const { t } = useTranslation();
@@ -20,7 +22,7 @@ export default function Erc20Token(props) {
         {
             title: t("crosschain:Select a token"),
             icon: null,
-            content: <SearchToken />,
+            content: <SearchToken onSearch={props.onHide} />,
             footer: (
                 <Button
                     onClick={() => {
@@ -87,16 +89,34 @@ export default function Erc20Token(props) {
     );
 }
 
-function SearchToken() {
+function SearchToken(props) {
     const { t } = useTranslation();
     const [loading, setLoading] = useState(true);
     const [allTokens, setAllTokens] = useState([]);
     const [display, setDisplay] = useState([]);
+    const [currentAccount, setCurrentAccount] = useState('');
 
     useEffect(() => {
         (async () => {
+            const account = await getMetamaskActiveAccount();
+
+            setCurrentAccount(account);
+        })();
+
+        window.ethereum.on('accountsChanged', (accounts) => {
+            setCurrentAccount(accounts[0]);
+            setAllTokens([]);
+            setDisplay([]);
+        });
+    }, []);
+
+    useEffect(() => {
+        (async () => {
+            setLoading(true);
+
             try {
-                const all = await getAllTokens();
+                const all = await getAllTokens(currentAccount);
+                console.log('%c [ all ]-118', 'font-size:13px; background:pink; color:#bf2c9f;', all);
 
                 setAllTokens(all);
                 setDisplay(all);
@@ -106,7 +126,7 @@ function SearchToken() {
                 setLoading(false);
             }
         })();
-    }, []);
+    }, [currentAccount]);
 
     return (
         <>
@@ -156,23 +176,23 @@ function SearchToken() {
             ) : (
                 <ListGroup className="token-list">
                     {display.map((token) => {
-                        const { symbol, address, logo } = token;
+                        const { symbol, address, logo, balance, source, name } = token;
 
                         return (
-                            <ListGroup.Item key={token.address}>
+                            <ListGroup.Item key={token.address} onClick={() => props.onSearch(token)}>
                                 <div>
                                     {!!logo ? (
                                         <img src={`/images/${logo}`} alt="" />
                                     ) : (
-                                        <JazzIcon address={address}></JazzIcon>
+                                        <JazzIcon address={source}></JazzIcon>
                                     )}
                                     <div>
-                                        <h6>{symbol}</h6>
+                                        <h6>{getTokenName(name, symbol)}</h6>
                                         <p>{toShortAccount(address)}</p>
                                     </div>
                                 </div>
 
-                                <span>amount: 999</span>
+                                <span>{formatBalance(balance)}</span>
                             </ListGroup.Item>
                         );
                     })}
@@ -254,7 +274,7 @@ function Manager(props) {
                     <ListGroup className="token-list">
                         <ListGroup.Item>
                             <div>
-                                <img src={''} alt="" />
+                                <img src={""} alt="" />
                                 <div>
                                     <h6>DAI</h6>
                                     <p>Dai Stablecoin</p>

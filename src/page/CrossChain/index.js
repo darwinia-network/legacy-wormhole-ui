@@ -122,7 +122,7 @@ class CrossChain extends Component {
             },
             accountValidation: null,
             isRegisterTokenModalDisplay: false,
-            erc20Token: '',
+            erc20Token: {},
         }
         this.querySubscribe = null
     }
@@ -897,7 +897,7 @@ class CrossChain extends Component {
                                     tokenType === 'erc20' ? (
                                         <>
                                             <Form.Label>{t('crosschain:ERC-20 Token')}</Form.Label>
-                                            <Form.Control value={this.state.erc20Token} onChange={() => { }}  onClick={() => this.setState({
+                                            <Form.Control value={this.state.erc20Token?.name || this.state.erc20Token?.symbol} onChange={() => { }}  onClick={() => this.setState({
                                                 isRegisterTokenModalDisplay: true
                                             })} placeholder={t('crosschain:Select a token')}>
                                             </Form.Control>
@@ -949,13 +949,13 @@ class CrossChain extends Component {
                                         <Form.Label>{t('crosschain:Amount')}</Form.Label>
                                         <InputRightWrap text={t('crosschain:MAX')} onClick={
                                             () => {
-                                                // this.setValue('crossChainBalance', { target: {} }, this.toWeiBNMiddleware, this.setRingBalanceText)
+                                                this.setValue('crossChainBalance', { target: {} }, this.toWeiBNMiddleware, this.setRingBalanceText)
                                             }
                                         }>
-                                            <Form.Control type="number" placeholder={`${t('crosschain:Balance')} : ${formatBalance(this.state[`${tokenType}Balance`], 'ether')}`}
+                                            <Form.Control type="number" placeholder={`${t('crosschain:Balance')} : ${formatBalance(this.state.erc20Token?.balance)}`}
                                                 autoComplete="off"
                                                 value={crossChainBalanceText}
-                                                onChange={(value) => this.setValue('crossChainBalance', value, null, null)} />
+                                                onChange={(value) => this.setValue('crossChainBalance', value, this.toWeiBNMiddleware, this.setRingBalanceText)} />
                                         </InputRightWrap>
                                     </>
                                     : null}
@@ -1810,7 +1810,14 @@ class CrossChain extends Component {
                         <Button variant="purple" onClick={() => this.setModalShow(false)}>{t('crosschain:Close')}</Button>
                     </Modal.Footer>
                 </Modal>
-                <Erc20Token show={this.state.isRegisterTokenModalDisplay} onHide={() => this.setState({isRegisterTokenModalDisplay: false})} />
+
+                <Erc20Token show={this.state.isRegisterTokenModalDisplay} onHide={(token) => {
+                    if(token) {
+                        this.setState({ erc20Token: token });
+                    }
+
+                    this.setState({isRegisterTokenModalDisplay: false});
+                }} />
             </div>
         );
     }

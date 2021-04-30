@@ -1,7 +1,6 @@
 import contractMap from "@metamask/contract-metadata";
 import abi from "human-standard-token-abi";
 import Web3 from "web3";
-import { DARWINIA_PROVIDER } from "../provider";
 
 const DEFAULT_SYMBOL = "";
 const DEFAULT_DECIMALS = "0";
@@ -11,9 +10,34 @@ const contractList = Object.entries(contractMap)
     .filter((tokenData) => Boolean(tokenData.erc20));
 
 export function getContractAtAddress(tokenAddress) {
-    const web3 = new Web3(DARWINIA_PROVIDER);
+    const web3 = new Web3(window.ethereum || window.web3.currentProvider);
 
     return new web3.eth.Contract(abi, tokenAddress);
+}
+
+/**
+ *
+ * @param {string} tokenAddress - token contract address
+ * @param {string} account - current active metamask account
+ * @returns {BN} balance of the account
+ */
+export async function getTokenBalance(address, account) {
+    const web3 = new Web3(window.ethereum || window.web3.currentProvider);
+    const contract = new web3.eth.Contract(abi, address);
+
+    try {
+        const balance = await contract.methods.balanceOf(account).call();
+
+        return Web3.utils.toBN(balance);
+    } catch (err) {
+        console.log(
+            "%c [ error ]-31",
+            "font-size:13px; background:pink; color:#bf2c9f;",
+            err
+        );
+    }
+
+    return 0;
 }
 
 async function getSymbolFromContract(tokenAddress) {
@@ -118,7 +142,8 @@ async function getSymbolAndDecimals(tokenAddress, existingTokens = []) {
 }
 
 export function getNameAndLogo(address) {
-    const { name = '', logo = ''} = contractList.find((token) => token.address === address) || {}; // logo: image name;
+    const { name, logo } =
+        contractList.find((token) => token.address === address) || {}; // logo: image name;
 
     return { name, logo };
 }
@@ -136,3 +161,7 @@ export const tokenInfoGetter = (() => {
         return tokens[address];
     };
 })();
+
+export function getTokenName(name, symbol) {
+    return typeof name === "undefined" ? symbol : `${name} (${symbol})`;
+}

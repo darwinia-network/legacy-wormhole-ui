@@ -895,3 +895,29 @@ export async function darwiniaToEthereumVerifyProof(account, {
             callback && callback(transactionHash)
         })
 }
+
+export function isMetamaskInstalled() {
+    return (
+        typeof window.ethereum !== "undefined" ||
+        typeof window.web3 !== "undefined"
+    );
+}
+
+/**
+ * 
+ * @returns {Promise<string>} - current active account in metamask;
+ */
+export async function getMetamaskActiveAccount() {
+    if (!isMetamaskInstalled) {
+        return;
+    }
+
+    await window.ethereum.request({ method: "eth_requestAccounts" });
+
+    const accounts = await window.ethereum.request({
+        method: "eth_accounts",
+    });
+    
+    // metamask just return the active account now, so the result array contains only one account;
+    return accounts[0];
+}

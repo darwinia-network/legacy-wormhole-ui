@@ -5,6 +5,7 @@ import mappingTokenABI from "../abi/MappingToken.json";
 import configJson from "../config.json";
 import { tokenInfoGetter, getNameAndLogo } from "./token-util";
 import { DARWINIA_PROVIDER } from "../provider";
+import { getTokenBalance } from "./token-util";
 
 const config = configJson[process.env.REACT_APP_CHAIN];
 const { backingContract, mappingContract } = (() => {
@@ -25,22 +26,28 @@ const { backingContract, mappingContract } = (() => {
     };
 })();
 
-export const getAllTokens = async () => {
+export const getAllTokens = async (currentAccount) => {
     const length = await mappingContract.methods.tokenLength().call(); // length: string
     const tokens = await Promise.all(
         new Array(+length).fill(0).map(async (_, index) => {
             const address = await mappingContract.methods
                 .allTokens(index)
-                .call();
+                .call(); // dvm address
             const info = await mappingContract.methods
                 .tokenToInfo(address)
-                .call();
+                .call(); // { source, backing }
             const { symbol = "", decimals = 0 } = await tokenInfoGetter(
-                address
+                info.source
             );
-            const { name, logo } = getNameAndLogo(address);
+            const { name, logo } = getNameAndLogo(info.source);
 
-            return { ...info, address, symbol, decimals, name, logo };
+            let balance = Web3.utils.toBN(0);
+
+            if(currentAccount) {
+                balance = await getTokenBalance(info.source, currentAccount);
+            }
+
+            return { ...info, address, symbol, decimals, name, logo, balance };
         })
     );
 
