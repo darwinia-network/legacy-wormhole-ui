@@ -1,12 +1,13 @@
 import contractMap from "@metamask/contract-metadata";
 import abi from "human-standard-token-abi";
 import Web3 from "web3";
+import { DARWINIA_PROVIDER } from "../provider";
 
 const DEFAULT_SYMBOL = "";
 const DEFAULT_DECIMALS = "0";
 
 export function getContractAtAddress(tokenAddress) {
-    const web3 = new Web3(window.ethereum || window.web3.currentProvider);
+    const web3 = new Web3(DARWINIA_PROVIDER);
 
     return new web3.eth.Contract(abi, tokenAddress);
 }

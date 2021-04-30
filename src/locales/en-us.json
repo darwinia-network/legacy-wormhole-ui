@@ -124,8 +124,13 @@
     "The entered recipient account is incorrect": "The entered recipient account is incorrect",
     "d2e crosschain gas tip 1": "· Please initiate a claim transaction of the Ethereum network in the \"Cross-chain transfer history\".",
     "d2e crosschain gas tip 2": "· Each claim transaction of Ethereum is estimated to use 600,000 Gas.",
-    "register erc20 token": "Register ERC20 token",
-    "Enter the contract address of the token": "Enter the contract address of the token"
+    "Search name or paste address": "Search name or paste address",
+    "Select a token": "Select a token",
+    "Tips After submit the registration, please wait for the {{type}} network to return the result, click [Upcoming] to view the progress.": "Tips: After submit the registration, please wait for the {{type}} network to return the result, click [Upcoming] to view the progress.",
+    "Register": "Register",
+    "Upcoming": "Upcoming",
+    "Token Contract Address": "Token Contract Address",
+    "Tips After {{type}} network returns the result, click [Confirm] to complete the token registration.": "Tips: After {{type}} network returns the result, click [Confirm] to complete the token registration."
   },
   "crosschain_ethtron": {
     "claim": "Cross-chain Transfer",
@@ -148,6 +153,7 @@
     "Please install Polkadot Extension": "Please install Polkadot Extension",
     "Polkadot Extension has no account": "Polkadot Extension has no account",
     "Confirm": "Confirm",
-    "Cancel": "Cancel"
+    "Submit": "Submit",
+    "Manage": "Manage"
   }
 }

@@ -1,0 +1,1 @@
+export const DARWINIA_PROVIDER = 'https://pangolin-rpc.darwinia.network';

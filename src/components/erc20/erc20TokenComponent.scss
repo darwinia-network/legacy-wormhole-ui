@@ -1,0 +1,147 @@
+$base-radius: 10px;
+
+.erc20-token-select {
+    .modal-header {
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 1rem;
+
+        .back {
+            cursor: pointer;
+            padding: 0 1rem;
+        }
+
+        .close {
+            margin: 0;
+        }
+    }
+
+    .modal-content,
+    .form-control {
+        border-radius: $base-radius;
+    }
+
+    .modal-footer {
+        justify-content: center;
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+
+        .tip {
+            opacity: 0.6;
+            font-size: 12px;
+            margin-bottom: 0.5rem;
+        }
+    }
+}
+
+.tab-container {
+    height: 42px;
+    background-color: #f0f0f0;
+    border-radius: 10px;
+    display: inline-flex;
+    width: 100%;
+    justify-content: space-around;
+    padding: 5px 1rem;
+    text-align: center;
+
+    .tab {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease-in;
+    }
+
+    .active {
+        background-color: #fff;
+        border-radius: $base-radius;
+    }
+}
+
+.register-control,
+.token-info,
+.register-search,
+.token-list {
+    padding: 0 2rem;
+}
+
+.register-control,
+.register-search {
+    margin-top: 1rem;
+}
+
+.token-info {
+    font-size: 12px;
+    h6 {
+        margin-bottom: 1rem;
+        &:after {
+            content: ":";
+        }
+    }
+
+    .info {
+        margin-bottom: 0.5rem;
+
+        b {
+            margin-right: 1em;
+
+            &:after {
+                content: ":";
+            }
+        }
+    }
+}
+
+.submit-btn {
+    display: block;
+    margin: 4rem auto 1rem;
+    width: 33%;
+}
+
+.token-list {
+    .list-group-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 12px;
+        border: none;
+        padding-left: 0;
+        padding-right: 0;
+
+        & > div {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        img {
+            width: 30px;
+            height: 30px;
+        }
+    }
+
+    p,
+    h6 {
+        margin-bottom: 0;
+    }
+
+    .circle-ring {
+        width: 10px;
+        height: 10px;
+        border: 2px solid #f446a0;
+        border-radius: 50%;
+        position: relative;
+
+        &::after {
+            content: "";
+            position: absolute;
+            bottom: -4px;
+            left: -4px;
+            background-color: #fff;
+            width: 8px;
+            height: 4px;
+            transform: rotateZ(-45deg);
+        }
+    }
+}

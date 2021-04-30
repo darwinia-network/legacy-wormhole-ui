@@ -3,16 +3,18 @@ import Web3 from "web3";
 import transferBridgeABI from "../abi/Backing.json";
 import mappingTokenABI from "../abi/MappingToken.json";
 import configJson from "../config.json";
-import { tokenInfoGetter } from './token-util';
+import { tokenInfoGetter } from "./token-util";
+import { DARWINIA_PROVIDER } from "../provider";
 
 const config = configJson[process.env.REACT_APP_CHAIN];
-const { backingContract, mappingContract  } = (() => {
+const { backingContract, mappingContract } = (() => {
     const web3 = new Web3(window.ethereum || window.web3.currentProvider);
     const backingContract = new web3.eth.Contract(
         transferBridgeABI,
         config.TRANSFER_BRIDGE_ETH_ADDRESS
     );
-    const mappingContract = new web3.eth.Contract(
+    const web3Darwinia = new Web3(DARWINIA_PROVIDER);
+    const mappingContract = new web3Darwinia.eth.Contract(
         mappingTokenABI,
         config.MAPPING_FACTORY_ADDRESS
     );
@@ -23,9 +25,7 @@ const { backingContract, mappingContract  } = (() => {
     };
 })();
 
-
 const getTokensInfo = (async () => {
-    // TODO: must under dvm network
     const length = await mappingContract.methods.tokenLength().call(); // length: string
     const tokens = await Promise.all(
         new Array(+length).fill(0).map(async (_, index) => {

@@ -51,7 +51,7 @@ import roadmapStatus1 from './img/roadmap-status-1.svg';
 import roadmapStatus2 from './img/roadmap-status-2.svg';
 
 import chainMap from '../Wrapper/chain';
-import RegisterErc20Token from '../../components/registerErc20Component';
+import Erc20Token from '../../components/erc20/erc20TokenComponent'
 
 const txProgressIcon = {
     stepStartIcon,
@@ -121,6 +121,7 @@ class CrossChain extends Component {
                 isFetchingClaimParams: false
             },
             isRegisterTokenModalDisplay: false,
+            erc20Token: '',
         }
         this.querySubscribe = null
     }
@@ -874,6 +875,35 @@ class CrossChain extends Component {
                     <div className={styles.formBox}>
                         <div className={`${styles.networkBox} claims-network-box`}>
                             <Form.Group controlId="darwinaAddressGroup">
+                                <Form.Label>{t('crosschain:Asset Types')}</Form.Label>
+                                <Form.Control as="select" value={tokenType}
+                                    onChange={(event) =>  {
+                                        const key = 'tokenType';
+
+                                        this.setValue(key, event, null, () => {
+                                            this.setState({
+                                                crossChainBalanceText: "",
+                                            });
+                                        });
+                                    }}>
+                                    <option value="ring">RING</option>
+                                    <option value="kton">KTON</option>
+                                    <option value="deposit">{t('crosschain:Deposit')}</option>
+                                    <option value="erc20">ERC-20</option>
+                                </Form.Control>
+
+                                {
+                                    tokenType === 'erc20' ? (
+                                        <>
+                                            <Form.Label>{t('crosschain:ERC-20 Token')}</Form.Label>
+                                            <Form.Control value={this.state.erc20Token} onChange={() => { }}  onClick={() => this.setState({
+                                                isRegisterTokenModalDisplay: true
+                                            })} placeholder={t('crosschain:Select a token')}>
+                                            </Form.Control>
+                                        </> 
+                                    ): null
+                                }
+
                                 <Form.Label>{t('crosschain:Please enter the destination account of Darwinia mainnet')} <a href={this.renderHelpUrl()} target="_blank"
                                     rel="noopener noreferrer"><img alt=""
                                         className={styles.labelIcon} src={helpLogo} /></a> </Form.Label>
@@ -882,33 +912,7 @@ class CrossChain extends Component {
                                 <Form.Text className="text-muted">
                                     {t('crosschain:Please be sure to fill in the real Darwinia mainnet account, and keep the account recovery files such as mnemonic properly.')}
                                 </Form.Text>
-
-                                <Form.Label>{t('crosschain:Asset Types')}</Form.Label>
-                                <Form.Control as="select" value={tokenType}
-                                    onChange={(event) =>  {
-                                        const key = 'tokenType';
-                                        const value = event.target.value;
-
-                                        if(value === 'register') {
-                                            this.setState({
-                                                isRegisterTokenModalDisplay: true
-                                            });
-                                        } else {
-                                            this.setValue(key, event, null, () => {
-                                                this.setState({
-                                                    crossChainBalanceText: "",
-                                                });
-                                            });
-                                        }
-                                    }}>
-                                    <option value="ring">RING</option>
-                                    <option value="kton">KTON</option>
-                                    <option value="deposit">{t('crosschain:Deposit')}</option>
-                                    {['Dai', 'USDT', 'USDC'].map(token => (
-                                        <option value={token} key={token}>{token}</option>
-                                    ))}
-                                    <option value="register">{t('crosschain:register erc20 token')}</option>
-                                </Form.Control>
+                                
 
                                 {tokenType === 'ring' ?
                                     <>
@@ -922,6 +926,22 @@ class CrossChain extends Component {
                                                 autoComplete="off"
                                                 value={crossChainBalanceText}
                                                 onChange={(value) => this.setValue('crossChainBalance', value, this.toWeiBNMiddleware, this.setRingBalanceText)} />
+                                        </InputRightWrap>
+                                    </>
+                                    : null}
+
+                                {tokenType === 'erc20' ?
+                                    <>
+                                        <Form.Label>{t('crosschain:Amount')}</Form.Label>
+                                        <InputRightWrap text={t('crosschain:MAX')} onClick={
+                                            () => {
+                                                // this.setValue('crossChainBalance', { target: {} }, this.toWeiBNMiddleware, this.setRingBalanceText)
+                                            }
+                                        }>
+                                            <Form.Control type="number" placeholder={`${t('crosschain:Balance')} : ${formatBalance(this.state[`${tokenType}Balance`], 'ether')}`}
+                                                autoComplete="off"
+                                                value={crossChainBalanceText}
+                                                onChange={(value) => this.setValue('crossChainBalance', value, null, null)} />
                                         </InputRightWrap>
                                     </>
                                     : null}
@@ -1776,7 +1796,7 @@ class CrossChain extends Component {
                         <Button variant="purple" onClick={() => this.setModalShow(false)}>{t('crosschain:Close')}</Button>
                     </Modal.Footer>
                 </Modal>
-                <RegisterErc20Token show={this.state.isRegisterTokenModalDisplay} onHide={() => this.setState({isRegisterTokenModalDisplay: false})} />
+                <Erc20Token show={this.state.isRegisterTokenModalDisplay} onHide={() => this.setState({isRegisterTokenModalDisplay: false})} />
             </div>
         );
     }

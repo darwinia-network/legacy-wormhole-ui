@@ -124,8 +124,13 @@
     "Extension": "从插件获取",
     "Manual": "手动输入",
     "Please input the Darwinia address to be queried": "输入需要查询的 Darwinia 账号",
-    "register erc20 token": "注册 ERC20 token",
-    "Enter the contract address of the token": "请输入ERC20 token 的合约地址"
+    "Search name or paste address": "搜索Token的名称或合约地址",
+    "Select a token": "请选择token",
+    "Tips After submit the registration, please wait for the {{type}} network to return the result, click [Upcoming] to view the progress.": "提示：提交注册后，请等待 {{type}} 网络完成，点击【即将完成】查看进度",
+    "Register": "注册",
+    "Upcoming": "即将完成",
+    "Token Contract Address": "token 合约地址",
+    "Tips After {{type}} network returns the result, click [Confirm] to complete the token registration.": "当 {{type}} 返回结果后，请点击确认按钮完成注册。"
   },
   "crosschain_ethtron": {
     "claim": "跨链转账",
@@ -148,6 +153,7 @@
     "Please install Polkadot Extension": "请安装Polkadot插件",
     "Polkadot Extension has no account": "Polkadot插件内无账号",
     "Confirm": "确定",
-    "Cancel": "取消"
+    "Submit": "确定",
+    "Manage": "管理"
   }
 }
