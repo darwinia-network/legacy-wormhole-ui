@@ -123,7 +123,7 @@ $base-radius: 10px;
 
     p,
     h6 {
-        margin-bottom: 0;
+        margin-bottom: 5px;
     }
 
     .circle-ring {
@@ -144,4 +144,9 @@ $base-radius: 10px;
             transform: rotateZ(-45deg);
         }
     }
+}
+
+.spinner {
+    display: block;
+    margin: auto;
 }

@@ -3,7 +3,7 @@ import Web3 from "web3";
 import transferBridgeABI from "../abi/Backing.json";
 import mappingTokenABI from "../abi/MappingToken.json";
 import configJson from "../config.json";
-import { tokenInfoGetter } from "./token-util";
+import { tokenInfoGetter, getNameAndLogo } from "./token-util";
 import { DARWINIA_PROVIDER } from "../provider";
 
 const config = configJson[process.env.REACT_APP_CHAIN];
@@ -25,7 +25,7 @@ const { backingContract, mappingContract } = (() => {
     };
 })();
 
-const getTokensInfo = (async () => {
+export const getAllTokens = async () => {
     const length = await mappingContract.methods.tokenLength().call(); // length: string
     const tokens = await Promise.all(
         new Array(+length).fill(0).map(async (_, index) => {
@@ -38,20 +38,14 @@ const getTokensInfo = (async () => {
             const { symbol = "", decimals = 0 } = await tokenInfoGetter(
                 address
             );
+            const { name, logo } = getNameAndLogo(address);
 
-            return { ...info, address, symbol, decimals };
+            return { ...info, address, symbol, decimals, name, logo };
         })
     );
 
-    console.log(
-        "%c [ tokens ]-170",
-        "font-size:13px; background:pink; color:#bf2c9f;",
-        tokens
-    );
-    return {
-        tokens,
-    };
-})();
+    return tokens;
+};
 
 const { assets } = (async () => {
     const assets = await backingContract.methods

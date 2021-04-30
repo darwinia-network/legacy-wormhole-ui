@@ -6,6 +6,10 @@ import { DARWINIA_PROVIDER } from "../provider";
 const DEFAULT_SYMBOL = "";
 const DEFAULT_DECIMALS = "0";
 
+const contractList = Object.entries(contractMap)
+    .map(([address, tokenData]) => ({ ...tokenData, address }))
+    .filter((tokenData) => Boolean(tokenData.erc20));
+
 export function getContractAtAddress(tokenAddress) {
     const web3 = new Web3(DARWINIA_PROVIDER);
 
@@ -111,6 +115,12 @@ async function getSymbolAndDecimals(tokenAddress, existingTokens = []) {
         symbol: symbol || DEFAULT_SYMBOL,
         decimals: decimals || DEFAULT_DECIMALS,
     };
+}
+
+export function getNameAndLogo(address) {
+    const { name = '', logo = ''} = contractList.find((token) => token.address === address) || {}; // logo: image name;
+
+    return { name, logo };
 }
 
 export const tokenInfoGetter = (() => {

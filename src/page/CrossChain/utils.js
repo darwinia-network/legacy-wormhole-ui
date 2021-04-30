@@ -264,15 +264,19 @@ async function buildInGenesisTron(account, params, callback) {
     })
 }
 
+export function toShortAccount(address, length = 8) {
+    return  address.substr(0, length) + '...' +address.substr(address.length - length, length)
+}
+
 export function convertSS58Address(text, isShort = false) {
     if(!text) {
         return '';
     }
     try {
         let address = encodeAddress(text, config.S58_PREFIX)
-        const length = 8
+        
         if(isShort) {
-            address = address.substr(0, length) + '...' +address.substr(address.length - length, length)
+            address = toShortAccount(text);
         }
         return address
     } catch (error) {

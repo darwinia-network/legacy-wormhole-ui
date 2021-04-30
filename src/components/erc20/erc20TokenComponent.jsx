@@ -1,11 +1,11 @@
-import React, { useState } from "react";
-import { ListGroup } from "react-bootstrap";
-import { Modal, Button, Form } from "react-bootstrap";
+import React, { useState, useEffect } from "react";
+import { ListGroup, Spinner, Modal, Button, Form } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import Web3 from "web3";
 import "./erc20TokenComponent.scss";
-import icon from "../../page/CrossChain/img/step-2-open.png";
-import { config } from "../../page/CrossChain/utils";
+import { config, toShortAccount } from "../../page/CrossChain/utils";
+import { getAllTokens } from "../../page/CrossChain/erc20/token";
+import JazzIcon from "../jazzIcon/JazzIconComponent";
 
 export default function Erc20Token(props) {
     const { t } = useTranslation();
@@ -89,30 +89,96 @@ export default function Erc20Token(props) {
 
 function SearchToken() {
     const { t } = useTranslation();
-    const [isValid, setIsValid] = useState(true);
-    const [address, setAddress] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [allTokens, setAllTokens] = useState([]);
+    const [display, setDisplay] = useState([]);
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const all = await getAllTokens();
+
+                setAllTokens(all);
+                setDisplay(all);
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setLoading(false);
+            }
+        })();
+    }, []);
 
     return (
-        <Form>
-            <Form.Group controlId="address">
-                <Form.Control
-                    type="text"
-                    required
-                    placeholder={t("crosschain:Search name or paste address")}
-                    onChange={(event) => {
-                        const value = event.target.value;
-                        const isValid = Web3.utils.isAddress(value);
+        <>
+            <Form>
+                <Form.Group controlId="address">
+                    <Form.Control
+                        type="text"
+                        required
+                        placeholder={t(
+                            "crosschain:Search name or paste address"
+                        )}
+                        onChange={(event) => {
+                            const value = event.target.value;
 
-                        setIsValid(isValid);
-                        setAddress(isValid ? value : "");
-                    }}
-                    isInvalid={!isValid}
-                />
-                <Form.Control.Feedback type="invalid">
-                    {t("crosschain:token address is invalid")}
-                </Form.Control.Feedback>
-            </Form.Group>
-        </Form>
+                            if (!value) {
+                                setDisplay(allTokens);
+                            }
+
+                            const isAddress = Web3.utils.isAddress(value);
+
+                            if (isAddress) {
+                                setDisplay(
+                                    allTokens.filter(
+                                        (token) => token.address === value
+                                    )
+                                );
+                            } else {
+                                setDisplay(
+                                    allTokens.filter((token) =>
+                                        token.symbol
+                                            .toLowerCase()
+                                            .includes(value.toLowerCase())
+                                    )
+                                );
+                            }
+                        }}
+                    />
+                </Form.Group>
+            </Form>
+
+            {loading ? (
+                <Spinner
+                    animation="border"
+                    role="status"
+                    className="spinner"
+                ></Spinner>
+            ) : (
+                <ListGroup className="token-list">
+                    {display.map((token) => {
+                        const { symbol, address, logo } = token;
+
+                        return (
+                            <ListGroup.Item key={token.address}>
+                                <div>
+                                    {!!logo ? (
+                                        <img src={`/images/${logo}`} alt="" />
+                                    ) : (
+                                        <JazzIcon address={address}></JazzIcon>
+                                    )}
+                                    <div>
+                                        <h6>{symbol}</h6>
+                                        <p>{toShortAccount(address)}</p>
+                                    </div>
+                                </div>
+
+                                <span>amount: 999</span>
+                            </ListGroup.Item>
+                        );
+                    })}
+                </ListGroup>
+            )}
+        </>
     );
 }
 
@@ -188,7 +254,7 @@ function Manager(props) {
                     <ListGroup className="token-list">
                         <ListGroup.Item>
                             <div>
-                                <img src={icon} alt="" />
+                                <img src={''} alt="" />
                                 <div>
                                     <h6>DAI</h6>
                                     <p>Dai Stablecoin</p>
@@ -198,18 +264,6 @@ function Manager(props) {
                             <Button variant="outline-dark" size="sm">
                                 {t("Confirm")}
                             </Button>
-                        </ListGroup.Item>
-
-                        <ListGroup.Item>
-                            <div>
-                                <img src={icon} alt="" />
-                                <div>
-                                    <h6>DAI</h6>
-                                    <p>Dai Stablecoin</p>
-                                </div>
-                            </div>
-
-                            <div className="circle-ring"></div>
                         </ListGroup.Item>
                     </ListGroup>
                 </>
