@@ -120,6 +120,7 @@ class CrossChain extends Component {
                 address: '',
                 isFetchingClaimParams: false
             },
+            accountValidation: null,
             isRegisterTokenModalDisplay: false,
             erc20Token: '',
         }
@@ -907,11 +908,24 @@ class CrossChain extends Component {
                                 <Form.Label>{t('crosschain:Please enter the destination account of Darwinia mainnet')} <a href={this.renderHelpUrl()} target="_blank"
                                     rel="noopener noreferrer"><img alt=""
                                         className={styles.labelIcon} src={helpLogo} /></a> </Form.Label>
-                                <Form.Control type="text" autoComplete="off" placeholder={t('crosschain:Darwinia Network account')} value={darwiniaAddress}
-                                    onChange={(value) => this.setValue('darwiniaAddress', value, null)} />
-                                <Form.Text className="text-muted">
-                                    {t('crosschain:Please be sure to fill in the real Darwinia mainnet account, and keep the account recovery files such as mnemonic properly.')}
-                                </Form.Text>
+                                <Form.Control type="text" autoComplete="off" isInvalid={this.state.accountValidation} placeholder={t('crosschain:Darwinia Network account')} value={darwiniaAddress}
+                                    onChange={(value) => {
+                                        const address = value.target.value;
+                                        const ss58Address = convertSS58Address(address);
+
+                                        this.setState({
+                                            accountValidation: !!address ? !!ss58Address ? null : { msg: "crosschain:This address is not {{type}} smart account"} : null,
+                                        });
+                                        this.setValue('darwiniaAddress', value, null);
+                                    }} />
+                                <Form.Control.Feedback type="invalid">
+                                    {t(this.state.accountValidation?.msg, { type: config.NETWORK_NAME })}
+                                </Form.Control.Feedback>
+                                {
+                                    !this.state.accountValidation && (<Form.Text className="text-muted">
+                                        {t('crosschain:Please be sure to fill in the real Darwinia mainnet account, and keep the account recovery files such as mnemonic properly.')}
+                                    </Form.Text>)
+                                }
                                 
 
                                 {tokenType === 'ring' ?

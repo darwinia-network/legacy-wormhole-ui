@@ -4,13 +4,17 @@ import { Modal, Button, Form } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import Web3 from "web3";
 import "./erc20TokenComponent.scss";
-import icon from '../../page/CrossChain/img/step-2-open.png'
+import icon from "../../page/CrossChain/img/step-2-open.png";
+import { config } from "../../page/CrossChain/utils";
 
 export default function Erc20Token(props) {
     const { t } = useTranslation();
     const [step, setStep] = useState(0);
     const [tipMsg, setTipMsg] = useState(
-        "Tips After submit the registration, please wait for the {{type}} network to return the result, click [Upcoming] to view the progress."
+        t(
+            "Tips After submit the registration, please wait for the {{type}} network to return the result, click [Upcoming] to view the progress.",
+            { type: config.NETWORK_NAME }
+        )
     );
     const facade = [
         {
@@ -51,7 +55,9 @@ export default function Erc20Token(props) {
                             "Tips After {{type}} network returns the result, click [Confirm] to complete the token registration.",
                         ];
 
-                        setTipMsg(messages[index]);
+                        setTipMsg(messages[index], {
+                            type: config.NETWORK_NAME,
+                        });
                     }}
                 />
             ),

@@ -130,7 +130,8 @@
     "Register": "Register",
     "Upcoming": "Upcoming",
     "Token Contract Address": "Token Contract Address",
-    "Tips After {{type}} network returns the result, click [Confirm] to complete the token registration.": "Tips: After {{type}} network returns the result, click [Confirm] to complete the token registration."
+    "Tips After {{type}} network returns the result, click [Confirm] to complete the token registration.": "Tips: After {{type}} network returns the result, click [Confirm] to complete the token registration.",
+    "This address is not {{type}} smart account": "This address is not {{type}} smart account"
   },
   "crosschain_ethtron": {
     "claim": "Cross-chain Transfer",
