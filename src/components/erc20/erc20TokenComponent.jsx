@@ -9,15 +9,20 @@ import {
     toShortAccount,
 } from "../../page/CrossChain/utils";
 import {
+    confirmRegister,
     getAllTokens,
     getTokenRegisterStatus,
+    proofObservable,
+    registerToken,
 } from "../../page/CrossChain/erc20/token";
 import {
+    getNameAndLogo,
     getSymbolAndDecimals,
     getTokenName,
 } from "../../page/CrossChain/erc20/token-util";
 import JazzIcon from "../jazzIcon/JazzIconComponent";
 import { getMetamaskActiveAccount } from "../../page/CrossChain/utils";
+import { useCancelablePromise } from "../../hooks/cancelablePromise";
 
 export default function Erc20Token(props) {
     const { t } = useTranslation();
@@ -32,7 +37,7 @@ export default function Erc20Token(props) {
         {
             title: t("crosschain:Select a token"),
             icon: null,
-            content: <SearchToken onSearch={props.onHide} />,
+            content: <SearchToken onSelect={props.onHide} />,
             footer: (
                 <Button
                     onClick={() => {
@@ -67,9 +72,11 @@ export default function Erc20Token(props) {
                             "Tips After {{type}} network returns the result, click [Confirm] to complete the token registration.",
                         ];
 
-                        setTipMsg(messages[index], {
-                            type: config.NETWORK_NAME,
-                        });
+                        setTipMsg(
+                            t(messages[index], {
+                                type: config.NETWORK_NAME,
+                            })
+                        );
                     }}
                 />
             ),
@@ -99,16 +106,43 @@ export default function Erc20Token(props) {
     );
 }
 
+function ListItem(props) {
+    const { token } = props;
+    const { address, logo, source, name, symbol } = token;
+
+    return (
+        <ListGroup.Item key={address} onClick={() => props?.onSelect(token)}>
+            <div>
+                {!!token.logo ? (
+                    <img src={`/images/${logo}`} alt="" />
+                ) : (
+                    <JazzIcon address={source || address}></JazzIcon>
+                )}
+                <div>
+                    <h6>{getTokenName(name, symbol)}</h6>
+                    <p>{toShortAccount(address)}</p>
+                </div>
+            </div>
+
+            {props.children}
+        </ListGroup.Item>
+    );
+}
+
+/**
+ * @param { onSelect?: token => void; isUpcoming: boolean; tokens: any[] }
+ */
 function SearchToken(props) {
     const { t } = useTranslation();
     const [loading, setLoading] = useState(true);
     const [allTokens, setAllTokens] = useState([]);
     const [display, setDisplay] = useState([]);
     const [currentAccount, setCurrentAccount] = useState("");
+    const makeCancelable = useCancelablePromise();
 
     useEffect(() => {
         (async () => {
-            const account = await getMetamaskActiveAccount();
+            const account = await makeCancelable(getMetamaskActiveAccount());
 
             setCurrentAccount(account);
         })();
@@ -118,24 +152,24 @@ function SearchToken(props) {
             setAllTokens([]);
             setDisplay([]);
         });
-    }, []);
+    }, [makeCancelable]);
 
     useEffect(() => {
         (async () => {
             setLoading(true);
 
             try {
-                const all = await getAllTokens(currentAccount);
+                const all = await makeCancelable(getAllTokens(currentAccount));
 
                 setAllTokens(all);
                 setDisplay(all);
             } catch (error) {
                 console.error(error);
-            } finally {
-                setLoading(false);
             }
+
+            setLoading(false);
         })();
-    }, [currentAccount]);
+    }, [currentAccount, makeCancelable]);
 
     return (
         <>
@@ -185,34 +219,16 @@ function SearchToken(props) {
             ) : (
                 <ListGroup className="token-list">
                     {display.map((token) => {
-                        const {
-                            symbol,
-                            address,
-                            logo,
-                            balance,
-                            source,
-                            name,
-                        } = token;
+                        const { balance } = token;
 
                         return (
-                            <ListGroup.Item
+                            <ListItem
                                 key={token.address}
-                                onClick={() => props.onSearch(token)}
+                                token={token}
+                                onSelect={props?.onSelect}
                             >
-                                <div>
-                                    {!!logo ? (
-                                        <img src={`/images/${logo}`} alt="" />
-                                    ) : (
-                                        <JazzIcon address={source}></JazzIcon>
-                                    )}
-                                    <div>
-                                        <h6>{getTokenName(name, symbol)}</h6>
-                                        <p>{toShortAccount(address)}</p>
-                                    </div>
-                                </div>
-
                                 <span>{formatBalance(balance)}</span>
-                            </ListGroup.Item>
+                            </ListItem>
                         );
                     })}
                 </ListGroup>
@@ -231,6 +247,9 @@ function Manager(props) {
     const [registeredStatus, setRegisteredStatus] = useState(-1);
     const [token, setToken] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [assets, setAssets] = useState([]);
+    const [display, setDisplay] = useState([]);
+    const makeCancelable = useCancelablePromise();
     const onTabClick = (index) => {
         return (event) => {
             if (props.onTabChange) {
@@ -242,6 +261,25 @@ function Manager(props) {
     };
 
     useEffect(() => {
+        const subscription = proofObservable.subscribe((proof) => {
+            // TODO: find the target assets , update its status to wait confirm.
+            const { address } = proof;
+            const index = assets.findIndex(
+                (asset) => asset.address === address
+            );
+            if (index > 0) {
+                assets[index].proof = proof;
+            }
+
+            setAssets([...assets]);
+        });
+
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [assets]);
+
+    useEffect(() => {
         if (active !== 0 || isRegisteredTokenInvalid || !inputValue) {
             setRegisteredStatus(-1);
             return;
@@ -250,14 +288,15 @@ function Manager(props) {
         (async () => {
             setIsLoading(true);
 
-            const status = await getTokenRegisterStatus(inputValue);
-            const result = await getSymbolAndDecimals(inputValue);
+            const status = await makeCancelable(getTokenRegisterStatus(inputValue));
+            const result = await makeCancelable(getSymbolAndDecimals(inputValue));
+            const { name, value } = getNameAndLogo(inputValue);
 
             setRegisteredStatus(status);
-            setToken(result);
+            setToken({ ...result, name, value, address: inputValue });
             setIsLoading(false);
         })();
-    }, [inputValue, active, isRegisteredTokenInvalid]);
+    }, [inputValue, active, isRegisteredTokenInvalid, makeCancelable]);
 
     return (
         <>
@@ -335,9 +374,10 @@ function Manager(props) {
                         <div
                             className="token-info"
                             style={{
-                                display: isRegisteredTokenInvalid || !inputValue
-                                    ? "none"
-                                    : "block",
+                                display:
+                                    isRegisteredTokenInvalid || !inputValue
+                                        ? "none"
+                                        : "block",
                             }}
                         >
                             <h6>{t("Token Info")}</h6>
@@ -356,10 +396,15 @@ function Manager(props) {
 
                     <Button
                         variant="secondary"
-                        disabled={isRegisteredTokenInvalid || isLoading || registeredStatus !== 0}
+                        disabled={
+                            isRegisteredTokenInvalid ||
+                            isLoading ||
+                            registeredStatus !== 0
+                        }
                         className="submit-btn"
-                        onClick={() => { 
-                            // TODO: registerToken(inputValue);
+                        onClick={() => {
+                            setAssets([token, ...assets]);
+                            registerToken(inputValue);
                         }}
                     >
                         {t("common:Submit")}
@@ -369,29 +414,94 @@ function Manager(props) {
 
             {active === 1 && (
                 <>
-                    <Form className="register-search">
+                    <Form className="register-control">
                         <Form.Group controlId="address">
-                            <Form.Control type="text" />
+                            <Form.Control
+                                type="text"
+                                required
+                                placeholder={t(
+                                    "crosschain:Search name or paste address"
+                                )}
+                                onChange={(event) => {
+                                    const value = event.target.value;
+
+                                    if (!value) {
+                                        setDisplay(assets);
+                                    }
+
+                                    const isAddress = Web3.utils.isAddress(
+                                        value
+                                    );
+
+                                    if (isAddress) {
+                                        setDisplay(
+                                            assets.filter(
+                                                (token) =>
+                                                    token.address === value
+                                            )
+                                        );
+                                    } else {
+                                        setDisplay(
+                                            assets.filter((token) =>
+                                                token.symbol
+                                                    .toLowerCase()
+                                                    .includes(
+                                                        value.toLowerCase()
+                                                    )
+                                            )
+                                        );
+                                    }
+                                }}
+                            />
                         </Form.Group>
                     </Form>
-
                     <ListGroup className="token-list">
-                        <ListGroup.Item>
-                            <div>
-                                <img src={""} alt="" />
-                                <div>
-                                    <h6>DAI</h6>
-                                    <p>Dai Stablecoin</p>
-                                </div>
-                            </div>
+                        {!display.length && <EmptyData />}
+                        {display?.map((token, index) => {
+                            const { proof } = token;
 
-                            <Button variant="outline-dark" size="sm">
-                                {t("Confirm")}
-                            </Button>
-                        </ListGroup.Item>
+                            return (
+                                <ListItem
+                                    key={token.address}
+                                    token={token}
+                                    onClick={props.onSelect}
+                                >
+                                    {token.proof ? (
+                                        token.confirm ? (
+                                            <span>✔</span>
+                                        ) : (
+                                            <Button
+                                                size="sm"
+                                                onClick={() =>
+                                                    confirmRegister(proof).then(
+                                                        () => {
+                                                            token.confirm = true;
+                                                        }
+                                                    )
+                                                }
+                                            >
+                                                {t("Confirm")}
+                                            </Button>
+                                        )
+                                    ) : (
+                                        <Spinner
+                                            animation="border"
+                                            size="sm"
+                                            variant="danger"
+                                        />
+                                    )}
+                                </ListItem>
+                            );
+                        })}
                     </ListGroup>
                 </>
             )}
         </>
     );
+}
+
+export function EmptyData() {
+    const { t } = useTranslation();
+
+    return <div className="empty">{t("Empty data")}</div>;
 }

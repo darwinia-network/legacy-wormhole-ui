@@ -6,6 +6,8 @@ import configJson from "../config.json";
 import { tokenInfoGetter, getNameAndLogo } from "./token-util";
 import { DARWINIA_PROVIDER } from "../provider";
 import { getTokenBalance } from "./token-util";
+import { getMPTProof } from '../utils';
+import { Subject } from 'rxjs';
 
 const config = configJson[process.env.REACT_APP_CHAIN];
 const { backingContract, mappingContract } = (() => {
@@ -25,6 +27,13 @@ const { backingContract, mappingContract } = (() => {
         mappingContract,
     };
 })();
+
+const proofSubject = new Subject();
+
+/**
+ * proof events stream
+ */
+export const proofObservable = proofSubject.asObservable();
 
 export const getAllTokens = async (currentAccount) => {
     const length = await mappingContract.methods.tokenLength().call(); // length: string
@@ -54,23 +63,23 @@ export const getAllTokens = async (currentAccount) => {
     return tokens;
 };
 
-const { assets } = (async () => {
-    const assets = await backingContract.methods
-        .assets("0x8d86E21649aebbeb4DDb2614E3d72673351b17a2")
-        .call();
-
-    return { assets };
-})();
-
 /**
  * @param { Address } address - erc20 token address
- * @return { void } - undefined
+ * @return { Promise<void> } - void 
  */
 export const registerToken = async (address) => {
     const isRegistered = await hasRegistered(address);
 
     if (!isRegistered) {
         await backingContract.methods.registerToken(address).call();
+
+        const blockHash = await getRegisteredTokenHash(address);
+        const eventsProof = await getMPTProof(
+            blockHash,
+            "0xe66f3de22eed97c730152f373193b5a0485b407d88f37d5fd6a2c59e5a696691"
+        );
+
+        proofSubject.next(eventsProof);
     }
 };
 
@@ -80,6 +89,7 @@ export const registerToken = async (address) => {
  * @returns block hash
  */
 const getRegisteredTokenHash = async (address) => {
+    // TODO: fetch block hash of address register. http? ws?
     const hash = await axios
         .get("xxx", { params: { address } })
         .then((res) => res.data);
@@ -120,3 +130,9 @@ export const hasRegistered = async (address) => {
 
     return !!status;
 };
+
+export const confirmRegister = async (proof) => {
+    const result = await backingContract.methods.crossChainSync(proof); 
+
+    return result;
+}

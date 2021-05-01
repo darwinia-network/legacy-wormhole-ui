@@ -687,9 +687,9 @@ export function encodeBlockHeader(blockHeaderStr) {
     });
 }
 
-export async function getMPTProof(hash = '') {
+export async function getMPTProof(hash = '', proofAddress = '0xf8860dda3d08046cf2706b92bf7202eaae7a79191c90e76297e0895605b8b457') {
     if(window.darwiniaApi) {
-        const proof = await window.darwiniaApi.rpc.state.getReadProof(['0xf8860dda3d08046cf2706b92bf7202eaae7a79191c90e76297e0895605b8b457'], hash);
+        const proof = await window.darwiniaApi.rpc.state.getReadProof([proofAddress], hash);
         const registry = new TypeRegistry();
 
         return registry.createType('Vec<Bytes>',proof.proof.toJSON());
