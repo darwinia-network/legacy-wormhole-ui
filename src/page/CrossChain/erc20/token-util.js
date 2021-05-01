@@ -5,6 +5,24 @@ import Web3 from "web3";
 const DEFAULT_SYMBOL = "";
 const DEFAULT_DECIMALS = "0";
 
+/**
+ * tokenCache: { address: string; symbol?: string; decimals?: string; name?: string; logo?: string;}[];
+ */
+const tokenCache = [];
+
+function updateTokenCache(value) {
+    const { address, ...others } = value;
+    const index = tokenCache.findIndex((token) => token.address === address);
+
+    if (index > 0) {
+        tokenCache[index] = { ...tokenCache[index], ...others };
+    } else {
+        tokenCache.push(value);
+    }
+
+    return tokenCache;
+}
+
 const contractList = Object.entries(contractMap)
     .map(([address, tokenData]) => ({ ...tokenData, address }))
     .filter((tokenData) => Boolean(tokenData.erc20));
@@ -111,12 +129,12 @@ async function getDecimals(tokenAddress) {
     return decimals;
 }
 
-async function getSymbolAndDecimals(tokenAddress, existingTokens = []) {
-    const existingToken = existingTokens.find(
-        ({ address }) => tokenAddress === address
-    );
+export async function getSymbolAndDecimals(tokenAddress, cacheFirst = true) {
+    const isTarget = ({ address }) => address === tokenAddress;
+    const existingToken =
+        tokenCache.find(isTarget) || contractList.find(isTarget);
 
-    if (existingToken) {
+    if (existingToken && cacheFirst) {
         return {
             symbol: existingToken.symbol,
             decimals: existingToken.decimals,
@@ -135,20 +153,26 @@ async function getSymbolAndDecimals(tokenAddress, existingTokens = []) {
         );
     }
 
-    return {
+    const result = {
         symbol: symbol || DEFAULT_SYMBOL,
         decimals: decimals || DEFAULT_DECIMALS,
     };
+
+    updateTokenCache({ address: tokenAddress, ...result });
+
+    return result;
 }
 
-export function getNameAndLogo(address) {
+export function getNameAndLogo(tokenAddress) {
     const { name, logo } =
-        contractList.find((token) => token.address === address) || {}; // logo: image name;
+        contractList.find((token) => token.address === tokenAddress) || {}; // logo: image name;
+
+    updateTokenCache({ address: tokenAddress, name, logo });
 
     return { name, logo };
 }
 
-export const tokenInfoGetter = (() => {
+export const tokenInfoGetter = ((cacheFirst = true) => {
     const tokens = {};
 
     return async (address) => {
@@ -156,7 +180,7 @@ export const tokenInfoGetter = (() => {
             return tokens[address];
         }
 
-        tokens[address] = await getSymbolAndDecimals(address);
+        tokens[address] = await getSymbolAndDecimals(address, cacheFirst);
 
         return tokens[address];
     };

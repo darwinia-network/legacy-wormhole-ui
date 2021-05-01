@@ -3,9 +3,19 @@ import { ListGroup, Spinner, Modal, Button, Form } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import Web3 from "web3";
 import "./erc20TokenComponent.scss";
-import { config, formatBalance, toShortAccount } from "../../page/CrossChain/utils";
-import { getAllTokens } from "../../page/CrossChain/erc20/token";
-import { getTokenName } from '../../page/CrossChain/erc20/token-util';
+import {
+    config,
+    formatBalance,
+    toShortAccount,
+} from "../../page/CrossChain/utils";
+import {
+    getAllTokens,
+    getTokenRegisterStatus,
+} from "../../page/CrossChain/erc20/token";
+import {
+    getSymbolAndDecimals,
+    getTokenName,
+} from "../../page/CrossChain/erc20/token-util";
 import JazzIcon from "../jazzIcon/JazzIconComponent";
 import { getMetamaskActiveAccount } from "../../page/CrossChain/utils";
 
@@ -94,7 +104,7 @@ function SearchToken(props) {
     const [loading, setLoading] = useState(true);
     const [allTokens, setAllTokens] = useState([]);
     const [display, setDisplay] = useState([]);
-    const [currentAccount, setCurrentAccount] = useState('');
+    const [currentAccount, setCurrentAccount] = useState("");
 
     useEffect(() => {
         (async () => {
@@ -103,7 +113,7 @@ function SearchToken(props) {
             setCurrentAccount(account);
         })();
 
-        window.ethereum.on('accountsChanged', (accounts) => {
+        window.ethereum.on("accountsChanged", (accounts) => {
             setCurrentAccount(accounts[0]);
             setAllTokens([]);
             setDisplay([]);
@@ -116,7 +126,6 @@ function SearchToken(props) {
 
             try {
                 const all = await getAllTokens(currentAccount);
-                console.log('%c [ all ]-118', 'font-size:13px; background:pink; color:#bf2c9f;', all);
 
                 setAllTokens(all);
                 setDisplay(all);
@@ -176,10 +185,20 @@ function SearchToken(props) {
             ) : (
                 <ListGroup className="token-list">
                     {display.map((token) => {
-                        const { symbol, address, logo, balance, source, name } = token;
+                        const {
+                            symbol,
+                            address,
+                            logo,
+                            balance,
+                            source,
+                            name,
+                        } = token;
 
                         return (
-                            <ListGroup.Item key={token.address} onClick={() => props.onSearch(token)}>
+                            <ListGroup.Item
+                                key={token.address}
+                                onClick={() => props.onSearch(token)}
+                            >
                                 <div>
                                     {!!logo ? (
                                         <img src={`/images/${logo}`} alt="" />
@@ -205,16 +224,41 @@ function SearchToken(props) {
 function Manager(props) {
     const { t } = useTranslation();
     const [active, setActive] = useState(0);
-    const { token, setToken } = useState(null);
+    const [inputValue, setInputValue] = useState("");
+    const [isRegisteredTokenInvalid, setIsRegisteredTokenInvalid] = useState(
+        false
+    );
+    const [registeredStatus, setRegisteredStatus] = useState(-1);
+    const [token, setToken] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
     const onTabClick = (index) => {
         return (event) => {
-            setActive(index);
-
             if (props.onTabChange) {
                 props.onTabChange(index);
             }
+
+            setActive(index);
         };
     };
+
+    useEffect(() => {
+        if (active !== 0 || isRegisteredTokenInvalid || !inputValue) {
+            setRegisteredStatus(-1);
+            return;
+        }
+
+        (async () => {
+            setIsLoading(true);
+
+            const status = await getTokenRegisterStatus(inputValue);
+            const result = await getSymbolAndDecimals(inputValue);
+
+            setRegisteredStatus(status);
+            setToken(result);
+            setIsLoading(false);
+        })();
+    }, [inputValue, active, isRegisteredTokenInvalid]);
+
     return (
         <>
             <div className="tab-container">
@@ -239,25 +283,85 @@ function Manager(props) {
                             <Form.Label>
                                 {t("crosschain:Token Contract Address")}
                             </Form.Label>
-                            <Form.Control type="text" required />
+                            <Form.Control
+                                type="text"
+                                isInvalid={isRegisteredTokenInvalid}
+                                onChange={(event) => {
+                                    const value = event.target.value;
+
+                                    setInputValue(value);
+
+                                    if (!value) {
+                                        setIsRegisteredTokenInvalid(false);
+                                        return;
+                                    }
+
+                                    const isAddress = Web3.utils.isAddress(
+                                        value
+                                    );
+
+                                    setIsRegisteredTokenInvalid(!isAddress);
+                                }}
+                            />
+                            <Form.Control.Feedback type="invalid">
+                                {t("common:Invalid Address")}
+                            </Form.Control.Feedback>
+
+                            {registeredStatus === 1 && (
+                                <Form.Text>
+                                    {t(
+                                        "crosschain:This token has been registered."
+                                    )}
+                                </Form.Text>
+                            )}
+
+                            {registeredStatus === 2 && (
+                                <Form.Text>
+                                    {t(
+                                        "crosschain:This token has been registered, switch to upcoming tab to view the register status."
+                                    )}
+                                </Form.Text>
+                            )}
                         </Form.Group>
                     </Form>
 
-                    <div className="token-info">
-                        <h6>{t("Token Info")}</h6>
+                    {isLoading ? (
+                        <Spinner
+                            animation="border"
+                            role="status"
+                            className="spinner"
+                        ></Spinner>
+                    ) : (
+                        <div
+                            className="token-info"
+                            style={{
+                                display: isRegisteredTokenInvalid || !inputValue
+                                    ? "none"
+                                    : "block",
+                            }}
+                        >
+                            <h6>{t("Token Info")}</h6>
 
-                        <div className="info">
-                            <b>{t("Symbol")}</b>
-                            <span>{token?.symbol}</span>
+                            <div className="info">
+                                <b>{t("Symbol")}</b>
+                                <span>{token?.symbol}</span>
+                            </div>
+
+                            <div className="info">
+                                <b>{t("Decimals of Precision")}</b>
+                                <span>{token?.decimals}</span>
+                            </div>
                         </div>
+                    )}
 
-                        <div className="info">
-                            <b>{t("Decimals of Precision")}</b>
-                            <span>{token?.decimals}</span>
-                        </div>
-                    </div>
-
-                    <Button variant="secondary" className="submit-btn">
+                    <Button
+                        variant="secondary"
+                        disabled={isRegisteredTokenInvalid || isLoading || registeredStatus !== 0}
+                        className="submit-btn"
+                        onClick={() => { 
+                            // TODO: registerToken(inputValue);
+                        }}
+                    >
                         {t("common:Submit")}
                     </Button>
                 </>

@@ -63,10 +63,6 @@ const { assets } = (async () => {
 })();
 
 /**
- * 已注册的tokens
- */
-
-/**
  * @param { Address } address - erc20 token address
  * @return { void } - undefined
  */
@@ -96,16 +92,23 @@ const getRegisteredTokenHash = async (address) => {
  * @param {Address} address - erc20 token address
  * @return {Promise<number>} status - 0: unregister 1: registered 2: registering
  */
-const getTokenRegisterStatus = async (address) => {
+export const getTokenRegisterStatus = async (address) => {
+    if(!address || !Web3.utils.isAddress(address)) {
+        console.warn(`Token address is invalid, except an ERC20 token address. Received value: ${address}`)
+        return;
+    }
+
     const { target, timestamp } = await backingContract.methods
         .assets(address)
         .call();
+    const isTargetTruthy = !!Web3.utils.hexToNumber(target);
+    const isTimestampExist = +timestamp > 0;
 
-    if (!!timestamp && !target) {
+    if (isTimestampExist && !isTargetTruthy) {
         return 2;
     }
 
-    if (!!timestamp && !!target) {
+    if (isTimestampExist && isTargetTruthy) {
         return 1;
     }
 

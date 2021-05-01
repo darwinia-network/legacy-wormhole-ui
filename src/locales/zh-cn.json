@@ -131,7 +131,9 @@
     "Upcoming": "即将完成",
     "Token Contract Address": "token 合约地址",
     "Tips After {{type}} network returns the result, click [Confirm] to complete the token registration.": "当 {{type}} 返回结果后，请点击确认按钮完成注册。",
-    "This address is not {{type}} smart account": "此地址不是 {{type}} 网络智能账号地址"
+    "This address is not {{type}} smart account": "此地址不是 {{type}} 网络智能账号地址",
+    "This token has been registered.": "此Token已经注册完成",
+    "This token is being registered, switch to upcoming tab to view the register status.": "此Token正在注册中，您可以切换到【即将完成】中查看注册状态"
   },
   "crosschain_ethtron": {
     "claim": "跨链转账",
