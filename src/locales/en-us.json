@@ -149,6 +149,7 @@
   },
   "common": {
     "Ethereum network type does not match": "Ethereum network type does not match",
+    "Ethereum network type does not match, please switch to {{network}} network in metamask.": "Ethereum network type does not match, please switch to {{network}} network in metamask.",
     "TRON network type does not match": "TRON network type does not match",
     "Please install MetaMask first": "Please install MetaMask first",
     "Please unlock TronLink first": "Please unlock TronLink first",

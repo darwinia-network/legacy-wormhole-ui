@@ -1,6 +1,8 @@
 {
   "development": {
     "ETHEREUM_NETWORK": 3,
+    "DVM_NETWORK_ID": 43,
+    "IS_DEV": true,
     "TRON_NETWORK_SYMBOL": "shasta",
     "S58_PREFIX": 18,
     "NETWORK_NAME": "Pangolin",
@@ -32,6 +34,8 @@
   },
   "production": {
     "ETHEREUM_NETWORK": 1,
+    "DVM_NETWORK_ID": "unknown",
+    "IS_PROD": true,
     "TRON_NETWORK_SYMBOL": "api.tron",
     "S58_PREFIX": 18,
     "NETWORK_NAME": "Darwinia MainNet",

@@ -6,11 +6,11 @@ import configJson from "../config.json";
 import { tokenInfoGetter, getNameAndLogo } from "./token-util";
 import { DARWINIA_PROVIDER } from "../provider";
 import { getTokenBalance } from "./token-util";
-import { getMPTProof } from '../utils';
-import { Subject } from 'rxjs';
+import { getMPTProof, isNetworkMatch } from "../utils";
+import { Subject, throwError } from "rxjs";
 
 const config = configJson[process.env.REACT_APP_CHAIN];
-const { backingContract, mappingContract } = (() => {
+const { backingContract, mappingContract, web3 } = (() => {
     const web3 = new Web3(window.ethereum || window.web3.currentProvider);
     const backingContract = new web3.eth.Contract(
         transferBridgeABI,
@@ -25,6 +25,7 @@ const { backingContract, mappingContract } = (() => {
     return {
         backingContract,
         mappingContract,
+        web3,
     };
 })();
 
@@ -52,7 +53,7 @@ export const getAllTokens = async (currentAccount) => {
 
             let balance = Web3.utils.toBN(0);
 
-            if(currentAccount) {
+            if (currentAccount) {
                 balance = await getTokenBalance(info.source, currentAccount);
             }
 
@@ -65,7 +66,7 @@ export const getAllTokens = async (currentAccount) => {
 
 /**
  * @param { Address } address - erc20 token address
- * @return { Promise<void> } - void 
+ * @return { Promise<void> } - void
  */
 export const registerToken = async (address) => {
     const isRegistered = await hasRegistered(address);
@@ -103,8 +104,10 @@ const getRegisteredTokenHash = async (address) => {
  * @return {Promise<number>} status - 0: unregister 1: registered 2: registering
  */
 export const getTokenRegisterStatus = async (address) => {
-    if(!address || !Web3.utils.isAddress(address)) {
-        console.warn(`Token address is invalid, except an ERC20 token address. Received value: ${address}`)
+    if (!address || !Web3.utils.isAddress(address)) {
+        console.warn(
+            `Token address is invalid, except an ERC20 token address. Received value: ${address}`
+        );
         return;
     }
 
@@ -132,13 +135,42 @@ export const hasRegistered = async (address) => {
 };
 
 export const confirmRegister = async (proof) => {
-    const result = await backingContract.methods.crossChainSync(proof); 
+    const result = await backingContract.methods.crossChainSync(proof);
+
+    return result;
+};
+
+export async function crossSendErc20FromEthToDvm(
+    tokenAddress,
+    recipientAddress,
+    amount
+) {
+    const result = await backingContract.methods.crossSendToken(
+        tokenAddress,
+        recipientAddress,
+        amount.toString()
+    );
 
     return result;
 }
 
-export async function crossSendErc20FromEthToDvm(tokenAddress, recipientAddress, amount) { 
-    const result = await backingContract.methods.crossSendToken(tokenAddress, recipientAddress, amount);
-    
-    return result;
-}
+export async function crossSendErc20FromDvmToEth(
+    tokenAddress,
+    recipientAddress,
+    amount
+) {
+    // dev env pangolin(id: 43) product env darwinia(id: ?);
+    const isMatch = await isNetworkMatch(config.DVM_NETWORK_ID);
+
+    if(isMatch) {
+        const result = await mappingContract.methods.crossTransfer(
+            tokenAddress,
+            recipientAddress,
+            amount.toString()
+        );
+
+        return result;
+    } else {
+        throw new Error('common:Ethereum network type does not match, please switch to {{network}} network in metamask.');
+    }
+} 

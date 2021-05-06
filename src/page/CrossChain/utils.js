@@ -921,3 +921,15 @@ export async function getMetamaskActiveAccount() {
     // metamask just return the active account now, so the result array contains only one account;
     return accounts[0];
 }
+
+/**
+ * 
+ * @param {number} expectNetworkId  - network id
+ * @returns {Promise<boolean>} is acutal network id match with expected.
+ */
+export async function isNetworkMatch(expectNetworkId) {
+    const web3 = new Web3(window.ethereum || window.web3.currentProvider);
+    const networkId = await web3.eth.net.getId();
+
+    return expectNetworkId === networkId;
+}

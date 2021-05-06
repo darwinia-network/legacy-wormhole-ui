@@ -149,6 +149,7 @@
   },
   "common": {
     "Ethereum network type does not match": "以太坊网络类型不匹配",
+    "Ethereum network type does not match, please switch to {{network}} network in metamask.": "以太坊网络类型不匹配，请在metamask中切换至{{network}}网络。",
     "TRON network type does not match": "波场网络类型不匹配",
     "Please install MetaMask first": "请解锁MetaMask",
     "Please unlock TronLink first": "请解锁TronLink",

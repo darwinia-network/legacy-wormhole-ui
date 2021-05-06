@@ -83,10 +83,11 @@ export default function Erc20Token(props) {
             footer: <p className="tip">{t(tipMsg, { type: "" })}</p>,
         },
     ];
+    const { networkType, ...modalProps} = props;
 
     return (
         <Modal
-            {...props}
+            {...modalProps}
             onHide={() => {
                 props.onHide();
                 setStep(0);
@@ -101,7 +102,9 @@ export default function Erc20Token(props) {
 
             <Modal.Body>{facade[step].content}</Modal.Body>
 
-            <Modal.Footer>{facade[step].footer}</Modal.Footer>
+            {networkType === "eth" ? (
+                <Modal.Footer>{facade[step].footer}</Modal.Footer>
+            ) : null}
         </Modal>
     );
 }
@@ -288,8 +291,12 @@ function Manager(props) {
         (async () => {
             setIsLoading(true);
 
-            const status = await makeCancelable(getTokenRegisterStatus(inputValue));
-            const result = await makeCancelable(getSymbolAndDecimals(inputValue));
+            const status = await makeCancelable(
+                getTokenRegisterStatus(inputValue)
+            );
+            const result = await makeCancelable(
+                getSymbolAndDecimals(inputValue)
+            );
             const { name, logo } = getNameAndLogo(inputValue);
 
             setRegisteredStatus(status);
