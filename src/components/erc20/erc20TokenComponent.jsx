@@ -290,10 +290,10 @@ function Manager(props) {
 
             const status = await makeCancelable(getTokenRegisterStatus(inputValue));
             const result = await makeCancelable(getSymbolAndDecimals(inputValue));
-            const { name, value } = getNameAndLogo(inputValue);
+            const { name, logo } = getNameAndLogo(inputValue);
 
             setRegisteredStatus(status);
-            setToken({ ...result, name, value, address: inputValue });
+            setToken({ ...result, name, logo, address: inputValue });
             setIsLoading(false);
         })();
     }, [inputValue, active, isRegisteredTokenInvalid, makeCancelable]);

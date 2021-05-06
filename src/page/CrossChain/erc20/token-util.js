@@ -131,13 +131,13 @@ async function getDecimals(tokenAddress) {
 
 export async function getSymbolAndDecimals(tokenAddress, cacheFirst = true) {
     const isTarget = ({ address }) => address === tokenAddress;
-    const existingToken =
-        tokenCache.find(isTarget) || contractList.find(isTarget);
+    const fromCache = tokenCache.find(isTarget);
+    const fromContractList = contractList.find(isTarget);
 
-    if (existingToken && cacheFirst) {
+    if ((fromCache || fromContractList) && cacheFirst) {
         return {
-            symbol: existingToken.symbol,
-            decimals: existingToken.decimals,
+            symbol: fromCache?.symbol || fromContractList?.symbol,
+            decimals: fromCache?.symbol || fromContractList?.decimals,
         };
     }
 

@@ -12,8 +12,9 @@ import {
     getTokenBalance, buildInGenesis, textTransform, remove0x, convertSS58Address, isMiddleScreen,
     getCringGenesisSwapInfo, redeemToken, redeemDeposit, checkIssuingAllowance, approveRingToIssuing, getEthereumBankDeposit,
     getEthereumToDarwiniaCrossChainInfo, getEthereumToDarwiniaCrossChainFee, crossChainFromDarwiniaToEthereum, getDarwiniaToEthereumCrossChainFee,
-    getDarwiniaToEthereumGenesisSwapInfo, substrateAddressToPublicKey, ClaimTokenFromD2E, getRegisteredErc20Tokens
+    getDarwiniaToEthereumGenesisSwapInfo, substrateAddressToPublicKey, ClaimTokenFromD2E, 
 } from './utils'
+import { crossSendErc20FromEthToDvm } from './erc20/token';
 import { InputRightWrap } from '../../components/InputRightWrap'
 import InputWrapWithCheck from '../../components/InputWrapWithCheck'
 import FormTip from '../../components/FormTip'
@@ -508,21 +509,27 @@ class CrossChain extends Component {
     }
 
     approveRingToIssuing = () => {
-        const { networkType, account } = this.state;
+        const { networkType, account, tokenType, erc20Token, darwiniaAddress, crossChainBalance } = this.state;
 
-        approveRingToIssuing(account[networkType], () => {
-            this.setState({
-                isApproving: true
-            })
-        }, async () => {
-            if (!this.state.isAllowanceIssuing) {
-                const isAllowance = await checkIssuingAllowance(account[networkType]);
+        if(tokenType === 'erc20') {
+            crossSendErc20FromEthToDvm(erc20Token.address, darwiniaAddress, crossChainBalance).then(res => { 
+                // TODO: listen backingLock event
+            });
+        } else {
+            approveRingToIssuing(account[networkType], () => {
                 this.setState({
-                    isApproving: false,
-                    isAllowanceIssuing: isAllowance
+                    isApproving: true
                 })
-            }
-        })
+            }, async () => {
+                if (!this.state.isAllowanceIssuing) {
+                    const isAllowance = await checkIssuingAllowance(account[networkType]);
+                    this.setState({
+                        isApproving: false,
+                        isAllowanceIssuing: isAllowance
+                    })
+                }
+            })
+        }
     }
 
     checkForm = (unit = 'ether') => {
@@ -897,7 +904,7 @@ class CrossChain extends Component {
                                     tokenType === 'erc20' ? (
                                         <>
                                             <Form.Label>{t('crosschain:ERC-20 Token')}</Form.Label>
-                                            <Form.Control value={this.state.erc20Token?.name || this.state.erc20Token?.symbol} onChange={() => { }}  onClick={() => this.setState({
+                                            <Form.Control value={this.state.erc20Token?.name || this.state.erc20Token?.symbol || ''} onChange={() => { }}  onClick={() => this.setState({
                                                 isRegisterTokenModalDisplay: true
                                             })} placeholder={t('crosschain:Select a token')}>
                                             </Form.Control>
@@ -949,7 +956,7 @@ class CrossChain extends Component {
                                         <Form.Label>{t('crosschain:Amount')}</Form.Label>
                                         <InputRightWrap text={t('crosschain:MAX')} onClick={
                                             () => {
-                                                this.setValue('crossChainBalance', { target: {} }, this.toWeiBNMiddleware, this.setRingBalanceText)
+                                                this.setValue('crossChainBalance', { target: { value: formatBalance(this.state.erc20Token.balance)} }, this.toWeiBNMiddleware, this.setRingBalanceText)
                                             }
                                         }>
                                             <Form.Control type="number" placeholder={`${t('crosschain:Balance')} : ${formatBalance(this.state.erc20Token?.balance)}`}

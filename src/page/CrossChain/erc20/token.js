@@ -136,3 +136,9 @@ export const confirmRegister = async (proof) => {
 
     return result;
 }
+
+export async function crossSendErc20FromEthToDvm(tokenAddress, recipientAddress, amount) { 
+    const result = await backingContract.methods.crossSendToken(tokenAddress, recipientAddress, amount);
+    
+    return result;
+}
