@@ -221,7 +221,6 @@ class Wrapper extends Component {
     }
 
     componentDidMount() {
-        console.log('wrapper componentDidMount')
         archorsComponent()
         // anime({
         //     targets: '.animeBg',
@@ -377,7 +376,7 @@ class Wrapper extends Component {
 
     getSlotInfo = (relates) => {
         const slotPath = []
-        relates.map((element) => {
+        relates.forEach((element) => {
             const line = document.getElementById(`path-${element[0]}-${element[1]}`)
 
             const isBallActive1 = this.isBallActive(styleIdToChainName[element[0] - 1])
@@ -391,7 +390,7 @@ class Wrapper extends Component {
             const p1 = line.getPointAtLength(lineLength/2 - 2)
             const p2 = line.getPointAtLength(lineLength/2 + 2)
             const theta = Math.atan2(p2.y - p1.y,p2.x - p1.x) * (180 / Math.PI)
-            slotPath.push(<defs>
+            slotPath.push(<defs key={`mask-path-${element[0]}-${element[1]}`}>
                 <mask id={`mask-path-${element[0]}-${element[1]}`}>
                     <circle cx={p0.x} cy={p0.y} r={lineLength/2} fill="white"></circle>
                     <circle cx={p0.x} cy={p0.y} r="10" fill="black"></circle>
@@ -422,7 +421,7 @@ class Wrapper extends Component {
             const distance12 = Math.sqrt(Math.pow(center1[0] - center2[0], 2) + Math.pow(center1[1] - center2[1], 2))
 
             const curvetoPath = distance12/1.3;
-            lines.push(<g transform={`rotate(${0}, ${parseInt(center1[0])} ${parseInt(center1[1])})`} mask={`url(#mask-path-${element[0]}-${element[1]}`}>
+            lines.push(<g key={`path-${element[0]}-${element[1]}-${lineOpacity}`} transform={`rotate(${0}, ${parseInt(center1[0])} ${parseInt(center1[1])})`} mask={`url(#mask-path-${element[0]}-${element[1]}`}>
                 <path key={`path-${element[0]}-${element[1]}-${lineOpacity}`} id={`path-${element[0]}-${element[1]}`} d={`m${center1[0]-rectSVG.x},${parseInt(center1[1]-rectSVG.y)}C${parseInt(center1[0]-rectSVG.x + curvetoPath)},${parseInt(center1[1]-rectSVG.y - curvetoPath)} ${parseInt(center1[0] -rectSVG.x+ distance12 - curvetoPath)},${parseInt(center2[1]-rectSVG.y + curvetoPath)} ${parseInt(center2[0]-rectSVG.x)},${parseInt(center2[1]-rectSVG.y)}`} style={{strokeWidth: "2"}} stroke="#43455a" strokeOpacity={lineOpacity} fill="none"/>
             </g>
             )
@@ -637,7 +636,6 @@ class Wrapper extends Component {
     }
 
     renderSubBall = (styleId) => {
-        const { checkedBall } = this.state
         const isBallActive = this.isBallActive('subball')
         // const isBallActive = [true]
         const isDisableBallClass = isBallActive[0] ? '' : styles.disableBall
@@ -654,7 +652,7 @@ class Wrapper extends Component {
     renderGuide = (from, to) => {
         const fromStyleId = 'From';
         const toStyleId = 'To';
-        const isDisableBallClass = '', isDisableBallShadowClass = '';
+        const isDisableBallClass = '';
 
         return (<div>
             <div className={`${styles['ball' + fromStyleId]} ${styles[`ballbg-${from}`]} ${isDisableBallClass}`}>
@@ -688,6 +686,7 @@ class Wrapper extends Component {
                             </Link>
                         </div>
                         <div>
+                            {/* eslint-disable-next-line */} 
                             <a href="javascript:void(0)" onClick={this.changeLng} className={styles.changeLng}>
                                 {i18n.language.indexOf('en') > -1 ? '中文' : 'EN'}
                             </a>

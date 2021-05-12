@@ -3,12 +3,8 @@ import {withTranslation} from "react-i18next";
 import styles from './style.module.scss'
 
 class FormTip extends Component {
-    constructor(props, context) {
-        super(props, context);
-    }
-
     render(){
-        const {children, text, className} = this.props
+        const { children, text } = this.props
         return(
             <>
             { ((Array.isArray(text) && text.length > 0) || text || children) ? <div className={styles.box}>

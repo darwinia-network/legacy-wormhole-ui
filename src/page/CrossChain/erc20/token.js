@@ -7,10 +7,10 @@ import { tokenInfoGetter, getNameAndLogo } from "./token-util";
 import { DARWINIA_PROVIDER } from "../provider";
 import { getTokenBalance } from "./token-util";
 import { getMPTProof, isNetworkMatch } from "../utils";
-import { Subject, throwError } from "rxjs";
+import { Subject } from "rxjs";
 
 const config = configJson[process.env.REACT_APP_CHAIN];
-const { backingContract, mappingContract, web3 } = (() => {
+const { backingContract, mappingContract } = (() => {
     const web3 = new Web3(window.ethereum || window.web3.currentProvider);
     const backingContract = new web3.eth.Contract(
         transferBridgeABI,
