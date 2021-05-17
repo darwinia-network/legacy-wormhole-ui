@@ -51,7 +51,7 @@ export async function checkIssuingAllowance(from, amount) {
 
     const erc20Contract = new web3js.eth.Contract(TokenABI, config.RING_ETH_ADDRESS)
     const allowanceAmount = await erc20Contract.methods.allowance(from, config.ETHEREUM_DARWINIA_ISSUING).call()
-    console.log('checkIssuingAllowance-amount', allowanceAmount.toString());
+
     return !Web3.utils.toBN(allowanceAmount).lt(Web3.utils.toBN(amount || '10000000000000000000000000'))
 }
 
@@ -451,14 +451,11 @@ export const wxRequest = async (params = {}, url) => {
                 'Content-Type': params.method === 'FORM' ? 'application/x-www-form-urlencoded' : 'application/json;charset=UTF-8;',
             }
         }).then(function (data) {
-            if (data && data.data) {
-                console.log(`fetchData url: ${url}`, data.data);
-            }
             resolve(data.data)
         })
-            .catch(function (error) {
-                console.log(error);
-            })
+        .catch(function (error) {
+            console.log(error);
+        })
     })
 }
 
@@ -552,7 +549,6 @@ export function getTokenBalanceEth(account = '') {
         const ringBalance = new Promise((resolve, reject) => {
             try {
                 ringContract.methods.balanceOf(account).call().then((result) => {
-                    console.log('ring:', result);
                     resolve(result);
                 })
             } catch (error) {
@@ -563,7 +559,6 @@ export function getTokenBalanceEth(account = '') {
         const ktonBalance = new Promise((resolve, reject) => {
             try {
                 ktonContract.methods.balanceOf(account).call().then((result) => {
-                    console.log('kton:', result);
                     resolve(result);
                 })
             } catch (error) {

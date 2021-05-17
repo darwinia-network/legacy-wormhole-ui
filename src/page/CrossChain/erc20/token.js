@@ -4,7 +4,6 @@ import transferBridgeABI from "../abi/Backing.json";
 import mappingTokenABI from "../abi/MappingToken.json";
 import configJson from "../config.json";
 import { tokenInfoGetter, getNameAndLogo } from "./token-util";
-import { DARWINIA_PROVIDER } from "../provider";
 import { getTokenBalance } from "./token-util";
 import { getMPTProof, isNetworkMatch } from "../utils";
 import { Subject } from "rxjs";
@@ -16,7 +15,7 @@ const { backingContract, mappingContract } = (() => {
         transferBridgeABI,
         config.TRANSFER_BRIDGE_ETH_ADDRESS
     );
-    const web3Darwinia = new Web3(DARWINIA_PROVIDER);
+    const web3Darwinia = new Web3(config.DARWINIA_PROVIDER);
     const mappingContract = new web3Darwinia.eth.Contract(
         mappingTokenABI,
         config.MAPPING_FACTORY_ADDRESS
@@ -37,6 +36,10 @@ const proofSubject = new Subject();
 export const proofObservable = proofSubject.asObservable();
 
 export const getAllTokens = async (currentAccount) => {
+    if(!currentAccount) {
+        return [];
+    }
+
     const length = await mappingContract.methods.tokenLength().call(); // length: string
     const tokens = await Promise.all(
         new Array(+length).fill(0).map(async (_, index) => {
@@ -90,12 +93,19 @@ export const registerToken = async (address) => {
  * @returns block hash
  */
 const getRegisteredTokenHash = async (address) => {
-    // TODO: fetch block hash of address register. http? ws?
-    const hash = await axios
-        .get("xxx", { params: { address } })
+    /**
+     * api response: {
+     *  "extrinsic_index": string; "account_id": string; "block_num": number; "block_hash": string; "backing": string; "source": string; "target": string; "block_timestamp": number;
+     *  "mmr_index": number; "mmr_root": string; "signatures": string; "block_header": JSON string; "tx": string;
+     * }
+     */
+    const data = await axios
+        .get(`${config.DAPP_API}/api/ethereumIssuing/register`, {
+            params: { source: address },
+        })
         .then((res) => res.data);
 
-    return hash;
+    return data.block_hash;
 };
 
 /**

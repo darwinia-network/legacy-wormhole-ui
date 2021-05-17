@@ -44,8 +44,9 @@ export default function Erc20Token(props) {
                         setStep(1);
                     }}
                     variant="link"
+                    className="manager"
                 >
-                    {"💻 "}
+                    <i className="bi bi-pencil-square"></i>
                     {t("common:Manage")}
                 </Button>
             ),
@@ -61,7 +62,7 @@ export default function Erc20Token(props) {
                         }
                     }}
                 >
-                    ⬅
+                    <i className="bi bi-arrow-left"></i>
                 </span>
             ),
             content: (
@@ -83,7 +84,7 @@ export default function Erc20Token(props) {
             footer: <p className="tip">{t(tipMsg, { type: "" })}</p>,
         },
     ];
-    const { networkType, ...modalProps} = props;
+    const { networkType, ...modalProps } = props;
 
     return (
         <Modal
@@ -244,9 +245,8 @@ function Manager(props) {
     const { t } = useTranslation();
     const [active, setActive] = useState(0);
     const [inputValue, setInputValue] = useState("");
-    const [isRegisteredTokenInvalid, setIsRegisteredTokenInvalid] = useState(
-        false
-    );
+    const [isRegisteredTokenInvalid, setIsRegisteredTokenInvalid] =
+        useState(false);
     const [registeredStatus, setRegisteredStatus] = useState(-1);
     const [token, setToken] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -342,9 +342,8 @@ function Manager(props) {
                                         return;
                                     }
 
-                                    const isAddress = Web3.utils.isAddress(
-                                        value
-                                    );
+                                    const isAddress =
+                                        Web3.utils.isAddress(value);
 
                                     setIsRegisteredTokenInvalid(!isAddress);
                                 }}
@@ -436,9 +435,8 @@ function Manager(props) {
                                         setDisplay(assets);
                                     }
 
-                                    const isAddress = Web3.utils.isAddress(
-                                        value
-                                    );
+                                    const isAddress =
+                                        Web3.utils.isAddress(value);
 
                                     if (isAddress) {
                                         setDisplay(

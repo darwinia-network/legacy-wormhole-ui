@@ -581,7 +581,6 @@ class Wrapper extends Component {
     }
 
     onChangePath = (path) => {
-        console.log(path);
         this.setState(path)
     }
 
@@ -624,8 +623,8 @@ class Wrapper extends Component {
                     {/* <div className={`animeBg ${styles[`ball${styleId}Shadow`]}  ${isDisableBallShadowClass}`}></div> */}
                 </div>
                 {!isBg && isBallActive[1] === 2 && chainMap[`${checkedBall}_${id}`] && chainMap[`${checkedBall}_${id}`].length ?
-                    chainMap[`${checkedBall}_${id}`].map((item) => {
-                        return <div className={`${styles[`ball${styleId}Btn`]}`} onClick={(e) => this.fn_wrapper(e, item, checkedBall, id)}>{t(`crosschain:${checkedBall}_${id}_${item}`)}</div>
+                    chainMap[`${checkedBall}_${id}`].map((item, index) => {
+                        return <div key={index} className={`${styles[`ball${styleId}Btn`]}`} onClick={(e) => this.fn_wrapper(e, item, checkedBall, id)}>{t(`crosschain:${checkedBall}_${id}_${item}`)}</div>
                     })
                     : null}
                 {!isBg && isBallActive[1] === 1 && !(chainMap[`${checkedBall}_${id}`] && chainMap[`${checkedBall}_${id}`].length) && (!chainMap[checkedBall] || !chainMap[checkedBall].length) ?

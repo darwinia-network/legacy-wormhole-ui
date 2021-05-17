@@ -9,6 +9,9 @@ $base-radius: 10px;
         .back {
             cursor: pointer;
             padding: 0 1rem;
+            opacity: .5;
+            font-size: 18px;
+            font-weight: bold;
         }
 
         .close {
@@ -30,6 +33,12 @@ $base-radius: 10px;
             opacity: 0.6;
             font-size: 12px;
             margin-bottom: 0.5rem;
+        }
+        
+        .manager {
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
     }
 }
