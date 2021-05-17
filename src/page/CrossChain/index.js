@@ -34,18 +34,6 @@ import labelTitleLogo from './img/label-title-logo.png';
 
 import stepStartIcon from './img/tx-step-start-icon.svg';
 
-import stepEthereumIcon from './img/tx-step-eth-icon.svg';
-import stepTronIcon from './img/tx-step-tron-icon.svg';
-import stepDarwiniaIcon from './img/tx-step-darwinia-icon.svg';
-import stepCrabIcon from './img/tx-step-crab-icon.svg';
-import stepRelayIcon from './img/tx-step-relay-icon.svg';
-
-import stepInactiveEthereumIcon from './img/tx-step-eth-inactive-icon.svg';
-import stepInactiveTronIcon from './img/tx-step-tron-inactive-icon.svg';
-import stepInactiveDarwiniaIcon from './img/tx-step-darwinia-inactive-icon.svg';
-import stepInactiveCrabIcon from './img/tx-step-crab-inactive-icon.svg';
-import stepInactiveRelayIcon from './img/tx-step-relay-inactive-icon.svg';
-
 import roadmapStatus0 from './img/roadmap-status-0.svg';
 import roadmapStatusActive0 from './img/roadmap-status-0-active.svg';
 import roadmapStatus1 from './img/roadmap-status-1.svg';
@@ -54,25 +42,8 @@ import roadmapStatus2 from './img/roadmap-status-2.svg';
 import chainMap from '../Wrapper/chain';
 import Erc20Token from '../../components/erc20/erc20TokenComponent'
 import AssetControl from "../../components/controls/assetControl";
-
-const txProgressIcon = {
-    stepStartIcon,
-
-    stepEthIcon: stepEthereumIcon,
-    stepInactiveEthIcon: stepInactiveEthereumIcon,
-
-    stepDarwiniaIcon,
-    stepInactiveDarwiniaIcon,
-
-    stepTronIcon,
-    stepInactiveTronIcon,
-
-    stepCrabIcon,
-    stepInactiveCrabIcon,
-
-    stepRelayIcon,
-    stepInactiveRelayIcon
-}
+import { txProgressIcon } from './icons';
+import HistoryRecord from "../../components/historyRecord/historyRecord";
 
 class CrossChain extends Component {
     constructor(props, context) {
@@ -262,11 +233,9 @@ class CrossChain extends Component {
 
         switch (networkType) {
             case 'eth':
-                connect(networkType, (_networkType, _account, subscribe) => {
+                connect(networkType, (_networkType, _account) => {
                     let initAccount = ''
 
-                    // this.querySubscribe && this.querySubscribe();
-                    // this.querySubscribe = subscribe;
                     if (Array.isArray(_account) && _account.length > 0) {
                         initAccount = _account[0].address
                     } else if (Array.isArray(_account) && _account.length === 0) {
@@ -660,6 +629,8 @@ class CrossChain extends Component {
                         resolve([]);
                     });
                 })
+
+                // TODO: add query bridge history
 
                 Promise.all([ethereumGenesisInfo, ethereumToDarwiniaCrosschainInfo]).then(([genesisHistory, crosschainHistory]) => {
                     this.setState({
@@ -1414,56 +1385,11 @@ class CrossChain extends Component {
 
                         {networkType === 'crab' || networkType === 'darwinia' ?
                         <>
-                        <p>{convertSS58Address(account[networkType])}</p>
-                        <Form.Row>
-                            {crabAndDarwiniaHistory.isManual ?
-                                <Form.Group as={Col}>
-                                    <Form.Control onChange={(value) => this.setCurrentAccount(networkType, value, async (account) => {
-                                        const params = new URLSearchParams();
-                                        const {hash} = this.props.location;
-
-                                        if (account) {
-                                            params.append("address", account)
-                                        } else {
-                                            params.delete("address")
-                                        }
-                                        this.props.history.replace({hash: hash, search: params.toString()})
-
-                                        this.queryClaims()
-                                    })} type="text" placeholder={t('crosschain:Please input the Darwinia address to be queried')} />
-                                </Form.Group>
-                                :
-                                <Form.Group as={Col} controlId="darwinaAddressGroup">
-                                    <Form.Control as="select" value={account[networkType]}
-                                    onChange={(value) => this.setCurrentAccount(networkType, value, async (account) => {
-                                        // const balances = await getTokenBalance('crab', account);
-                                        // this.setState({
-                                        //     ringBalance: Web3.utils.toBN(balances[0]),
-                                        //     darwiniaAddress: convertSS58Address(account)
-                                        // })
-                                        const params = new URLSearchParams();
-                                        const {hash} = this.props.location;
-
-                                        if (account) {
-                                            params.append("address", account)
-                                        } else {
-                                            params.delete("address")
-                                        }
-                                        this.props.history.replace({hash: hash, search: params.toString()})
-
-                                        this.queryClaims()
-                                    })}>
-                                    {account[`${networkType}List`]?.map((item, index) => {
-                                        return <option key={item.address} value={item.address}>{convertSS58Address(item.address, middleScreen)} - {item.meta.name}</option>
-                                    })
-                                    }
-                                </Form.Control>
-                                </Form.Group>}
-
-                                <Form.Group>
-                                    <Button variant="primary" onClick={() => {
-                                        if(crabAndDarwiniaHistory.isManual) {
-                                            account[`${networkType}List`][0] && this.setCurrentAccount(networkType, {target: {value: account[`${networkType}List`][0].address}}, async (account) => {
+                            <p>{convertSS58Address(account[networkType])}</p>
+                            <Form.Row>
+                                {crabAndDarwiniaHistory.isManual ?
+                                    <Form.Group as={Col}>
+                                        <Form.Control onChange={(value) => this.setCurrentAccount(networkType, value, async (account) => {
                                                 const params = new URLSearchParams();
                                                 const {hash} = this.props.location;
 
@@ -1475,20 +1401,64 @@ class CrossChain extends Component {
                                                 this.props.history.replace({hash: hash, search: params.toString()})
 
                                                 this.queryClaims()
-                                            })
+                                            })}
+                                            type="text" placeholder={t('crosschain:Please input the Darwinia address to be queried')} />
+                                    </Form.Group> :
+                                    <Form.Group as={Col} controlId="darwinaAddressGroup">
+                                        <Form.Control as="select" value={account[networkType]}
+                                            onChange={(value) => this.setCurrentAccount(networkType, value, async (account) => {
+                                                // const balances = await getTokenBalance('crab', account);
+                                                // this.setState({
+                                                //     ringBalance: Web3.utils.toBN(balances[0]),
+                                                //     darwiniaAddress: convertSS58Address(account)
+                                                // })
+                                                const params = new URLSearchParams();
+                                                const {hash} = this.props.location;
+
+                                                if (account) {
+                                                    params.append("address", account)
+                                                } else {
+                                                    params.delete("address")
+                                                }
+                                                this.props.history.replace({hash: hash, search: params.toString()})
+
+                                                this.queryClaims()
+                                            })}>
+                                                {account[`${networkType}List`]?.map((item, index) => {
+                                                    return <option key={item.address} value={item.address}>{convertSS58Address(item.address, middleScreen)} - {item.meta.name}</option>
+                                                })}
+                                        </Form.Control>
+                                    </Form.Group>}
+
+                                    <Form.Group>
+                                        <Button variant="primary" onClick={() => {
+                                            if(crabAndDarwiniaHistory.isManual) {
+                                                account[`${networkType}List`][0] && this.setCurrentAccount(networkType, {target: {value: account[`${networkType}List`][0].address}}, async (account) => {
+                                                    const params = new URLSearchParams();
+                                                    const {hash} = this.props.location;
+
+                                                    if (account) {
+                                                        params.append("address", account)
+                                                    } else {
+                                                        params.delete("address")
+                                                    }
+                                                    this.props.history.replace({hash: hash, search: params.toString()})
+
+                                                    this.queryClaims()
+                                                })
+                                            }
+                                            this.setState({crabAndDarwiniaHistory: {
+                                                ...this.state.crabAndDarwiniaHistory,
+                                                isManual: !crabAndDarwiniaHistory.isManual,
+                                                address: ''
+                                            }})
                                         }
-                                        this.setState({crabAndDarwiniaHistory: {
-                                            ...this.state.crabAndDarwiniaHistory,
-                                            isManual: !crabAndDarwiniaHistory.isManual,
-                                            address: ''
-                                        }})
-                                    }
-                                    }>{crabAndDarwiniaHistory.isManual ? t('crosschain:Extension') : t('crosschain:Manual')}</Button>
-                                </Form.Group>
-                        </Form.Row>
+                                        }>{crabAndDarwiniaHistory.isManual ? t('crosschain:Extension') : t('crosschain:Manual')}</Button>
+                                    </Form.Group>
+                            </Form.Row>
                         </> : <p>{account[networkType]}</p>}
                     </div>
-                    {networkType === 'eth' || networkType === 'tron' ? this.renderEthereumTronHistory(history) : null}
+                    {networkType === 'eth' || networkType === 'tron' ? <HistoryRecord history={history} /> : null}
                     {networkType === 'darwinia' ? this.renderDarwiniaToEthereumHistory(history) : null}
                     {networkType === 'crab' ? this.renderCrabHistory(history) : null}
 
@@ -1499,81 +1469,7 @@ class CrossChain extends Component {
             </div>
         )
     }
-
-    renderEthereumTronHistory = (history) => {
-        const { t } = this.props;
-        return <>
-            {!history ?
-                <div className="d-flex flex-wrap justify-content-center pb-4">
-                    <Spinner animation="border" />
-                </div>
-                : null}
-            {history && history.length === 0 ?
-                <div className={styles.historyEmpty}>
-                    <p>{t('crosschain:No Cross-chain transfer history')}</p>
-                </div>
-                : null}
-            {history ? history.map((item) => {
-                let step = 2;
-                const isDeposit = item.currency.toUpperCase() === 'DEPOSIT';
-                let depositInfo = JSON.parse(item.deposit || '{}');
-
-                if (item.is_crosschain) {
-                    if (item.is_relayed) {
-                        step = 3;
-                    }
-                    if (item.is_relayed && item.darwinia_tx !== "") {
-                        step = 4;
-                    }
-                } else {
-                    step = 4;
-                }
-
-                return (<div className={styles.historyItem} key={item.block_hash}>
-                    <div>
-                        <h3>{t('crosschain:Time')}</h3>
-                        <p>{dayjs.unix(item.block_timestamp).format('YYYY-MM-DD HH:mm:ss ZZ')}</p>
-                    </div>
-                    <div>
-                        <h3>{t('crosschain:Cross-chain direction')}</h3>
-                        <p>{textTransform(parseChain(item.chain), 'capitalize')} -&gt; Darwinia MainNet</p>
-                    </div>
-                    {isDeposit ?
-                        <>
-                            <div>
-                                <h3>{t('crosschain:Asset')}</h3>
-                                <p>{t('crosschain:Deposit ID')}: {depositInfo.deposit_id}</p>
-                            </div>
-                            <div>
-                                <h3>{t('crosschain:Detail')}</h3>
-                                {this.renderDepositHistoryDetail(item.amount, depositInfo)}
-                            </div>
-                        </> :
-                        <div>
-                            <h3>{t('crosschain:Amount')}</h3>
-                            <p>{formatBalance(Web3.utils.toBN(item.amount), 'ether')} {item.currency.toUpperCase()}</p>
-                        </div>
-                    }
-                    <div>
-                        <h3>{t('crosschain:Destination account')}</h3>
-                        <p>{encodeAddress('0x' + item.target, 18)}</p>
-                    </div>
-                    <div className={styles.line}></div>
-                    {this.renderTransferProgress(item.chain, 'darwinia', step, {
-                        from: {
-                            tx: item.tx,
-                            chain: item.chain
-                        },
-                        to: {
-                            tx: item.darwinia_tx,
-                            chain: 'darwinia'
-                        }
-                    }, item.is_crosschain)}
-                </div>)
-            }) : null}
-        </>
-    }
-
+    
     renderDarwiniaToEthereumHistory = (history) => {
         const { t } = this.props;
         const { historyMeta } = this.state;

@@ -1,28 +1,27 @@
-import React, { useState, useEffect } from "react";
-import { ListGroup, Spinner, Modal, Button, Form } from "react-bootstrap";
+import React, { useEffect, useState } from "react";
+import { Button, Form, ListGroup, Modal, Spinner } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import Web3 from "web3";
-import "./erc20TokenComponent.scss";
-import {
-    config,
-    formatBalance,
-    toShortAccount,
-} from "../../page/CrossChain/utils";
+import { useCancelablePromise } from "../../hooks/cancelablePromise";
 import {
     confirmRegister,
     getAllTokens,
     getTokenRegisterStatus,
     proofObservable,
-    registerToken,
+    registerToken
 } from "../../page/CrossChain/erc20/token";
 import {
     getNameAndLogo,
     getSymbolAndDecimals,
-    getTokenName,
+    getTokenName
 } from "../../page/CrossChain/erc20/token-util";
+import {
+    config,
+    formatBalance, getMetamaskActiveAccount, toShortAccount
+} from "../../page/CrossChain/utils";
+import EmptyData from "../empty/emptyData";
 import JazzIcon from "../jazzIcon/JazzIconComponent";
-import { getMetamaskActiveAccount } from "../../page/CrossChain/utils";
-import { useCancelablePromise } from "../../hooks/cancelablePromise";
+import "./erc20TokenComponent.scss";
 
 export default function Erc20Token(props) {
     const { t } = useTranslation();
@@ -503,10 +502,4 @@ function Manager(props) {
             )}
         </>
     );
-}
-
-export function EmptyData() {
-    const { t } = useTranslation();
-
-    return <div className="empty">{t("Empty data")}</div>;
 }

@@ -97,7 +97,7 @@ export async function getDarwiniaToEthereumCrossChainFee() {
 function connectEth(accountsChangedCallback, t) {
     if (typeof window.ethereum !== 'undefined' || typeof window.web3 !== 'undefined') {
         let web3js = new Web3(window.ethereum || window.web3.currentProvider);
-        let subscribe = null;
+
         if (window.ethereum) {
             window.ethereum.enable()
                 .then(async (account) => {
@@ -106,16 +106,9 @@ function connectEth(accountsChangedCallback, t) {
                         formToast(t('common:Ethereum network type does not match'));
                         return;
                     }
-                    // if (window.ethereum.on) {
-                    //     subscribe = window.ethereum.on('accountsChanged', (accounts) => {
-                    //         if (accounts.length > 0) {
-                    //             accountsChangedCallback && accountsChangedCallback('eth', accounts[0].toLowerCase());
-                    //         }
-                    //     })
-                    // }
 
                     if (account.length > 0) {
-                        accountsChangedCallback && accountsChangedCallback('eth', account[0].toLowerCase(), subscribe);
+                        accountsChangedCallback && accountsChangedCallback('eth', account[0].toLowerCase());
                     }
                 })
                 .catch(console.error)
