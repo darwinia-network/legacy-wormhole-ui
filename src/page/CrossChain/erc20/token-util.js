@@ -137,7 +137,7 @@ export async function getSymbolAndDecimals(tokenAddress, cacheFirst = true) {
     if ((fromCache || fromContractList) && cacheFirst) {
         return {
             symbol: fromCache?.symbol || fromContractList?.symbol,
-            decimals: fromCache?.symbol || fromContractList?.decimals,
+            decimals: fromCache?.decimals || fromContractList?.decimals,
         };
     }
 

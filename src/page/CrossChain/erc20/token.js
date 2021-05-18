@@ -1,15 +1,25 @@
 import axios from "axios";
+import { from, Subject } from "rxjs";
+import { delay, map, retryWhen, switchMap } from "rxjs/operators";
 import Web3 from "web3";
 import transferBridgeABI from "../abi/Backing.json";
+import Erc20StringABI from "../abi/Erc20-string.json";
 import mappingTokenABI from "../abi/MappingToken.json";
 import configJson from "../config.json";
-import { tokenInfoGetter, getNameAndLogo } from "./token-util";
-import { getTokenBalance } from "./token-util";
-import { getMPTProof, isNetworkMatch } from "../utils";
-import { Subject } from "rxjs";
+import {
+    getMetamaskActiveAccount,
+    getMPTProof,
+    isNetworkMatch,
+} from "../utils";
+import {
+    getNameAndLogo,
+    getSymbolAndDecimals,
+    getTokenBalance,
+    tokenInfoGetter,
+} from "./token-util";
 
 const config = configJson[process.env.REACT_APP_CHAIN];
-const { backingContract, mappingContract } = (() => {
+const { backingContract, mappingContract, web3 } = (() => {
     const web3 = new Web3(window.ethereum || window.web3.currentProvider);
     const backingContract = new web3.eth.Contract(
         transferBridgeABI,
@@ -55,14 +65,14 @@ const getTokenInfo = async (tokenAddress, currentAccount) => {
     };
 };
 
-export const getAllTokens = async (currentAccount, networkType = 'eth') => {
+export const getAllTokens = async (currentAccount, networkType = "eth") => {
     if (!currentAccount) {
         return [];
     }
 
-    const tokens = networkType === 'eth' ? await getAllTokensEthereum(currentAccount) : await getAllTokensDvm(currentAccount);
-
-    return tokens;
+    return networkType === "eth"
+        ? await getAllTokensEthereum(currentAccount)
+        : await getAllTokensDvm(currentAccount);
 };
 
 const getAllTokensDvm = async (currentAccount) => {
@@ -91,10 +101,8 @@ const getAllTokensEthereum = async (currentAccount) => {
             const address = await backingContract.methods
                 .allAssets(index)
                 .call();
-            
-            const token = await getTokenInfo(address, currentAccount);
 
-            return token;
+            return await getTokenInfo(address, currentAccount);
         })
     );
 
@@ -104,43 +112,80 @@ const getAllTokensEthereum = async (currentAccount) => {
 /**
  * test address 0x1F4E71cA23f2390669207a06dDDef70BDE75b679;
  * @param { Address } address - erc20 token address
- * @return { Promise<void> } - void
+ * @return { Promise<void | subscription> } - void
  */
 export const registerToken = async (address) => {
     const isRegistered = await hasRegistered(address);
 
     if (!isRegistered) {
-        await backingContract.methods.registerToken(address).call();
+        const from = await getMetamaskActiveAccount();
+        const { isString } = await getSymbolType(address);
+        const register = isString
+            ? backingContract.methods.registerToken
+            : backingContract.methods.registerTokenBytes32;
+        const txHash = await register(address).send({ from });
 
-        const blockHash = await getRegisteredTokenHash(address);
-        const eventsProof = await getMPTProof(
-            blockHash,
-            "0xe66f3de22eed97c730152f373193b5a0485b407d88f37d5fd6a2c59e5a696691"
+        console.log(
+            "%c [ register token transaction hash ]-118",
+            "font-size:13px; background:pink; color:#bf2c9f;",
+            txHash
         );
 
-        proofSubject.next(eventsProof);
+        return monitorEventProof(address);
+    }
+};
+
+/**
+ * @function getSymbolType - Predicate the return type of the symbol method in erc20 token abi;
+ * @param {string} - address
+ * @returns {Promise<{symbol: string; isString: boolean }>}
+ */
+export const getSymbolType = async (address) => {
+    try {
+        const stringContract = new web3.eth.Contract(Erc20StringABI, address);
+        const symbol = await stringContract.methods.symbol().call();
+
+        return { symbol, isString: true };
+    } catch (error) {
+        const { symbol } = await getSymbolAndDecimals(address);
+
+        return { symbol, isString: false };
     }
 };
 
 /**
  *
  * @param {Address} address - token address
- * @returns block hash
+ * @returns subscription
  */
-const getRegisteredTokenHash = async (address) => {
-    /**
-     * api response: {
-     *  "extrinsic_index": string; "account_id": string; "block_num": number; "block_hash": string; "backing": string; "source": string; "target": string; "block_timestamp": number;
-     *  "mmr_index": number; "mmr_root": string; "signatures": string; "block_header": JSON string; "tx": string;
-     * }
-     */
-    const data = await axios
+const monitorEventProof = (address) => {
+    // api response: {
+    //  "extrinsic_index": string; "account_id": string; "block_num": number; "block_hash": string; "backing": string; "source": string; "target": string; "block_timestamp": number;
+    //  "mmr_index": number; "mmr_root": string; "signatures": string; "block_header": JSON string; "tx": string;
+    // }
+    const api = axios
         .get(`${config.DAPP_API}/api/ethereumIssuing/register`, {
             params: { source: address },
         })
         .then((res) => res.data);
+    const proofAddress =
+        "0xe66f3de22eed97c730152f373193b5a0485b407d88f37d5fd6a2c59e5a696691";
 
-    return data.block_hash;
+    return from(api)
+        .pipe(
+            map((data) => {
+                if (!data) {
+                    throw new Error("Unreceived register block info");
+                }
+
+                return data;
+            }),
+            retryWhen((error) => error.pipe(delay(3000))),
+            switchMap(({ block_hash }) =>
+                from(getMPTProof(block_hash, proofAddress))
+            )
+        )
+        .subscribe(proofSubject);
 };
 
 /**

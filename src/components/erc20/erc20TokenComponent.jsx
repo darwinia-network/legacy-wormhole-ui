@@ -17,7 +17,9 @@ import {
 } from "../../page/CrossChain/erc20/token-util";
 import {
     config,
-    formatBalance, getMetamaskActiveAccount, toShortAccount
+    formatBalance,
+    getMetamaskActiveAccount,
+    toShortAccount
 } from "../../page/CrossChain/utils";
 import EmptyData from "../empty/emptyData";
 import JazzIcon from "../jazzIcon/JazzIconComponent";
@@ -36,7 +38,12 @@ export default function Erc20Token(props) {
         {
             title: t("crosschain:Select a token"),
             icon: null,
-            content: <SearchToken onSelect={props.onHide} networkType={props.networkType} />,
+            content: (
+                <SearchToken
+                    onSelect={props.onHide}
+                    networkType={props.networkType}
+                />
+            ),
             footer: (
                 <Button
                     onClick={() => {
@@ -162,7 +169,9 @@ function SearchToken(props) {
             setLoading(true);
 
             try {
-                const all = await makeCancelable(getAllTokens(currentAccount, props.networkType));
+                const all = await makeCancelable(
+                    getAllTokens(currentAccount, props.networkType)
+                );
 
                 setAllTokens(all);
                 setDisplay(all);
@@ -230,7 +239,7 @@ function SearchToken(props) {
                                 token={token}
                                 onSelect={props?.onSelect}
                             >
-                                <span>{formatBalance(balance)}</span>
+                                <span>{formatBalance(balance, 'ether')}</span>
                             </ListItem>
                         );
                     })}
@@ -331,6 +340,7 @@ function Manager(props) {
                             <Form.Control
                                 type="text"
                                 isInvalid={isRegisteredTokenInvalid}
+                                value={inputValue}
                                 onChange={(event) => {
                                     const value = event.target.value;
 
