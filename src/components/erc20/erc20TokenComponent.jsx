@@ -36,7 +36,7 @@ export default function Erc20Token(props) {
         {
             title: t("crosschain:Select a token"),
             icon: null,
-            content: <SearchToken onSelect={props.onHide} />,
+            content: <SearchToken onSelect={props.onHide} networkType={props.networkType} />,
             footer: (
                 <Button
                     onClick={() => {
@@ -162,7 +162,7 @@ function SearchToken(props) {
             setLoading(true);
 
             try {
-                const all = await makeCancelable(getAllTokens(currentAccount));
+                const all = await makeCancelable(getAllTokens(currentAccount, props.networkType));
 
                 setAllTokens(all);
                 setDisplay(all);
@@ -172,7 +172,7 @@ function SearchToken(props) {
 
             setLoading(false);
         })();
-    }, [currentAccount, makeCancelable]);
+    }, [currentAccount, makeCancelable, props.networkType]);
 
     return (
         <>

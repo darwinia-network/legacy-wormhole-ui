@@ -35,11 +35,37 @@ const proofSubject = new Subject();
  */
 export const proofObservable = proofSubject.asObservable();
 
-export const getAllTokens = async (currentAccount) => {
-    if(!currentAccount) {
+const getTokenInfo = async (tokenAddress, currentAccount) => {
+    const { symbol = "", decimals = 0 } = await tokenInfoGetter(tokenAddress);
+    const { name, logo } = getNameAndLogo(tokenAddress);
+
+    let balance = Web3.utils.toBN(0);
+
+    if (currentAccount) {
+        balance = await getTokenBalance(tokenAddress, currentAccount);
+    }
+
+    return {
+        address: tokenAddress,
+        symbol,
+        decimals,
+        name,
+        logo,
+        balance,
+    };
+};
+
+export const getAllTokens = async (currentAccount, networkType = 'eth') => {
+    if (!currentAccount) {
         return [];
     }
 
+    const tokens = networkType === 'eth' ? await getAllTokensEthereum(currentAccount) : await getAllTokensDvm(currentAccount);
+
+    return tokens;
+};
+
+const getAllTokensDvm = async (currentAccount) => {
     const length = await mappingContract.methods.tokenLength().call(); // length: string
     const tokens = await Promise.all(
         new Array(+length).fill(0).map(async (_, index) => {
@@ -49,18 +75,26 @@ export const getAllTokens = async (currentAccount) => {
             const info = await mappingContract.methods
                 .tokenToInfo(address)
                 .call(); // { source, backing }
-            const { symbol = "", decimals = 0 } = await tokenInfoGetter(
-                info.source
-            );
-            const { name, logo } = getNameAndLogo(info.source);
+            const token = await getTokenInfo(info.source, currentAccount);
 
-            let balance = Web3.utils.toBN(0);
+            return { ...info, ...token };
+        })
+    );
 
-            if (currentAccount) {
-                balance = await getTokenBalance(info.source, currentAccount);
-            }
+    return tokens;
+};
 
-            return { ...info, address, symbol, decimals, name, logo, balance };
+const getAllTokensEthereum = async (currentAccount) => {
+    const length = await backingContract.methods.assetLength().call();
+    const tokens = await Promise.all(
+        new Array(+length).fill(0).map(async (_, index) => {
+            const address = await backingContract.methods
+                .allAssets(index)
+                .call();
+            
+            const token = await getTokenInfo(address, currentAccount);
+
+            return token;
         })
     );
 
@@ -68,6 +102,7 @@ export const getAllTokens = async (currentAccount) => {
 };
 
 /**
+ * test address 0x1F4E71cA23f2390669207a06dDDef70BDE75b679;
  * @param { Address } address - erc20 token address
  * @return { Promise<void> } - void
  */
@@ -172,7 +207,7 @@ export async function crossSendErc20FromDvmToEth(
     // dev env pangolin(id: 43) product env darwinia(id: ?);
     const isMatch = await isNetworkMatch(config.DVM_NETWORK_ID);
 
-    if(isMatch) {
+    if (isMatch) {
         const result = await mappingContract.methods.crossTransfer(
             tokenAddress,
             recipientAddress,
@@ -181,6 +216,8 @@ export async function crossSendErc20FromDvmToEth(
 
         return result;
     } else {
-        throw new Error('common:Ethereum network type does not match, please switch to {{network}} network in metamask.');
+        throw new Error(
+            "common:Ethereum network type does not match, please switch to {{network}} network in metamask."
+        );
     }
-} 
+}

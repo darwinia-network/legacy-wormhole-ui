@@ -6,7 +6,6 @@ import 'react-toastify/dist/ReactToastify.css';
 import dayjs from 'dayjs';
 import Web3 from 'web3';
 import _ from 'lodash';
-import { encodeAddress } from '@polkadot/util-crypto';
 import {
     connect, formToast, config, formatBalance, getBuildInGenesisInfo,
     getTokenBalance, buildInGenesis, textTransform, remove0x, convertSS58Address, isMiddleScreen,

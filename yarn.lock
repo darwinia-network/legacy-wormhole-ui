@@ -2007,22 +2007,22 @@
   resolved "https://registry.yarnpkg.com/@csstools/normalize.css/-/normalize.css-10.1.0.tgz#f0950bba18819512d42f7197e56c518aa491cf18"
   integrity sha512-ij4wRiunFfaJxjB0BdrYHIH8FxBJpOwNPhhAcunlmPdXudL1WQV1qoP9un6JsEBAgQH+7UXyyjh0g7jTxXK6tg==
 
-"@darwinia/types-known@^1.1.0-alpha.11":
-  version "1.1.0-alpha.11"
-  resolved "https://registry.nlark.com/@darwinia/types-known/download/@darwinia/types-known-1.1.0-alpha.11.tgz#ee9712d7d4366ed978b0c17648b5097a5afa154a"
-  integrity sha1-7pcS19Q2btl4sMF2SLUJelr6FUo=
+"@darwinia/types-known@^1.1.0-alpha.15":
+  version "1.1.0-alpha.15"
+  resolved "https://registry.yarnpkg.com/@darwinia/types-known/-/types-known-1.1.0-alpha.15.tgz#29a8558e5523878c9a773be858781495fd6aeba8"
+  integrity sha512-LxhtA5Mhfu7xBWB7KvqnktO9o5Ridvt/3dtFZ/9BI6+Ld4bnYLohvOSD9zvXn/KwUuiF+kY/5QdGaQAm5DDt5g==
   dependencies:
     "@babel/runtime" "^7.9.6"
     "@polkadot/types" "4.0.4-5"
     "@polkadot/util" "6.0.5"
     bn.js "^5.1.2"
 
-"@darwinia/types@1.1.0-alpha.11":
-  version "1.1.0-alpha.11"
-  resolved "https://registry.nlark.com/@darwinia/types/download/@darwinia/types-1.1.0-alpha.11.tgz#d0d6d1a6730d20a53a9e221fc33273b169449732"
-  integrity sha1-0NbRpnMNIKU6niIfwzJzsWlElzI=
+"@darwinia/types@^1.1.0-alpha.15":
+  version "1.1.0-alpha.15"
+  resolved "https://registry.yarnpkg.com/@darwinia/types/-/types-1.1.0-alpha.15.tgz#5f53a0db35cd77102342d414a96b21aa618b1ca8"
+  integrity sha512-7lURTc6jJqWFe1xxYDX0csRn8JuYSUhx4l/0tdYY7NGjQ5fsvpafe08HrSwV7ETZcZaRYgW6wDkvC5HVs9YYyA==
   dependencies:
-    "@darwinia/types-known" "^1.1.0-alpha.11"
+    "@darwinia/types-known" "^1.1.0-alpha.15"
 
 "@hapi/address@2.x.x":
   version "2.1.4"
@@ -2204,10 +2204,10 @@
     "@types/istanbul-reports" "^1.1.1"
     "@types/yargs" "^13.0.0"
 
-"@metamask/contract-metadata@1.22.0":
-  version "1.22.0"
-  resolved "https://registry.yarnpkg.com/@metamask/contract-metadata/-/contract-metadata-1.22.0.tgz#55cc84756c703c433176b484b1d34f0e03d16d1e"
-  integrity sha512-t4ijbU+4OH9UAlrPkfLPFo6KmkRTRZJHB+Vly4ajF8oZMnota5YjVVl/SmltsoRC9xvJtRn9DUVf3YMHMIdofw==
+"@metamask/contract-metadata@^1.25.0":
+  version "1.25.0"
+  resolved "https://registry.yarnpkg.com/@metamask/contract-metadata/-/contract-metadata-1.25.0.tgz#442ace91fb40165310764b68d8096d0017bb0492"
+  integrity sha512-yhmYB9CQPv0dckNcPoWDcgtrdUp0OgK0uvkRE5QIBv4b3qENI1/03BztvK2ijbTuMlORUpjPq7/1MQDUPoRPVw==
 
 "@metamask/jazzicon@^2.0.0":
   version "2.0.0"
