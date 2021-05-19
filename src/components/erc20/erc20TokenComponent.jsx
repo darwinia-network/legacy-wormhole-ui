@@ -1,25 +1,29 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Button, Form, ListGroup, Modal, Spinner } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
 import Web3 from "web3";
-import { useCancelablePromise } from "../../hooks/cancelablePromise";
+import {
+    useAllTokens,
+    useCancelablePromise,
+    useLocalSearch,
+} from "../../hooks";
 import {
     confirmRegister,
-    getAllTokens,
     getTokenRegisterStatus,
+    popupRegisterProof,
     proofObservable,
-    registerToken
+    registerToken,
 } from "../../page/CrossChain/erc20/token";
 import {
     getNameAndLogo,
     getSymbolAndDecimals,
-    getTokenName
+    getTokenName,
 } from "../../page/CrossChain/erc20/token-util";
 import {
     config,
+    connectNodeProvider,
     formatBalance,
-    getMetamaskActiveAccount,
-    toShortAccount
+    toShortAccount,
 } from "../../page/CrossChain/utils";
 import EmptyData from "../empty/emptyData";
 import JazzIcon from "../jazzIcon/JazzIconComponent";
@@ -92,6 +96,10 @@ export default function Erc20Token(props) {
     ];
     const { networkType, ...modalProps } = props;
 
+    useEffect(() => {
+        connectNodeProvider(config.DARWINIA_ETHEREUM_FROM_WSS);
+    }, []);
+
     return (
         <Modal
             {...modalProps}
@@ -121,7 +129,11 @@ function ListItem(props) {
     const { address, logo, source, name, symbol } = token;
 
     return (
-        <ListGroup.Item key={address} onClick={() => props?.onSelect(token)}>
+        <ListGroup.Item
+            disabled={props.disabled}
+            key={address}
+            onClick={() => props?.onSelect(token)}
+        >
             <div>
                 {!!token.logo ? (
                     <img src={`/images/${logo}`} alt="" />
@@ -139,49 +151,28 @@ function ListItem(props) {
     );
 }
 
+const tokenSearchFactory = (tokens) => (value) => {
+    if (!value) {
+        return tokens;
+    }
+
+    const isAddress = Web3.utils.isAddress(value);
+
+    return isAddress
+        ? tokens.filter((token) => token.address === value)
+        : tokens.filter((token) =>
+              token.symbol.toLowerCase().includes(value.toLowerCase())
+          );
+};
+
 /**
  * @param { onSelect?: token => void; isUpcoming: boolean; tokens: any[] }
  */
 function SearchToken(props) {
     const { t } = useTranslation();
-    const [loading, setLoading] = useState(true);
-    const [allTokens, setAllTokens] = useState([]);
-    const [display, setDisplay] = useState([]);
-    const [currentAccount, setCurrentAccount] = useState("");
-    const makeCancelable = useCancelablePromise();
-
-    useEffect(() => {
-        (async () => {
-            const account = await makeCancelable(getMetamaskActiveAccount());
-
-            setCurrentAccount(account);
-        })();
-
-        window.ethereum.on("accountsChanged", (accounts) => {
-            setCurrentAccount(accounts[0]);
-            setAllTokens([]);
-            setDisplay([]);
-        });
-    }, [makeCancelable]);
-
-    useEffect(() => {
-        (async () => {
-            setLoading(true);
-
-            try {
-                const all = await makeCancelable(
-                    getAllTokens(currentAccount, props.networkType)
-                );
-
-                setAllTokens(all);
-                setDisplay(all);
-            } catch (error) {
-                console.error(error);
-            }
-
-            setLoading(false);
-        })();
-    }, [currentAccount, makeCancelable, props.networkType]);
+    const { loading, allTokens } = useAllTokens(props.networkType);
+    const searchFn = useCallback(tokenSearchFactory(allTokens), [allTokens]);
+    const { data, setSearch } = useLocalSearch(searchFn);
 
     return (
         <>
@@ -196,27 +187,7 @@ function SearchToken(props) {
                         onChange={(event) => {
                             const value = event.target.value;
 
-                            if (!value) {
-                                setDisplay(allTokens);
-                            }
-
-                            const isAddress = Web3.utils.isAddress(value);
-
-                            if (isAddress) {
-                                setDisplay(
-                                    allTokens.filter(
-                                        (token) => token.address === value
-                                    )
-                                );
-                            } else {
-                                setDisplay(
-                                    allTokens.filter((token) =>
-                                        token.symbol
-                                            .toLowerCase()
-                                            .includes(value.toLowerCase())
-                                    )
-                                );
-                            }
+                            setSearch(value);
                         }}
                     />
                 </Form.Group>
@@ -230,19 +201,22 @@ function SearchToken(props) {
                 ></Spinner>
             ) : (
                 <ListGroup className="token-list">
-                    {display.map((token) => {
-                        const { balance } = token;
-
-                        return (
-                            <ListItem
-                                key={token.address}
-                                token={token}
-                                onSelect={props?.onSelect}
-                            >
-                                <span>{formatBalance(balance, 'ether')}</span>
-                            </ListItem>
-                        );
-                    })}
+                    {data.map((token) => (
+                        <ListItem
+                            key={token.address}
+                            token={token}
+                            onSelect={props?.onSelect}
+                            display={token.status === 2}
+                        >
+                            {token.status === 1 ? (
+                                <span>
+                                    {formatBalance(token.balance, "ether")}
+                                </span>
+                            ) : (
+                                <span className="circle-ring" />
+                            )}
+                        </ListItem>
+                    ))}
                 </ListGroup>
             )}
         </>
@@ -258,11 +232,15 @@ function Manager(props) {
     const [registeredStatus, setRegisteredStatus] = useState(-1);
     const [token, setToken] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [assets, setAssets] = useState([]);
-    const [display, setDisplay] = useState([]);
     const makeCancelable = useCancelablePromise();
+    const { loading, allTokens, setAllTokens } = useAllTokens(
+        props.networkType,
+        2
+    );
+    const searchFn = useCallback(tokenSearchFactory(allTokens), [allTokens]);
+    const { data, setSearch } = useLocalSearch(searchFn);
     const onTabClick = (index) => {
-        return (event) => {
+        return () => {
             if (props.onTabChange) {
                 props.onTabChange(index);
             }
@@ -273,22 +251,25 @@ function Manager(props) {
 
     useEffect(() => {
         const subscription = proofObservable.subscribe((proof) => {
-            // TODO: find the target assets , update its status to wait confirm.
-            const { address } = proof;
-            const index = assets.findIndex(
-                (asset) => asset.address === address
+            const updated = allTokens.map((token) =>
+                proof.source === token.address ? { ...token, proof } : token
             );
-            if (index > 0) {
-                assets[index].proof = proof;
-            }
 
-            setAssets([...assets]);
+            setAllTokens(updated);
         });
 
+        return () => subscription.unsubscribe();
+    }, [allTokens, setAllTokens]);
+
+    useEffect(() => {
+        const subscriptions = allTokens.map(({ address }) =>
+            popupRegisterProof(address)
+        );
+
         return () => {
-            subscription.unsubscribe();
+            subscriptions.forEach((sub) => sub.unsubscribe());
         };
-    }, [assets]);
+    }, [allTokens]);
 
     useEffect(() => {
         if (active !== 0 || isRegisteredTokenInvalid || !inputValue) {
@@ -418,9 +399,12 @@ function Manager(props) {
                         }
                         className="submit-btn"
                         onClick={() => {
-                            setAssets([token, ...assets]);
                             registerToken(inputValue);
+                            setAllTokens([{ ...token, status: 2 }, ...data]);
                         }}
+                        hidden={
+                            registeredStatus === 1 || registeredStatus === 2
+                        }
                     >
                         {t("common:Submit")}
                     </Button>
@@ -440,76 +424,81 @@ function Manager(props) {
                                 onChange={(event) => {
                                     const value = event.target.value;
 
-                                    if (!value) {
-                                        setDisplay(assets);
-                                    }
-
-                                    const isAddress =
-                                        Web3.utils.isAddress(value);
-
-                                    if (isAddress) {
-                                        setDisplay(
-                                            assets.filter(
-                                                (token) =>
-                                                    token.address === value
-                                            )
-                                        );
-                                    } else {
-                                        setDisplay(
-                                            assets.filter((token) =>
-                                                token.symbol
-                                                    .toLowerCase()
-                                                    .includes(
-                                                        value.toLowerCase()
-                                                    )
-                                            )
-                                        );
-                                    }
+                                    setSearch(value);
                                 }}
                             />
                         </Form.Group>
                     </Form>
-                    <ListGroup className="token-list">
-                        {!display.length && <EmptyData />}
-                        {display?.map((token, index) => {
-                            const { proof } = token;
 
-                            return (
-                                <ListItem
-                                    key={token.address}
-                                    token={token}
-                                    onClick={props.onSelect}
-                                >
-                                    {token.proof ? (
-                                        token.confirm ? (
-                                            <span>✔</span>
-                                        ) : (
-                                            <Button
-                                                size="sm"
-                                                onClick={() =>
-                                                    confirmRegister(proof).then(
-                                                        () => {
-                                                            token.confirm = true;
-                                                        }
-                                                    )
-                                                }
-                                            >
-                                                {t("Confirm")}
-                                            </Button>
-                                        )
-                                    ) : (
-                                        <Spinner
-                                            animation="border"
-                                            size="sm"
-                                            variant="danger"
+                    {loading ? (
+                        <Spinner
+                            animation="border"
+                            role="status"
+                            className="spinner"
+                        ></Spinner>
+                    ) : (
+                        <ListGroup className="token-list">
+                            {!data.length && <EmptyData />}
+                            {data?.map((token, index) => {
+                                const { proof } = token;
+
+                                return (
+                                    <ListItem
+                                        key={token.address}
+                                        token={token}
+                                        onClick={props.onSelect}
+                                        disabled={!token.confirmed}
+                                    >
+                                        <UpcomingTokenState
+                                            token={token}
+                                            confirm={() =>
+                                                confirmRegister(proof).then(
+                                                    () => {
+                                                        const newData = [
+                                                            ...allTokens,
+                                                        ];
+
+                                                        newData[
+                                                            index
+                                                        ].confirmed = true;
+                                                        setAllTokens(newData);
+                                                    }
+                                                )
+                                            }
                                         />
-                                    )}
-                                </ListItem>
-                            );
-                        })}
-                    </ListGroup>
+                                    </ListItem>
+                                );
+                            })}
+                        </ListGroup>
+                    )}
                 </>
             )}
         </>
+    );
+}
+
+function UpcomingTokenState({ token, confirm }) {
+    const { t } = useTranslation();
+    const { proof, confirmed } = token;
+
+    if (!proof) {
+        return <Spinner animation="border" size="sm" variant="danger" />;
+    }
+
+    if (confirmed) {
+        return <i className="bi bi-check-circle"></i>;
+    }
+
+    return (
+        <Button
+            size="sm"
+            variant="color"
+            onClick={confirm}
+            style={{
+                pointerEvents: "all",
+            }}
+        >
+            {t("Confirm")}
+        </Button>
     );
 }

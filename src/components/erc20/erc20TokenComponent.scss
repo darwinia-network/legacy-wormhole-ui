@@ -136,8 +136,8 @@ $base-radius: 10px;
     }
 
     .circle-ring {
-        width: 10px;
-        height: 10px;
+        width: 15px;
+        height: 15px;
         border: 2px solid #f446a0;
         border-radius: 50%;
         position: relative;
@@ -149,7 +149,7 @@ $base-radius: 10px;
             left: -4px;
             background-color: #fff;
             width: 8px;
-            height: 4px;
+            height: 8px;
             transform: rotateZ(-45deg);
         }
     }

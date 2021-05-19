@@ -153,8 +153,10 @@ function connectTron(accountsChangedCallback, t) {
     }
 }
 
-async function connectNodeProvider(wss, type = 'darwinia') {
+export async function connectNodeProvider(wss, type = 'darwinia') {
     try{
+        // !FIXME: If wss change, it will not connect to the new node with the provider.
+        // Maybe the logic here is disconnect with the old node first then connect to new node.
         if (!window.darwiniaApi) {
             const provider = new WsProvider(wss);
             // Create the API and wait until ready
@@ -689,28 +691,18 @@ function trimSpace(s){
 }
 
 export async function getMMRProof(blockNumber, mmrBlockNumber, blockHash) {
-    console.log('getMMRProof', {blockNumber, mmrBlockNumber, blockHash})
     if(window.darwiniaApi) {
-        console.log(blockNumber, mmrBlockNumber)
         const proof = await window.darwiniaApi.rpc.headerMMR.genProof(blockNumber, mmrBlockNumber);
-        console.log(proof)
         const proofStr = proof.proof.substring(1, proof.proof.length - 1);
-
         const proofHexStr = proofStr.split(',').map((item) => {
             return remove0x(trimSpace(item))
         });
-
         const encodeProof = proofHexStr.join('');
-
-        console.log(blockNumber, proof.mmrSize.toString(), encodeProof, blockHash )
-
         const mmrProof = [
             // eslint-disable-next-line no-undef
             blockNumber, proof.mmrSize, hexToU8a('0x' + encodeProof), hexToU8a(blockHash)
         ]
-
         const mmrProofConverted = convert(...mmrProof);
-        console.log(mmrProofConverted)
 
         // parse wasm ouput
         const [mmrSize, peaksStr, siblingsStr] = mmrProofConverted.split('|');

@@ -1,6 +1,13 @@
-import axios from "axios";
-import { from, Subject } from "rxjs";
-import { delay, map, retryWhen, switchMap } from "rxjs/operators";
+import { from, iif, NEVER, of, Subject, zip } from "rxjs";
+import { fromFetch } from "rxjs/fetch";
+import {
+    catchError,
+    delay,
+    map,
+    retryWhen,
+    switchMap,
+    tap,
+} from "rxjs/operators";
 import Web3 from "web3";
 import transferBridgeABI from "../abi/Backing.json";
 import Erc20StringABI from "../abi/Erc20-string.json";
@@ -8,6 +15,7 @@ import mappingTokenABI from "../abi/MappingToken.json";
 import configJson from "../config.json";
 import {
     getMetamaskActiveAccount,
+    getMMRProof,
     getMPTProof,
     isNetworkMatch,
 } from "../utils";
@@ -39,6 +47,7 @@ const { backingContract, mappingContract, web3 } = (() => {
 })();
 
 const proofSubject = new Subject();
+const proofMemo = [];
 
 /**
  * proof events stream
@@ -55,6 +64,8 @@ const getTokenInfo = async (tokenAddress, currentAccount) => {
         balance = await getTokenBalance(tokenAddress, currentAccount);
     }
 
+    const status = await getTokenRegisterStatus(tokenAddress);
+
     return {
         address: tokenAddress,
         symbol,
@@ -62,6 +73,7 @@ const getTokenInfo = async (tokenAddress, currentAccount) => {
         name,
         logo,
         balance,
+        status,
     };
 };
 
@@ -75,6 +87,11 @@ export const getAllTokens = async (currentAccount, networkType = "eth") => {
         : await getAllTokensDvm(currentAccount);
 };
 
+/**
+ * @function getAllTokensDvm - get all tokens at dvm side
+ * @param {string} currentAccount
+ * @returns tokens that status maybe registered or registering
+ */
 const getAllTokensDvm = async (currentAccount) => {
     const length = await mappingContract.methods.tokenLength().call(); // length: string
     const tokens = await Promise.all(
@@ -94,6 +111,11 @@ const getAllTokensDvm = async (currentAccount) => {
     return tokens;
 };
 
+/**
+ * @function getAllTokensEthereum - get all tokens at ethereum side
+ * @param {string} currentAccount
+ * @returns tokens that status maybe registered or registering
+ */
 const getAllTokensEthereum = async (currentAccount) => {
     const length = await backingContract.methods.assetLength().call();
     const tokens = await Promise.all(
@@ -131,7 +153,7 @@ export const registerToken = async (address) => {
             txHash
         );
 
-        return monitorEventProof(address);
+        return generateRegisterProof(address).subscribe(proofSubject);
     }
 };
 
@@ -154,38 +176,80 @@ export const getSymbolType = async (address) => {
 };
 
 /**
- *
- * @param {Address} address - token address
- * @returns subscription
+ * @param {string} address
+ * @returns {subscription}
  */
-const monitorEventProof = (address) => {
-    // api response: {
-    //  "extrinsic_index": string; "account_id": string; "block_num": number; "block_hash": string; "backing": string; "source": string; "target": string; "block_timestamp": number;
-    //  "mmr_index": number; "mmr_root": string; "signatures": string; "block_header": JSON string; "tx": string;
-    // }
-    const api = axios
-        .get(`${config.DAPP_API}/api/ethereumIssuing/register`, {
-            params: { source: address },
-        })
-        .then((res) => res.data);
+const generateRegisterProof = (address) => {
     const proofAddress =
         "0xe66f3de22eed97c730152f373193b5a0485b407d88f37d5fd6a2c59e5a696691";
 
-    return from(api)
-        .pipe(
-            map((data) => {
-                if (!data) {
-                    throw new Error("Unreceived register block info");
-                }
+    return fromFetch(
+        `${config.DAPP_API}/api/ethereumIssuing/register?source=${address}`,
+        { selector: (response) => response.json() }
+    ).pipe(
+        map(({ data }) => {
+            if (!data) {
+                const msg = `Unreceived register block info of ${address}, refetch it after 5 seconds`;
 
-                return data;
-            }),
-            retryWhen((error) => error.pipe(delay(3000))),
-            switchMap(({ block_hash }) =>
-                from(getMPTProof(block_hash, proofAddress))
-            )
-        )
-        .subscribe(proofSubject);
+                console.info(msg);
+                throw new Error(msg);
+            }
+
+            return data;
+        }),
+        retryWhen((error) => error.pipe(delay(5000))),
+        switchMap((data) => {
+            const { block_hash, block_num, mmr_index } = data;
+            const mptProof = from(getMPTProof(block_hash, proofAddress)).pipe(
+                map((proof) => proof.toHex()),
+                catchError((err) => {
+                    console.warn(
+                        "%c [ get MPT proof error ]-216",
+                        "font-size:13px; background:pink; color:#bf2c9f;",
+                        err.message,
+                        block_hash
+                    );
+
+                    return NEVER;
+                })
+            );
+            const mmrProof = from(
+                getMMRProof(block_num, mmr_index, block_hash)
+            ).pipe(
+                catchError((err) => {
+                    console.warn(
+                        "%c [ get MMR proof error ]-228",
+                        "font-size:13px; background:pink; color:#bf2c9f;",
+                        err.message,
+                        block_hash,
+                        block_num,
+                        mmr_index
+                    );
+
+                    return NEVER;
+                })
+            );
+
+            return zip(mptProof, mmrProof, (eventsProofStr, proof) => ({
+                ...data,
+                ...proof,
+                eventsProofStr,
+            }));
+        }),
+        tap((proof) => proofMemo.push(proof))
+    );
+};
+
+/**
+ * @param {Address} address - token address
+ * @returns {subscription}
+ */
+export const popupRegisterProof = (address) => {
+    const proof = proofMemo.find((item) => item.source === address);
+    const fromQuery = generateRegisterProof(address);
+    const fromMemo = of(proof).pipe(delay(2000));
+
+    return iif(() => !!proof, fromMemo, fromQuery).subscribe(proofSubject);
 };
 
 /**
@@ -204,8 +268,15 @@ export const getTokenRegisterStatus = async (address) => {
     const { target, timestamp } = await backingContract.methods
         .assets(address)
         .call();
-    const isTargetTruthy = !!Web3.utils.hexToNumber(target);
+    let isTargetTruthy = false;
     const isTimestampExist = +timestamp > 0;
+
+    try {
+        // if target exists, the number should be overflow.
+        isTargetTruthy = !!Web3.utils.hexToNumber(target);
+    } catch (_) {
+        isTargetTruthy = true;
+    }
 
     if (isTimestampExist && !isTargetTruthy) {
         return 2;
@@ -225,9 +296,27 @@ export const hasRegistered = async (address) => {
 };
 
 export const confirmRegister = async (proof) => {
-    const result = await backingContract.methods.crossChainSync(proof);
+    const {
+        mmr_root,
+        mmr_index,
+        block_header,
+        peaks,
+        siblings,
+        eventsProofStr,
+    } = proof;
+    const from = await getMetamaskActiveAccount();
+    const txHash = await backingContract.methods
+        .crossChainSync(
+            mmr_root,
+            mmr_index,
+            block_header,
+            peaks,
+            siblings,
+            eventsProofStr
+        )
+        .send({ from });
 
-    return result;
+    return txHash;
 };
 
 export async function crossSendErc20FromEthToDvm(
