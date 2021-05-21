@@ -717,7 +717,7 @@ export async function getMMRProof(blockNumber, mmrBlockNumber, blockHash) {
     }
 }
 
-function encodeMMRRootMessage(networkPrefix, methodID, mmrIndex, mmrRoot) {
+export function encodeMMRRootMessage(networkPrefix, methodID, mmrIndex, mmrRoot) {
     const registry = new TypeRegistry();
     return registry.createType('{"prefix": "Vec<u8>", "methodID": "[u8; 4; methodID]", "index": "Compact<u32>", "root": "H256"}', {
         prefix: networkPrefix,
@@ -736,16 +736,6 @@ export async function ClaimTokenFromD2E({ networkPrefix, mmrIndex, mmrRoot, mmrS
                 const blockHeader = encodeBlockHeader(blockHeaderStr);
                 const mmrProof = await getMMRProof(blockNumber, historyMeta.best, blockHash);
                 const eventsProof = await getMPTProof(blockHash);
-
-                console.log('ClaimTokenFromD2E - darwiniaToEthereumVerifyProof', {
-                    root: '0x' + historyMeta.mmrRoot,
-                    MMRIndex: historyMeta.best,
-                    blockNumber: blockNumber,
-                    blockHeader: blockHeader.toHex(),
-                    peaks: mmrProof.peaks,
-                    siblings: mmrProof.siblings,
-                    eventsProofStr: eventsProof.toHex()
-                })
 
                 darwiniaToEthereumVerifyProof(_account, {
                     root: '0x' + historyMeta.mmrRoot,
@@ -767,18 +757,6 @@ export async function ClaimTokenFromD2E({ networkPrefix, mmrIndex, mmrRoot, mmrS
                 const blockHeader = encodeBlockHeader(blockHeaderStr);
                 const mmrProof = await getMMRProof(blockNumber, mmrIndex, blockHash);
                 const eventsProof = await getMPTProof(blockHash);
-
-                console.log('ClaimTokenFromD2E - darwiniaToEthereumAppendRootAndVerifyProof', {
-                    message: mmrRootMessage.toHex(),
-                    signatures: mmrSignatures.split(','),
-                    root: mmrRoot,
-                    MMRIndex: mmrIndex,
-                    blockNumber: blockNumber,
-                    blockHeader: blockHeader.toHex(),
-                    peaks: mmrProof.peaks,
-                    siblings: mmrProof.siblings,
-                    eventsProofStr: eventsProof.toHex()
-                })
 
                 darwiniaToEthereumAppendRootAndVerifyProof(_account, {
                     message: mmrRootMessage.toHex(),

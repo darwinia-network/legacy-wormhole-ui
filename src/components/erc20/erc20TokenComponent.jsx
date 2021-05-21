@@ -23,6 +23,7 @@ import {
     config,
     connectNodeProvider,
     formatBalance,
+    formToast,
     toShortAccount,
 } from "../../page/CrossChain/utils";
 import EmptyData from "../empty/emptyData";
@@ -439,36 +440,41 @@ function Manager(props) {
                     ) : (
                         <ListGroup className="token-list">
                             {!data.length && <EmptyData />}
-                            {data?.map((token, index) => {
-                                const { proof } = token;
-
-                                return (
-                                    <ListItem
-                                        key={token.address}
+                            {data?.map((token, index) => (
+                                <ListItem
+                                    key={token.address}
+                                    token={token}
+                                    onClick={props.onSelect}
+                                    disabled={!token.confirmed}
+                                >
+                                    <UpcomingTokenState
                                         token={token}
-                                        onClick={props.onSelect}
-                                        disabled={!token.confirmed}
-                                    >
-                                        <UpcomingTokenState
-                                            token={token}
-                                            confirm={() =>
-                                                confirmRegister(proof).then(
-                                                    () => {
-                                                        const newData = [
-                                                            ...allTokens,
-                                                        ];
+                                        onConfirm={() => {
+                                            const newData = [...allTokens];
 
-                                                        newData[
-                                                            index
-                                                        ].confirmed = true;
-                                                        setAllTokens(newData);
-                                                    }
-                                                )
-                                            }
-                                        />
-                                    </ListItem>
-                                );
-                            })}
+                                            newData[index].confirmed = 0;
+
+                                            setAllTokens([...newData]);
+
+                                            confirmRegister(token.proof)
+                                                .then((tx) => {
+                                                    formToast(
+                                                        `Register success transaction hash: ${tx.transactionHash}`
+                                                    );
+
+                                                    newData[
+                                                        index
+                                                    ].confirmed = 1;
+
+                                                    setAllTokens(newData);
+                                                })
+                                                .catch((err) => {
+                                                    formToast(err.message);
+                                                });
+                                        }}
+                                    />
+                                </ListItem>
+                            ))}
                         </ListGroup>
                     )}
                 </>
@@ -477,23 +483,38 @@ function Manager(props) {
     );
 }
 
-function UpcomingTokenState({ token, confirm }) {
+/**
+ * confirmed - 0: confirming 1: confirmed
+ */
+function UpcomingTokenState({ token, onConfirm }) {
     const { t } = useTranslation();
     const { proof, confirmed } = token;
 
     if (!proof) {
+        return <Spinner animation="grow" size="sm" variant="primary" />;
+    }
+
+    if (confirmed === 0) {
         return <Spinner animation="border" size="sm" variant="danger" />;
     }
 
-    if (confirmed) {
-        return <i className="bi bi-check-circle"></i>;
+    if (confirmed === 1) {
+        return (
+            <i
+                className="bi bi-check-circle"
+                style={{
+                    fontSize: "22px",
+                    color: "#48e248",
+                }}
+            ></i>
+        );
     }
 
     return (
         <Button
             size="sm"
             variant="color"
-            onClick={confirm}
+            onClick={onConfirm}
             style={{
                 pointerEvents: "all",
             }}

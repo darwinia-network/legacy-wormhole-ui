@@ -14,6 +14,8 @@ import Erc20StringABI from "../abi/Erc20-string.json";
 import mappingTokenABI from "../abi/MappingToken.json";
 import configJson from "../config.json";
 import {
+    encodeBlockHeader,
+    encodeMMRRootMessage,
     getMetamaskActiveAccount,
     getMMRProof,
     getMPTProof,
@@ -45,6 +47,8 @@ const { backingContract, mappingContract, web3 } = (() => {
         web3,
     };
 })();
+
+export { backingContract };
 
 const proofSubject = new Subject();
 const proofMemo = [];
@@ -191,7 +195,7 @@ const generateRegisterProof = (address) => {
             if (!data) {
                 const msg = `Unreceived register block info of ${address}, refetch it after 5 seconds`;
 
-                console.info(msg);
+                // console.info(msg);
                 throw new Error(msg);
             }
 
@@ -297,6 +301,7 @@ export const hasRegistered = async (address) => {
 
 export const confirmRegister = async (proof) => {
     const {
+        signatures,
         mmr_root,
         mmr_index,
         block_header,
@@ -305,18 +310,42 @@ export const confirmRegister = async (proof) => {
         eventsProofStr,
     } = proof;
     const from = await getMetamaskActiveAccount();
-    const txHash = await backingContract.methods
+    const mmrRootMessage = encodeMMRRootMessage(
+        config.D2E_NETWORK_PREFIX,
+        "0x479fbdf9",
+        mmr_index,
+        mmr_root
+    );
+    const blockHeader = encodeBlockHeader(block_header);
+    // !FIXME: unhandled reject error [object object] on Firefox;
+    const tx = await backingContract.methods
         .crossChainSync(
+            mmrRootMessage.toHex(),
+            signatures.split(","),
             mmr_root,
             mmr_index,
-            block_header,
+            blockHeader.toHex(),
             peaks,
             siblings,
             eventsProofStr
         )
-        .send({ from });
+        .send({ from })
+        .on("transactionHash", (hash) => {
+            console.log(
+                "%c [ hash ]-331",
+                "font-size:13px; background:pink; color:#bf2c9f;",
+                hash
+            );
+        })
+        .on("error", (error) => {
+            console.log(
+                "%c [ error ]-334",
+                "font-size:13px; background:pink; color:#bf2c9f;",
+                error
+            );
+        });
 
-    return txHash;
+    return tx;
 };
 
 export async function crossSendErc20FromEthToDvm(
