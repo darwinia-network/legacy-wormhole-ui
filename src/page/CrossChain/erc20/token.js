@@ -3,6 +3,7 @@ import { fromFetch } from "rxjs/fetch";
 import {
     catchError,
     delay,
+    distinctUntilKeyChanged,
     map,
     retryWhen,
     switchMap,
@@ -48,15 +49,15 @@ const { backingContract, mappingContract, web3 } = (() => {
     };
 })();
 
-export { backingContract };
-
 const proofSubject = new Subject();
 const proofMemo = [];
 
 /**
  * proof events stream
  */
-export const proofObservable = proofSubject.asObservable();
+export const proofObservable = proofSubject
+    .asObservable()
+    .pipe(distinctUntilKeyChanged("source"));
 
 const getTokenInfo = async (tokenAddress, currentAccount) => {
     const { symbol = "", decimals = 0 } = await tokenInfoGetter(tokenAddress);
@@ -157,7 +158,9 @@ export const registerToken = async (address) => {
             txHash
         );
 
-        return generateRegisterProof(address).subscribe(proofSubject);
+        return generateRegisterProof(address).subscribe((proof) =>
+            proofSubject.next(proof)
+        );
     }
 };
 
@@ -180,6 +183,9 @@ export const getSymbolType = async (address) => {
 };
 
 /**
+ * @description - 1. fetch block hash from server, if block hash has not generated yet, send request every five seconds.
+ * 2. calculate mpt proof and mmr proof then combine them together
+ * 3. cache the result and emit it to proof subject.
  * @param {string} address
  * @returns {subscription}
  */
@@ -245,6 +251,7 @@ const generateRegisterProof = (address) => {
 };
 
 /**
+ * @description - Check register proof in cache, if exists emit it directly, otherwise get it through api request.
  * @param {Address} address - token address
  * @returns {subscription}
  */
@@ -253,7 +260,9 @@ export const popupRegisterProof = (address) => {
     const fromQuery = generateRegisterProof(address);
     const fromMemo = of(proof).pipe(delay(2000));
 
-    return iif(() => !!proof, fromMemo, fromQuery).subscribe(proofSubject);
+    return iif(() => !!proof, fromMemo, fromQuery).subscribe((proof) =>
+        proofSubject.next(proof)
+    );
 };
 
 /**

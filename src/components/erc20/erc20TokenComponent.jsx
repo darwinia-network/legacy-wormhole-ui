@@ -234,12 +234,9 @@ function Manager(props) {
     const [token, setToken] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const makeCancelable = useCancelablePromise();
-    const { loading, allTokens, setAllTokens } = useAllTokens(
-        props.networkType,
-        2
-    );
+    const { allTokens, setAllTokens } = useAllTokens(props.networkType, 2);
     const searchFn = useCallback(tokenSearchFactory(allTokens), [allTokens]);
-    const { data, setSearch } = useLocalSearch(searchFn);
+    const { data } = useLocalSearch(searchFn);
     const onTabClick = (index) => {
         return () => {
             if (props.onTabChange) {
@@ -249,28 +246,6 @@ function Manager(props) {
             setActive(index);
         };
     };
-
-    useEffect(() => {
-        const subscription = proofObservable.subscribe((proof) => {
-            const updated = allTokens.map((token) =>
-                proof.source === token.address ? { ...token, proof } : token
-            );
-
-            setAllTokens(updated);
-        });
-
-        return () => subscription.unsubscribe();
-    }, [allTokens, setAllTokens]);
-
-    useEffect(() => {
-        const subscriptions = allTokens.map(({ address }) =>
-            popupRegisterProof(address)
-        );
-
-        return () => {
-            subscriptions.forEach((sub) => sub.unsubscribe());
-        };
-    }, [allTokens]);
 
     useEffect(() => {
         if (active !== 0 || isRegisteredTokenInvalid || !inputValue) {
@@ -412,72 +387,104 @@ function Manager(props) {
                 </>
             )}
 
-            {active === 1 && (
-                <>
-                    <Form className="register-control">
-                        <Form.Group controlId="address">
-                            <Form.Control
-                                type="text"
-                                required
-                                placeholder={t(
-                                    "crosschain:Search name or paste address"
-                                )}
-                                onChange={(event) => {
-                                    const value = event.target.value;
+            {active === 1 && <Upcoming networkType={props.networkType} />}
+        </>
+    );
+}
 
-                                    setSearch(value);
+function Upcoming(props) {
+    const { t } = useTranslation();
+    const { loading, allTokens, setAllTokens } = useAllTokens(
+        props.networkType,
+        2
+    );
+    const searchFn = useCallback(tokenSearchFactory(allTokens), [allTokens]);
+    const { data, setSearch } = useLocalSearch(searchFn);
+
+    useEffect(() => {
+        if (!allTokens.length) {
+            return;
+        }
+
+        const subscription = proofObservable.subscribe((proof) => {
+            const updated = allTokens.map((token) =>
+                proof.source === token.address ? { ...token, proof } : token
+            );
+
+            setAllTokens(updated);
+        });
+
+        allTokens.forEach(({ address }) => {
+            const sub$$ = popupRegisterProof(address);
+
+            subscription.add(sub$$);
+        });
+
+        return () => subscription.unsubscribe();
+    }, [allTokens, setAllTokens]);
+
+    return (
+        <>
+            <Form className="register-control">
+                <Form.Group controlId="address">
+                    <Form.Control
+                        type="text"
+                        required
+                        placeholder={t(
+                            "crosschain:Search name or paste address"
+                        )}
+                        onChange={(event) => {
+                            const value = event.target.value;
+
+                            setSearch(value);
+                        }}
+                    />
+                </Form.Group>
+            </Form>
+
+            {loading ? (
+                <Spinner
+                    animation="border"
+                    role="status"
+                    className="spinner"
+                ></Spinner>
+            ) : (
+                <ListGroup className="token-list">
+                    {!data.length && <EmptyData />}
+                    {data?.map((token, index) => (
+                        <ListItem
+                            key={token.address}
+                            token={token}
+                            onClick={props.onSelect}
+                            disabled={!token.confirmed}
+                        >
+                            <UpcomingTokenState
+                                token={token}
+                                onConfirm={() => {
+                                    const newData = [...allTokens];
+
+                                    newData[index].confirmed = 0;
+
+                                    setAllTokens([...newData]);
+
+                                    confirmRegister(token.proof)
+                                        .then((tx) => {
+                                            formToast(
+                                                `Register success transaction hash: ${tx.transactionHash}`
+                                            );
+
+                                            newData[index].confirmed = 1;
+
+                                            setAllTokens(newData);
+                                        })
+                                        .catch((err) => {
+                                            formToast(err.message);
+                                        });
                                 }}
                             />
-                        </Form.Group>
-                    </Form>
-
-                    {loading ? (
-                        <Spinner
-                            animation="border"
-                            role="status"
-                            className="spinner"
-                        ></Spinner>
-                    ) : (
-                        <ListGroup className="token-list">
-                            {!data.length && <EmptyData />}
-                            {data?.map((token, index) => (
-                                <ListItem
-                                    key={token.address}
-                                    token={token}
-                                    onClick={props.onSelect}
-                                    disabled={!token.confirmed}
-                                >
-                                    <UpcomingTokenState
-                                        token={token}
-                                        onConfirm={() => {
-                                            const newData = [...allTokens];
-
-                                            newData[index].confirmed = 0;
-
-                                            setAllTokens([...newData]);
-
-                                            confirmRegister(token.proof)
-                                                .then((tx) => {
-                                                    formToast(
-                                                        `Register success transaction hash: ${tx.transactionHash}`
-                                                    );
-
-                                                    newData[
-                                                        index
-                                                    ].confirmed = 1;
-
-                                                    setAllTokens(newData);
-                                                })
-                                                .catch((err) => {
-                                                    formToast(err.message);
-                                                });
-                                        }}
-                                    />
-                                </ListItem>
-                            ))}
-                        </ListGroup>
-                    )}
-                </>
+                        </ListItem>
+                    ))}
+                </ListGroup>
             )}
         </>
     );

@@ -109,6 +109,9 @@ $base-radius: 10px;
 }
 
 .token-list {
+    max-height: 45vh;
+    overflow: scroll;
+    
     .list-group-item {
         display: flex;
         justify-content: space-between;
