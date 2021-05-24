@@ -1,3 +1,5 @@
+import { u8aToHex } from "@polkadot/util";
+import { decodeAddress } from "@polkadot/util-crypto";
 import { from, iif, NEVER, of, Subject, zip } from "rxjs";
 import { fromFetch } from "rxjs/fetch";
 import {
@@ -12,6 +14,7 @@ import {
 import Web3 from "web3";
 import transferBridgeABI from "../abi/Backing.json";
 import Erc20StringABI from "../abi/Erc20-string.json";
+import Erc20ABI from "../abi/Erc20.json";
 import mappingTokenABI from "../abi/MappingToken.json";
 import configJson from "../config.json";
 import {
@@ -182,6 +185,22 @@ export const getSymbolType = async (address) => {
     }
 };
 
+const loopQuery = (url) => {
+    return fromFetch(url, { selector: (response) => response.json() }).pipe(
+        map(({ data }) => {
+            if (!data) {
+                const msg = `The ${url} api has no result, refetch it after 5 seconds`;
+
+                // console.info(msg);
+                throw new Error(msg);
+            }
+
+            return data;
+        }),
+        retryWhen((error) => error.pipe(delay(5000)))
+    );
+};
+
 /**
  * @description - 1. fetch block hash from server, if block hash has not generated yet, send request every five seconds.
  * 2. calculate mpt proof and mmr proof then combine them together
@@ -193,21 +212,9 @@ const generateRegisterProof = (address) => {
     const proofAddress =
         "0xe66f3de22eed97c730152f373193b5a0485b407d88f37d5fd6a2c59e5a696691";
 
-    return fromFetch(
-        `${config.DAPP_API}/api/ethereumIssuing/register?source=${address}`,
-        { selector: (response) => response.json() }
+    return loopQuery(
+        `${config.DAPP_API}/api/ethereumIssuing/register?source=${address}`
     ).pipe(
-        map(({ data }) => {
-            if (!data) {
-                const msg = `Unreceived register block info of ${address}, refetch it after 5 seconds`;
-
-                // console.info(msg);
-                throw new Error(msg);
-            }
-
-            return data;
-        }),
-        retryWhen((error) => error.pipe(delay(5000))),
         switchMap((data) => {
             const { block_hash, block_num, mmr_index } = data;
             const mptProof = from(getMPTProof(block_hash, proofAddress)).pipe(
@@ -357,18 +364,49 @@ export const confirmRegister = async (proof) => {
     return tx;
 };
 
+export async function canCrossSendToDvm(tokenAddress, currentAccount, amount) {
+    const erc20Contract = new web3.eth.Contract(Erc20ABI, tokenAddress);
+    const allowance = await erc20Contract.methods
+        .allowance(currentAccount, config.TRANSFER_BRIDGE_ETH_ADDRESS)
+        .call();
+    const isAllowanceEnough = Web3.utils
+        .toBN(allowance)
+        .gte(Web3.utils.toBN(Web3.utils.fromWei(amount.toString(), "ether")));
+
+    if (isAllowanceEnough) {
+        return true;
+    } else {
+        const tx = await erc20Contract.methods
+            .approve(
+                config.TRANSFER_BRIDGE_ETH_ADDRESS,
+                Web3.utils.toWei(Web3.utils.toBN("1000000"), "ether")
+            )
+            .send({ from: currentAccount });
+
+        return tx.transactionHash;
+    }
+}
+
+/**
+ *
+ * @param {string} tokenAddress - erc20 token address
+ * @param {string} recipientAddress - recipient address, ss58 format
+ * @param {BN} amount - transfer token amount
+ * @param {string} currentAccount - metamask current active account
+ */
 export async function crossSendErc20FromEthToDvm(
     tokenAddress,
     recipientAddress,
-    amount
+    amount,
+    currentAccount
 ) {
-    const result = await backingContract.methods.crossSendToken(
-        tokenAddress,
-        recipientAddress,
-        amount.toString()
-    );
+    const recipient =
+        "0x" + u8aToHex(decodeAddress(recipientAddress)).slice(-42, -2);
+    const tx = await backingContract.methods
+        .crossSendToken(tokenAddress, recipient, amount.toString())
+        .send({ from: currentAccount });
 
-    return result;
+    return tx.transactionHash;
 }
 
 export async function crossSendErc20FromDvmToEth(

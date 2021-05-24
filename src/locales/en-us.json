@@ -133,7 +133,10 @@
     "Tips After {{type}} network returns the result, click [Confirm] to complete the token registration.": "Tips: After {{type}} network returns the result, click [Confirm] to complete the token registration.",
     "This address is not {{type}} smart account": "This address is not {{type}} smart account",
     "This token has been registered.": "This token has been registered.",
-    "This token has been registered, switch to upcoming tab to view the register status.": "This token has been registered, switch to upcoming tab to view the register status."
+    "This token has been registered, switch to upcoming tab to view the register status.": "This token has been registered, switch to upcoming tab to view the register status.",
+    "Transfer State": "Transfer State",
+    "Approve transaction hash - {{hash}}": "Approve transaction hash: {{hash}}",
+    "Transfer transaction hash - {{hash}}": "Transfer transaction hash: {{hash}}"
   },
   "crosschain_ethtron": {
     "claim": "Cross-chain Transfer",

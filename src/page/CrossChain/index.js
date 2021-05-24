@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Button, Form, Spinner, Dropdown, ButtonGroup, Modal, Col } from 'react-bootstrap'
+import { Button, Form, Spinner, Dropdown, ButtonGroup, Modal, Col, Alert } from 'react-bootstrap'
 import { withRouter } from 'react-router-dom';
 
 import 'react-toastify/dist/ReactToastify.css';
@@ -13,7 +13,7 @@ import {
     getEthereumToDarwiniaCrossChainInfo, getEthereumToDarwiniaCrossChainFee, crossChainFromDarwiniaToEthereum, getDarwiniaToEthereumCrossChainFee,
     getDarwiniaToEthereumGenesisSwapInfo, substrateAddressToPublicKey, ClaimTokenFromD2E, 
 } from './utils'
-import { crossSendErc20FromEthToDvm, crossSendErc20FromDvmToEth } from './erc20/token';
+import { canCrossSendToDvm, crossSendErc20FromEthToDvm, crossSendErc20FromDvmToEth } from './erc20/token';
 import { InputRightWrap } from '../../components/InputRightWrap'
 import InputWrapWithCheck from '../../components/InputWrapWithCheck'
 import FormTip from '../../components/FormTip'
@@ -95,6 +95,7 @@ class CrossChain extends Component {
             accountValidation: null,
             isRegisterTokenModalDisplay: false,
             erc20Token: {},
+            erc20TokenTransferState: null,
         }
         this.querySubscribe = null
     }
@@ -492,8 +493,30 @@ class CrossChain extends Component {
         const { networkType, account, tokenType, erc20Token, darwiniaAddress, crossChainBalance } = this.state;
 
         if(tokenType === 'erc20') {
-            crossSendErc20FromEthToDvm(erc20Token.address, darwiniaAddress, crossChainBalance).then(res => { 
-                // TODO: listen backingLock event
+            this.setState({ isApproving: true, erc20TokenTransferState: null });
+
+            canCrossSendToDvm(erc20Token.address, account.eth, crossChainBalance).then(result => { 
+                if(typeof result === 'string'){
+                    this.setState({erc20TokenTransferState: { approveTxHash: result }})
+                }
+
+                return crossSendErc20FromEthToDvm(
+                    erc20Token.address,
+                    darwiniaAddress,
+                    crossChainBalance,
+                    account.eth
+                );
+            }).then((transferTxHash) => { 
+                const { erc20TokenTransferState } = this.state;
+
+                this.setState({ erc20TokenTransferState: { ...erc20TokenTransferState, transferTxHash }, isApproving: false });
+            }).catch(error => { 
+                console.warn(
+                    "%c [ error ]-499",
+                    "font-size:13px; background:pink; color:#bf2c9f;",
+                    error.message
+                );
+                this.setState({ isApproving: false, erc20TokenTransferState: null });               
             });
         } else {
             approveRingToIssuing(account[networkType], () => {
@@ -932,10 +955,10 @@ class CrossChain extends Component {
                                         <Form.Label>{t('crosschain:Amount')}</Form.Label>
                                         <InputRightWrap text={t('crosschain:MAX')} onClick={
                                             () => {
-                                                this.setValue('crossChainBalance', { target: { value: formatBalance(this.state.erc20Token.balance)} }, this.toWeiBNMiddleware, this.setRingBalanceText)
+                                                this.setValue('crossChainBalance', { target: { value: formatBalance(this.state.erc20Token?.balance, 'ether')} }, this.toWeiBNMiddleware, this.setRingBalanceText)
                                             }
                                         }>
-                                            <Form.Control type="number" placeholder={`${t('crosschain:Balance')} : ${formatBalance(this.state.erc20Token?.balance)}`}
+                                            <Form.Control type="number" placeholder={`${t('crosschain:Balance')} : ${formatBalance(this.state.erc20Token?.balance, 'ether')}`}
                                                 autoComplete="off"
                                                 value={crossChainBalanceText}
                                                 onChange={(value) => this.setValue('crossChainBalance', value, this.toWeiBNMiddleware, this.setRingBalanceText)} />
@@ -968,10 +991,6 @@ class CrossChain extends Component {
                                                 currentDepositID: eventKey
                                             })
                                         }}>
-                                            {/* {!ethereumDeposits || ethereumDeposits.length === 0 ?
-                                        <Dropdown.Toggle id="ethereum-deposit">{t('No Deposits')}</Dropdown.Toggle>
-                                        : null
-                                    } */}
                                             <Dropdown.Toggle as="div" className={styles.reactSelectToggle} id="ethereum-deposit-toggle">
                                                 {this.renderDepositItem(this.getDepositByID(currentDepositID))}
                                             </Dropdown.Toggle>
@@ -981,18 +1000,6 @@ class CrossChain extends Component {
                                                 })}
                                             </Dropdown.Menu>
                                         </Dropdown>
-                                        {/* <Form.Control as="select" value={currentDepositID}
-                                    onChange={(value) => this.setValue('currentDepositID', value, null, () => {
-
-                                    })}>
-                                    {!ethereumDeposits || ethereumDeposits.length === 0 ?
-                                        <option value="">{t('No Deposits')}</option>
-                                        : null
-                                    }
-                                    {ethereumDeposits && ethereumDeposits.length > 0 && ethereumDeposits.map((item) => {
-                                        return <option key={item.deposit_id} value={item.deposit_id}>{this.renderDepositItem(item)}</option>
-                                    })}
-                                </Form.Control> */}
                                     </>
                                     : null}
                                 {tokenType === 'ring' || tokenType === 'kton' ? <Form.Text muted className={`${styles.feeTip} ${isSufficientFee ? '' : 'text-muted'}`}>
@@ -1754,6 +1761,27 @@ class CrossChain extends Component {
 
                         this.setState({isRegisterTokenModalDisplay: false});
                     }} />
+                
+                <Alert show={!!this.state.erc20TokenTransferState} 
+                    onClose={() => this.setState({ erc20TokenTransferState: null })}
+                    variant={this.state.erc20TokenTransferState?.transferTxHash ? 'success' : 'info'} 
+                    dismissible
+                    style={{position: 'fixed', top: '54px', right: '10px', maxWidth: '500px', zIndex: 99 }}
+                >
+                    <Alert.Heading>
+                        {t('crosschain:Transfer State')}
+                        {
+                            this.state.erc20TokenTransferState && !this.state.erc20TokenTransferState.transferTxHash &&
+                            <span style={{fontSize: 10, marginLeft: 10}}>
+                                <Spinner animation="border" size="sm" variant="danger" />
+                            </span>
+                        }
+                    </Alert.Heading>
+                        
+                    {this.state.erc20TokenTransferState?.approveTxHash && (<p>{t('crosschain:Approve transaction hash - {{hash}}', { hash: this.state.erc20TokenTransferState?.approveTxHash })}</p>)}
+                    {this.state.erc20TokenTransferState?.transferTxHash && (<p>{t('crosschain:Transfer transaction hash - {{hash}}', { hash: this.state.erc20TokenTransferState?.transferTxHash })}</p>)}
+                </Alert>
+
             </div>
         );
     }
