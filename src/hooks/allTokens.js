@@ -43,7 +43,11 @@ export const useAllTokens = (networkType, status = null) => {
                         : all
                 );
             } catch (error) {
-                console.error(error);
+                console.log(
+                    "%c [ error in useAllToken hook ]-56",
+                    "font-size:13px; background:pink; color:#bf2c9f;",
+                    error.message
+                );
             }
 
             setLoading(false);

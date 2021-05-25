@@ -1,6 +1,8 @@
 import contractMap from "@metamask/contract-metadata";
-import abi from "human-standard-token-abi";
+import erc20ABI from "human-standard-token-abi";
 import Web3 from "web3";
+import tokenABI from "../../CrossChain/tokenABI.json";
+import { config } from "../utils";
 
 const DEFAULT_SYMBOL = "";
 const DEFAULT_DECIMALS = "0";
@@ -28,9 +30,9 @@ const contractList = Object.entries(contractMap)
     .filter((tokenData) => Boolean(tokenData.erc20));
 
 export function getContractAtAddress(tokenAddress) {
-    const web3 = new Web3(window.ethereum || window.web3.currentProvider);
+    const web3 = new Web3(config.ETHERSCAN_DOMAIN.rpc);
 
-    return new web3.eth.Contract(abi, tokenAddress);
+    return new web3.eth.Contract(erc20ABI, tokenAddress);
 }
 
 /**
@@ -39,8 +41,9 @@ export function getContractAtAddress(tokenAddress) {
  * @param {string} account - current active metamask account
  * @returns {BN} balance of the account
  */
-export async function getTokenBalance(address, account) {
+export async function getTokenBalance(address, account, isEth = true) {
     const web3 = new Web3(window.ethereum || window.web3.currentProvider);
+    const abi = isEth ? erc20ABI : tokenABI;
     const contract = new web3.eth.Contract(abi, address);
 
     try {
@@ -49,13 +52,13 @@ export async function getTokenBalance(address, account) {
         return Web3.utils.toBN(balance);
     } catch (err) {
         console.log(
-            "%c [ error ]-31",
+            "%c [ get token balance error ]-52",
             "font-size:13px; background:pink; color:#bf2c9f;",
-            err
+            err.message
         );
     }
 
-    return 0;
+    return Web3.utils.toBN(0);
 }
 
 async function getSymbolFromContract(tokenAddress) {

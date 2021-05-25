@@ -39,6 +39,7 @@ export default function Erc20Token(props) {
             { type: config.NETWORK_NAME }
         )
     );
+    const { networkType, ...modalProps } = props;
     const facade = [
         {
             title: t("crosschain:Select a token"),
@@ -46,7 +47,7 @@ export default function Erc20Token(props) {
             content: (
                 <SearchToken
                     onSelect={props.onHide}
-                    networkType={props.networkType}
+                    networkType={networkType}
                 />
             ),
             footer: (
@@ -95,7 +96,6 @@ export default function Erc20Token(props) {
             footer: <p className="tip">{t(tipMsg, { type: "" })}</p>,
         },
     ];
-    const { networkType, ...modalProps } = props;
 
     useEffect(() => {
         connectNodeProvider(config.DARWINIA_ETHEREUM_FROM_WSS);

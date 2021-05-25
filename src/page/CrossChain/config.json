@@ -11,7 +11,8 @@
     "DAPP_API": "https://api.darwinia.network.l2me.com",
     "ETHERSCAN_DOMAIN": {
       "en": "https://ropsten.etherscan.io",
-      "zh": "https://ropsten.etherscan.io"
+      "zh": "https://ropsten.etherscan.io",
+      "rpc": "wss://ropsten.infura.io/ws/v3/5350449ccd2349afa007061e62ee1409"
     },
     "TRONSCAN_DOMAIN": "https://shasta.tronscan.io",
     "SUBSCAN_DARWINIA_DOMAIN": "https://pangolin.subscan.io",
@@ -30,7 +31,7 @@
     "DARWINIA_ETHEREUM_TOKEN_ISSUING":"0x98fAE9274562FE131e2CF5771ebFB0bB232aFd25",
     "DARWINIA_ETHEREUM_FROM_WSS": "wss://pangolin-rpc.darwinia.network",
     "DARWINIA_PROVIDER": "https://pangolin-rpc.darwinia.network",
-    "TRANSFER_BRIDGE_ETH_ADDRESS" : "0xb2Bea2358d817dAE01B0FD0DC3aECB25910E65AA",
+    "E2D_BACKING_ADDRESS" : "0xb2Bea2358d817dAE01B0FD0DC3aECB25910E65AA",
     "MAPPING_FACTORY_ADDRESS": "0xcB8531Bc0B7C8F41B55CF4E94698C37b130597B9"
   },
   "production": {
@@ -45,7 +46,8 @@
     "DAPP_API": "https://api.darwinia.network",
     "ETHERSCAN_DOMAIN": {
       "en": "https://etherscan.io",
-      "zh": "https://cn.etherscan.com"
+      "zh": "https://cn.etherscan.com",
+      "rpc": "wss://mainnet.infura.io/ws/v3/5350449ccd2349afa007061e62ee1409"
     },
     "TRONSCAN_DOMAIN": "https://tronscan.io",
     "SUBSCAN_DARWINIA_DOMAIN": "https://darwinia.subscan.io",
@@ -64,7 +66,7 @@
     "DARWINIA_ETHEREUM_TOKEN_ISSUING":"0x5f44dd8e59f56aa04fe54e95cc690560ae706b18",
     "DARWINIA_ETHEREUM_FROM_WSS": "wss://rpc.darwinia.network",
     "DARWINIA_PROVIDER": "https://rpc.darwinia.network",
-    "TRANSFER_BRIDGE_ETH_ADDRESS" : "",
+    "E2D_BACKING_ADDRESS" : "",
     "MAPPING_FACTORY_ADDRESS": ""
   }
 }

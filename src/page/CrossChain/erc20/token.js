@@ -1,5 +1,3 @@
-import { u8aToHex } from "@polkadot/util";
-import { decodeAddress } from "@polkadot/util-crypto";
 import { from, iif, NEVER, of, Subject, zip } from "rxjs";
 import { fromFetch } from "rxjs/fetch";
 import {
@@ -17,6 +15,7 @@ import Erc20StringABI from "../abi/Erc20-string.json";
 import Erc20ABI from "../abi/Erc20.json";
 import mappingTokenABI from "../abi/MappingToken.json";
 import configJson from "../config.json";
+import TokenABI from "../tokenABI.json";
 import {
     encodeBlockHeader,
     encodeMMRRootMessage,
@@ -37,7 +36,7 @@ const { backingContract, mappingContract, web3 } = (() => {
     const web3 = new Web3(window.ethereum || window.web3.currentProvider);
     const backingContract = new web3.eth.Contract(
         transferBridgeABI,
-        config.TRANSFER_BRIDGE_ETH_ADDRESS
+        config.E2D_BACKING_ADDRESS
     );
     const web3Darwinia = new Web3(config.DARWINIA_PROVIDER);
     const mappingContract = new web3Darwinia.eth.Contract(
@@ -62,29 +61,26 @@ export const proofObservable = proofSubject
     .asObservable()
     .pipe(distinctUntilKeyChanged("source"));
 
-const getTokenInfo = async (tokenAddress, currentAccount) => {
+const getTokenInfo = async (tokenAddress) => {
     const { symbol = "", decimals = 0 } = await tokenInfoGetter(tokenAddress);
     const { name, logo } = getNameAndLogo(tokenAddress);
 
-    let balance = Web3.utils.toBN(0);
-
-    if (currentAccount) {
-        balance = await getTokenBalance(tokenAddress, currentAccount);
-    }
-
-    const status = await getTokenRegisterStatus(tokenAddress);
-
     return {
-        address: tokenAddress,
         symbol,
         decimals,
         name,
         logo,
-        balance,
-        status,
     };
 };
 
+/**
+ *
+ * @param {string} currentAccount - metamask active account
+ * @param {string} networkType - eth or darwinia
+ * @returns {address: string; source: string; backing: string; symbol: string; decimals: string; name: string; logo: string; status; balance: BN}
+ * for eth: both address and source fields in result are all represent the token's ethereum address, actually equal
+ * for dvm: the address field represent the token's dvm address, the source field represent the token's ethereum address.
+ */
 export const getAllTokens = async (currentAccount, networkType = "eth") => {
     if (!currentAccount) {
         return [];
@@ -110,9 +106,15 @@ const getAllTokensDvm = async (currentAccount) => {
             const info = await mappingContract.methods
                 .tokenToInfo(address)
                 .call(); // { source, backing }
-            const token = await getTokenInfo(info.source, currentAccount);
+            const token = await getTokenInfo(info.source);
+            const status = await getTokenRegisterStatus(info.source, false);
+            let balance = Web3.utils.toBN(0);
 
-            return { ...info, ...token };
+            if (currentAccount) {
+                balance = await getTokenBalance(address, currentAccount, false);
+            }
+
+            return { ...info, ...token, balance, status, address };
         })
     );
 
@@ -131,8 +133,22 @@ const getAllTokensEthereum = async (currentAccount) => {
             const address = await backingContract.methods
                 .allAssets(index)
                 .call();
+            const info = await getTokenInfo(address);
+            const status = await getTokenRegisterStatus(address);
+            let balance = Web3.utils.toBN(0);
 
-            return await getTokenInfo(address, currentAccount);
+            if (currentAccount) {
+                balance = await getTokenBalance(address, currentAccount);
+            }
+
+            return {
+                ...info,
+                balance,
+                status,
+                address,
+                source: address,
+                backing: backingContract.options.address,
+            };
         })
     );
 
@@ -277,7 +293,7 @@ export const popupRegisterProof = (address) => {
  * @param {Address} address - erc20 token address
  * @return {Promise<number>} status - 0: unregister 1: registered 2: registering
  */
-export const getTokenRegisterStatus = async (address) => {
+export const getTokenRegisterStatus = async (address, isEth = true) => {
     if (!address || !Web3.utils.isAddress(address)) {
         console.warn(
             `Token address is invalid, except an ERC20 token address. Received value: ${address}`
@@ -285,9 +301,18 @@ export const getTokenRegisterStatus = async (address) => {
         return;
     }
 
-    const { target, timestamp } = await backingContract.methods
-        .assets(address)
-        .call();
+    let contract = backingContract;
+
+    if (!isEth) {
+        const web3 = new Web3(config.ETHERSCAN_DOMAIN.rpc);
+
+        contract = new web3.eth.Contract(
+            transferBridgeABI,
+            config.E2D_BACKING_ADDRESS
+        );
+    }
+
+    const { target, timestamp } = await contract.methods.assets(address).call();
     let isTargetTruthy = false;
     const isTimestampExist = +timestamp > 0;
 
@@ -365,9 +390,18 @@ export const confirmRegister = async (proof) => {
 };
 
 export async function canCrossSendToDvm(tokenAddress, currentAccount, amount) {
-    const erc20Contract = new web3.eth.Contract(Erc20ABI, tokenAddress);
-    const allowance = await erc20Contract.methods
-        .allowance(currentAccount, config.TRANSFER_BRIDGE_ETH_ADDRESS)
+    return canCrossSend(tokenAddress, currentAccount, amount, "eth");
+}
+
+async function canCrossSend(tokenAddress, currentAccount, amount, networkType) {
+    const abi = networkType === "eth" ? Erc20ABI : TokenABI;
+    const contractAddress =
+        networkType === "eth"
+            ? config.E2D_BACKING_ADDRESS
+            : config.MAPPING_FACTORY_ADDRESS;
+    const contract = new web3.eth.Contract(abi, tokenAddress);
+    const allowance = await contract.methods
+        .allowance(currentAccount, contractAddress)
         .call();
     const isAllowanceEnough = Web3.utils
         .toBN(allowance)
@@ -376,9 +410,9 @@ export async function canCrossSendToDvm(tokenAddress, currentAccount, amount) {
     if (isAllowanceEnough) {
         return true;
     } else {
-        const tx = await erc20Contract.methods
+        const tx = await contract.methods
             .approve(
-                config.TRANSFER_BRIDGE_ETH_ADDRESS,
+                contractAddress,
                 Web3.utils.toWei(Web3.utils.toBN("1000000"), "ether")
             )
             .send({ from: currentAccount });
@@ -400,31 +434,37 @@ export async function crossSendErc20FromEthToDvm(
     amount,
     currentAccount
 ) {
-    const recipient =
-        "0x" + u8aToHex(decodeAddress(recipientAddress)).slice(-42, -2);
     const tx = await backingContract.methods
-        .crossSendToken(tokenAddress, recipient, amount.toString())
+        .crossSendToken(tokenAddress, recipientAddress, amount.toString())
         .send({ from: currentAccount });
 
     return tx.transactionHash;
 }
 
+export async function canCrossSendToEth(tokenAddress, currentAccount, amount) {
+    return canCrossSend(tokenAddress, currentAccount, amount, "darwinia");
+}
+
 export async function crossSendErc20FromDvmToEth(
     tokenAddress,
     recipientAddress,
-    amount
+    amount,
+    currentAccount
 ) {
     // dev env pangolin(id: 43) product env darwinia(id: ?);
     const isMatch = await isNetworkMatch(config.DVM_NETWORK_ID);
 
     if (isMatch) {
-        const result = await mappingContract.methods.crossTransfer(
-            tokenAddress,
-            recipientAddress,
-            amount.toString()
+        const web3 = new Web3(window.ethereum || window.currentProvider);
+        const contract = new web3.eth.Contract(
+            mappingTokenABI,
+            config.MAPPING_FACTORY_ADDRESS
         );
+        const tx = await contract.methods
+            .crossTransfer(tokenAddress, recipientAddress, amount.toString())
+            .send({ from: currentAccount });
 
-        return result;
+        return tx.transactionHash;
     } else {
         throw new Error(
             "common:Ethereum network type does not match, please switch to {{network}} network in metamask."
