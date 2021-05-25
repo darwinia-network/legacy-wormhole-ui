@@ -534,6 +534,55 @@ export const getEthereumBankDeposit = async (params, cb, failedcb) => {
     }
 }
 
+export const getErc20BurnsRecords = async ({ row, page, sender }) => {
+    sender = !!sender ? sender : await getMetamaskActiveAccount();
+
+    try {
+        const {
+            data: { data },
+        } = await axios.get(
+            "https://api.darwinia.network.l2me.com/api/ethereumIssuing/burns",
+            { params: { sender, row, page } }
+        );
+        return data;
+    } catch (err) {
+        console.warn(
+            "%c [ err ]-546",
+            "font-size:13px; background:pink; color:#bf2c9f;",
+            err
+        );
+
+        return [];
+    }
+
+};
+
+/**
+ * Record { extrinsic_index: string; account_id: string; block_num: number; block_hash: string; backing: string; source: string; target: string; sender: string; recipient: string;
+ * value: string; block_timestamp: number; mmr_index: number; mmr_root: string; signatures: string; block_header: string; tx: string; } 
+ * @returns {MMRRoot: string; best: number; count: number; implName: string; list: Record[]}
+ */
+export const getErc20TokenLockRecords = async ({ sender, row, page }) => {
+    try {
+        const {
+            data: { data },
+        } = await axios.get(
+            "https://api.darwinia.network.l2me.com/api/ethereumBacking/tokenlock",
+            { params: { sender, row, page } }
+        );
+
+        return data;
+    } catch (err) {
+        console.warn(
+            "%c [ err ]-558",
+            "font-size:13px; background:pink; color:#bf2c9f;",
+            err
+        );
+
+        return [];
+    }
+};;
+
 export function getTokenBalanceEth(account = '') {
     try {
 

@@ -471,3 +471,17 @@ export async function crossSendErc20FromDvmToEth(
         );
     }
 }
+
+/**
+ * 
+ * @param {string} source - uin256 string 
+ * @returns {BN}
+ */
+export function decodeUint256(source) {
+    const bytes = Web3.utils.hexToBytes(source);
+    const hex = Web3.utils.bytesToHex(bytes.reverse());
+    const web3 = new Web3(config.ETHERSCAN_DOMAIN.rpc);
+    const result = web3.eth.abi.decodeParameter("uint256", hex);
+
+    return Web3.utils.toBN(result);
+}

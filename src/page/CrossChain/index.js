@@ -11,7 +11,8 @@ import {
     getTokenBalance, buildInGenesis, textTransform, remove0x, convertSS58Address, isMiddleScreen,
     getCringGenesisSwapInfo, redeemToken, redeemDeposit, checkIssuingAllowance, approveRingToIssuing, getEthereumBankDeposit,
     getEthereumToDarwiniaCrossChainInfo, getEthereumToDarwiniaCrossChainFee, crossChainFromDarwiniaToEthereum, getDarwiniaToEthereumCrossChainFee,
-    getDarwiniaToEthereumGenesisSwapInfo, substrateAddressToPublicKey, ClaimTokenFromD2E, getMetamaskActiveAccount
+    getDarwiniaToEthereumGenesisSwapInfo, substrateAddressToPublicKey, ClaimTokenFromD2E, getMetamaskActiveAccount,
+    getErc20BurnsRecords, getErc20TokenLockRecords,
 } from './utils'
 import { canCrossSendToDvm, crossSendErc20FromEthToDvm, crossSendErc20FromDvmToEth, canCrossSendToEth } from './erc20/token';
 import { InputRightWrap } from '../../components/InputRightWrap'
@@ -43,6 +44,8 @@ import Erc20Token from '../../components/erc20/erc20TokenComponent'
 import AssetControl from "../../components/controls/assetControl";
 import { txProgressIcon } from './icons';
 import HistoryRecord from "../../components/historyRecord/historyRecord";
+import { getSymbolAndDecimals } from './erc20/token-util';
+import { decodeUint256 } from './erc20/token';
 
 class CrossChain extends Component {
     constructor(props, context) {
@@ -657,7 +660,7 @@ class CrossChain extends Component {
         switch (networkType) {
             case "eth":
                 address = account[networkType]
-                let ethereumGenesisInfo = new Promise((resolve, reject) => {
+                const ethereumGenesisInfo = new Promise((resolve, reject) => {
                     getBuildInGenesisInfo({
                         query: { address: address },
                         method: "get"
@@ -668,7 +671,7 @@ class CrossChain extends Component {
                     });
                 })
 
-                let ethereumToDarwiniaCrosschainInfo = new Promise((resolve, reject) => {
+                const ethereumToDarwiniaCrossChainInfo = new Promise((resolve, reject) => {
                     getEthereumToDarwiniaCrossChainInfo({
                         query: { address: address },
                         method: "get"
@@ -679,11 +682,11 @@ class CrossChain extends Component {
                     });
                 })
 
-                // TODO: add query bridge history
+                const erc20TransferInfo = getErc20TokenLockRecords({ sender: address, row: 200, page: 0 });
 
-                Promise.all([ethereumGenesisInfo, ethereumToDarwiniaCrosschainInfo]).then(([genesisHistory, crosschainHistory]) => {
+                Promise.all([ethereumGenesisInfo, ethereumToDarwiniaCrossChainInfo, erc20TransferInfo]).then(([genesisHistory, crosschainHistory, erc20CrossChain]) => {
                     this.setState({
-                        history: [...crosschainHistory.map((item) => {
+                        history: [...(crosschainHistory.concat(erc20CrossChain.list)).map((item) => {
                             item.is_crosschain = true;
                             return item;
                         }), ...genesisHistory]
@@ -751,6 +754,30 @@ class CrossChain extends Component {
                         history: [],
                         historyMeta: {}
                     })
+                }
+
+                try {
+                    const { list, best, MMRRoot } = await getErc20BurnsRecords({ page: 0, row: 200 });
+                    const sources = _.uniq(list.map(item => item.source));
+                    const data = await Promise.all(sources.map(async source => { 
+                        const { symbol } = await getSymbolAndDecimals(source)
+
+                        return { [source] : symbol };
+                    }));
+                    const symbolMap = data.reduce((acc, cur) => ({ ...acc, ...cur }), { });
+
+                    this.setState({
+                        erc20History: list.map(({ source, ...others }) => {
+
+                            return { ...others, source, symbol: symbolMap[source] }
+                        }),
+                        erc20HistoryMeta: { best, mmrRoot: MMRRoot } 
+                    });
+                } catch (error) {
+                    this.setState({
+                        erc20History: [],
+                        erc20HistoryMeta: {},
+                    });
                 }
 
                 break;
@@ -1505,7 +1532,7 @@ class CrossChain extends Component {
                         </> : <p>{account[networkType]}</p>}
                     </div>
                     {networkType === 'eth' || networkType === 'tron' ? <HistoryRecord history={history} /> : null}
-                    {networkType === 'darwinia' ? this.renderDarwiniaToEthereumHistory(history) : null}
+                    {networkType === 'darwinia' ? this.d2eHistory() : null}
                     {networkType === 'crab' ? this.renderCrabHistory(history) : null}
 
                     <div className={styles.buttonBox}>
@@ -1515,22 +1542,40 @@ class CrossChain extends Component {
             </div>
         )
     }
-    
-    renderDarwiniaToEthereumHistory = (history) => {
-        const { t } = this.props;
-        const { historyMeta } = this.state;
 
-        return <>
-            {!history ?
+    d2eHistory() {
+        const { t } = this.props;
+        const { history, historyMeta, erc20HistoryMeta, erc20History } = this.state;
+        
+        return (<>
+            {!history || !erc20History ?
                 <div className="d-flex flex-wrap justify-content-center pb-4">
                     <Spinner animation="border" />
                 </div>
                 : null}
-            {history && history.length === 0 ?
+            {history && history.length === 0 && erc20History && erc20History.length === 0 ?
                 <div className={styles.historyEmpty}>
                     <p>{t('crosschain:No Cross-chain transfer history')}</p>
                 </div>
                 : null}
+            {this.renderDarwiniaToEthereumHistory(
+                history,
+                historyMeta,
+                item => `${formatBalance(Web3.utils.toBN(item.ring_value), 'gwei')} RING ${item.kton_value !== '0' ? (' / ' + formatBalance(Web3.utils.toBN(item.kton_value), 'gwei') + ' KTON'): "" }`
+            )}
+            {this.renderDarwiniaToEthereumHistory(
+                erc20History,
+                erc20HistoryMeta,
+                item => `${formatBalance(decodeUint256(item.value), 'ether')} ${item.symbol}`,
+                true
+            )}
+        </>);
+    }
+    
+    renderDarwiniaToEthereumHistory = (history, historyMeta, getAmountFn, isErc20 = false) => {
+        const { t } = this.props;
+
+        return <>
             {history ? history.map((item) => {
                 let step = 2;
 
@@ -1548,11 +1593,11 @@ class CrossChain extends Component {
                     </div>
                     <div>
                         <h3>{t('crosschain:Cross-chain direction')}</h3>
-                        <p>Darwinia Mainnet -&gt; Ethereum</p>
+                        <p>{isErc20 ? 'DVM' : 'Darwinia Mainnet'} -&gt; Ethereum</p>
                     </div>
                     <div>
                         <h3>{t('crosschain:Amount')}</h3>
-                        <p>{formatBalance(Web3.utils.toBN(item.ring_value), 'gwei')} RING{item.kton_value !== '0' ? (' / ' + formatBalance(Web3.utils.toBN(item.kton_value), 'gwei') + ' KTON'): "" }</p>
+                        <p>{getAmountFn(item)}</p>
                     </div>
                     <div>
                         <h3>{t('crosschain:Destination account')}</h3>

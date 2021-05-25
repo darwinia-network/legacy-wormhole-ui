@@ -42,7 +42,7 @@ export default function HistoryRecord({ history }) {
         <>
             {history.map((item) => {
                 let step = 2;
-                const isDeposit = item.currency.toUpperCase() === "DEPOSIT";
+                const isDeposit = item.currency?.toUpperCase() === "DEPOSIT";
                 let depositInfo = JSON.parse(item.deposit || "{}");
 
                 if (item.is_crosschain) {
@@ -57,7 +57,7 @@ export default function HistoryRecord({ history }) {
                 }
 
                 return (
-                    <div className="history-item" key={item.block_hash}>
+                    <div className="history-item" key={item.block_hash || item.tx || item.block_timestamp}>
                         <div>
                             <h3>{t("crosschain:Time")}</h3>
                             <p>
@@ -104,14 +104,14 @@ export default function HistoryRecord({ history }) {
                                         Web3.utils.toBN(item.amount),
                                         "ether"
                                     )}{" "}
-                                    {item.currency.toUpperCase()}
+                                    {item.currency?.toUpperCase()}
                                 </p>
                             </div>
                         )}
 
                         <div>
                             <h3>{t("crosschain:Destination account")}</h3>
-                            <p>{encodeAddress("0x" + item.target, 18)}</p>
+                            <p>{item.target?.startsWith('0x') ? item.target : encodeAddress("0x" + item.target, 18)}</p>
                         </div>
 
                         <div className="line"></div>
@@ -161,12 +161,11 @@ function DepositHistoryDetail({ amount, deposit }) {
 function getProgress(current, threshold, isStyle = true) {
     const className = current >= threshold ? "" : "inactive";
 
-    return isStyle ? styles[className] : className;
+    return isStyle ? styles[className] : textTransform(className, 'capitalize');
 }
 
-function getExplorerUrl(_hash, _networkType) {
+function getExplorerUrl(hash, networkType) {
     const lng = i18n.language.indexOf("en") > -1 ? "en" : "zh";
-    const { txhash, networkType } = this.state;
     const domain = {
         eth: `${config.ETHERSCAN_DOMAIN[lng]}/tx/`,
         tron: `${config.TRONSCAN_DOMAIN}/#transaction/`,
@@ -174,13 +173,13 @@ function getExplorerUrl(_hash, _networkType) {
         pangolin: `https://pangolin.subscan.io/extrinsic/`,
         darwinia: `${config.SUBSCAN_DARWINIA_DOMAIN}/extrinsic/`,
     };
-    let urlHash = _hash || txhash;
+    let urlHash = hash;
 
-    if ((_networkType || networkType) === "tron") {
+    if (networkType === "tron") {
         urlHash = remove0x(urlHash);
     }
 
-    return `${domain[_networkType || networkType]}${urlHash}`;
+    return `${domain[networkType]}${urlHash}`;
 }
 
 function TransferProgress({
@@ -195,7 +194,7 @@ function TransferProgress({
     const { t } = useTranslation();
 
     return (
-        <div className="transfer-Progress">
+        <div className="transfer-progress">
             <div className="icon-box">
                 <div>
                     <img src={stepStartIcon} alt="tx"></img>
