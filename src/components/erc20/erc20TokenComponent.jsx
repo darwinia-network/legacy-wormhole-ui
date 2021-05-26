@@ -22,6 +22,7 @@ import {
 import {
     config,
     connectNodeProvider,
+    getUnitFromValue,
     formatBalance,
     formToast,
     toShortAccount,
@@ -134,6 +135,7 @@ function ListItem(props) {
             disabled={props.disabled}
             key={address}
             onClick={() => props?.onSelect(token)}
+            style={{ cursor: 'default' }}
         >
             <div>
                 {!!token.logo ? (
@@ -207,11 +209,11 @@ function SearchToken(props) {
                             key={token.address}
                             token={token}
                             onSelect={props?.onSelect}
-                            display={token.status === 2}
+                            disabled={token.status === 2}
                         >
                             {token.status === 1 ? (
                                 <span>
-                                    {formatBalance(token.balance, "ether")}
+                                    {formatBalance(token.balance, getUnitFromValue(+token.decimals))}
                                 </span>
                             ) : (
                                 <span className="circle-ring" />

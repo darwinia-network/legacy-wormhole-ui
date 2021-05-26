@@ -28,6 +28,7 @@ import {
     getNameAndLogo,
     getSymbolAndDecimals,
     getTokenBalance,
+    getUnitFromAddress,
     tokenInfoGetter,
 } from "./token-util";
 
@@ -225,15 +226,12 @@ const loopQuery = (url) => {
  * @returns {subscription}
  */
 const generateRegisterProof = (address) => {
-    const proofAddress =
-        "0xe66f3de22eed97c730152f373193b5a0485b407d88f37d5fd6a2c59e5a696691";
-
     return loopQuery(
         `${config.DAPP_API}/api/ethereumIssuing/register?source=${address}`
     ).pipe(
         switchMap((data) => {
             const { block_hash, block_num, mmr_index } = data;
-            const mptProof = from(getMPTProof(block_hash, proofAddress)).pipe(
+            const mptProof = from(getMPTProof(block_hash, config.PROOF_ADDRESS)).pipe(
                 map((proof) => proof.toHex()),
                 catchError((err) => {
                     console.warn(
@@ -389,6 +387,8 @@ export const confirmRegister = async (proof) => {
     return tx;
 };
 
+export const claimErc20Token = confirmRegister;
+
 export async function canCrossSendToDvm(tokenAddress, currentAccount, amount) {
     return canCrossSend(tokenAddress, currentAccount, amount, "eth");
 }
@@ -400,12 +400,7 @@ async function canCrossSend(tokenAddress, currentAccount, amount, networkType) {
             ? config.E2D_BACKING_ADDRESS
             : config.MAPPING_FACTORY_ADDRESS;
     const contract = new web3.eth.Contract(abi, tokenAddress);
-    const allowance = await contract.methods
-        .allowance(currentAccount, contractAddress)
-        .call();
-    const isAllowanceEnough = Web3.utils
-        .toBN(allowance)
-        .gte(Web3.utils.toBN(Web3.utils.fromWei(amount.toString(), "ether")));
+    const isAllowanceEnough = await hasApproved(tokenAddress, currentAccount, amount, networkType); 
 
     if (isAllowanceEnough) {
         return true;
@@ -413,12 +408,29 @@ async function canCrossSend(tokenAddress, currentAccount, amount, networkType) {
         const tx = await contract.methods
             .approve(
                 contractAddress,
-                Web3.utils.toWei(Web3.utils.toBN("1000000"), "ether")
+                "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
             )
             .send({ from: currentAccount });
 
         return tx.transactionHash;
     }
+}
+
+export async function hasApproved(tokenAddress, currentAccount, amount, networkType) {
+    const abi = networkType === "eth" ? Erc20ABI : TokenABI;
+    const contractAddress =
+        networkType === "eth"
+            ? config.E2D_BACKING_ADDRESS
+            : config.MAPPING_FACTORY_ADDRESS;
+    const contract = new web3.eth.Contract(abi, tokenAddress);
+    const unit = await getUnitFromAddress(tokenAddress);
+    const allowance = await contract.methods
+        .allowance(currentAccount, contractAddress)
+        .call();
+
+    return Web3.utils
+        .toBN(allowance)
+        .gte(Web3.utils.toBN(Web3.utils.fromWei(amount.toString(), unit)));
 }
 
 /**
@@ -473,8 +485,8 @@ export async function crossSendErc20FromDvmToEth(
 }
 
 /**
- * 
- * @param {string} source - uin256 string 
+ *
+ * @param {string} source - uin256 string
  * @returns {BN}
  */
 export function decodeUint256(source) {

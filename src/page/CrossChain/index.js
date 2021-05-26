@@ -12,9 +12,9 @@ import {
     getCringGenesisSwapInfo, redeemToken, redeemDeposit, checkIssuingAllowance, approveRingToIssuing, getEthereumBankDeposit,
     getEthereumToDarwiniaCrossChainInfo, getEthereumToDarwiniaCrossChainFee, crossChainFromDarwiniaToEthereum, getDarwiniaToEthereumCrossChainFee,
     getDarwiniaToEthereumGenesisSwapInfo, substrateAddressToPublicKey, ClaimTokenFromD2E, getMetamaskActiveAccount,
-    getErc20BurnsRecords, getErc20TokenLockRecords,
+    getErc20BurnsRecords, getErc20TokenLockRecords, getMMRProof, getMPTProof
 } from './utils'
-import { canCrossSendToDvm, crossSendErc20FromEthToDvm, crossSendErc20FromDvmToEth, canCrossSendToEth } from './erc20/token';
+import { canCrossSendToDvm, crossSendErc20FromEthToDvm, crossSendErc20FromDvmToEth, canCrossSendToEth, claimErc20Token } from './erc20/token';
 import { InputRightWrap } from '../../components/InputRightWrap'
 import InputWrapWithCheck from '../../components/InputWrapWithCheck'
 import FormTip from '../../components/FormTip'
@@ -45,7 +45,7 @@ import AssetControl from "../../components/controls/assetControl";
 import { txProgressIcon } from './icons';
 import HistoryRecord from "../../components/historyRecord/historyRecord";
 import { getSymbolAndDecimals } from './erc20/token-util';
-import { decodeUint256 } from './erc20/token';
+import { decodeUint256, hasApproved } from './erc20/token';
 
 class CrossChain extends Component {
     constructor(props, context) {
@@ -757,7 +757,7 @@ class CrossChain extends Component {
 
                 try {
                     const { list, best, MMRRoot } = await getErc20BurnsRecords({ page: 0, row: 200 });
-                    const symbolMap = this.getSymbolMap(list);
+                    const symbolMap = await this.getSymbolMap(list);
 
                     this.setState({
                         erc20History: list.map(({ source, ...others }) => {
@@ -961,9 +961,13 @@ class CrossChain extends Component {
                                     tokenType === 'erc20' ? (
                                         <>
                                             <Form.Label>{t('crosschain:ERC-20 Token')}</Form.Label>
-                                            <Form.Control value={this.state.erc20Token?.name || this.state.erc20Token?.symbol || ''} onChange={() => { }}  onClick={() => this.setState({
-                                                isRegisterTokenModalDisplay: true
-                                            })} placeholder={t('crosschain:Select a token')}>
+                                            <Form.Control 
+                                                value={this.state.erc20Token?.name || this.state.erc20Token?.symbol || ''}
+                                                onClick={() => this.setState({
+                                                    isRegisterTokenModalDisplay: true
+                                                })}
+                                                onChange={() => { }}
+                                                placeholder={t('crosschain:Select a token')}>
                                             </Form.Control>
                                         </> 
                                     ): null
@@ -1029,10 +1033,10 @@ class CrossChain extends Component {
                                         <Form.Label>{t('crosschain:Amount')}</Form.Label>
                                         <InputRightWrap text={t('crosschain:MAX')} onClick={
                                             () => {
-                                                this.setValue('crossChainBalance', { target: { value: formatBalance(this.state.erc20Token?.balance, 'ether')} }, this.toWeiBNMiddleware, this.setRingBalanceText)
+                                                this.setValue('crossChainBalance', { target: { value: formatBalance(this.state.erc20Token?.balance, this.state.erc20Token?.decimals)} }, this.toWeiBNMiddleware, this.setRingBalanceText)
                                             }
                                         }>
-                                            <Form.Control type="number" placeholder={`${t('crosschain:Balance')} : ${formatBalance(this.state.erc20Token?.balance, 'ether')}`}
+                                            <Form.Control type="number" placeholder={`${t('crosschain:Balance')} : ${formatBalance(this.state.erc20Token?.balance, this.state.erc20Token?.decimals)}`}
                                                 autoComplete="off"
                                                 value={crossChainBalanceText}
                                                 onChange={(value) => this.setValue('crossChainBalance', value, this.toWeiBNMiddleware, this.setRingBalanceText)} />
@@ -1086,7 +1090,13 @@ class CrossChain extends Component {
 
                             <div className={styles.buttonBox}>
                                 {isAllowanceIssuing || tokenType === 'deposit' ?
-                                    <Button disabled={!isSufficientFee && (tokenType !== 'deposit')} variant="color" onClick={this.redeemToken}>{t('crosschain:Submit')}</Button> :
+                                    <Button disabled={(tokenType !== 'erc20' && !isSufficientFee && (tokenType !== 'deposit')) || isApproving} variant="color" onClick={() => {
+                                        if(tokenType === 'erc20') {
+                                            this.approveRingToIssuing();
+                                        } else {
+                                            this.redeemToken();
+                                        }
+                                    }}>{t('crosschain:Submit')}</Button> :
                                     <Button disabled={isApproving} variant="color" onClick={this.approveRingToIssuing}>{isApproving ? t('crosschain:Approving') : t('crosschain:Approve')}</Button>
                                 }
                                 <Button variant="outline-purple" onClick={() => this.goBack(1)}>{t('crosschain:Back')}</Button>
@@ -1116,11 +1126,11 @@ class CrossChain extends Component {
                                                 <InputRightWrap text={t('crosschain:MAX')} 
                                                     onClick={
                                                         () => {
-                                                            this.setValue('crossChainBalance', { target: { value: formatBalance(this.state.erc20Token.balance, 'ether')} }, this.toWeiBNMiddleware, this.setRingBalanceText)
+                                                            this.setValue('crossChainBalance', { target: { value: formatBalance(this.state.erc20Token.balance, this.state.erc20Token?.decimals)} }, this.toWeiBNMiddleware, this.setRingBalanceText)
                                                         }
                                                     }
                                                 >
-                                                    <Form.Control type="number" placeholder={`${t('crosschain:Balance')} : ${formatBalance(this.state.erc20Token?.balance, 'ether')}`}
+                                                    <Form.Control type="number" placeholder={`${t('crosschain:Balance')} : ${formatBalance(this.state.erc20Token?.balance, this.state.erc20Token?.decimals)}`}
                                                         autoComplete="off"
                                                         value={crossChainBalanceText}
                                                         onChange={(value) => this.setValue('crossChainBalance', value, this.toWeiBNMiddleware, this.setRingBalanceText)} />
@@ -1617,43 +1627,84 @@ class CrossChain extends Component {
                             tx: item.tx,
                             chain: 'eth'
                         },
-                    }, true, () =>
-                    item.signatures && !item.tx ? <Button variant="outline-purple" disabled={this.state.crabAndDarwiniaHistory.isFetchingClaimParams} className={styles.hashBtn} onClick={() => {
-                            this.setState({
-                                crabAndDarwiniaHistory: {
-                                    ...this.state.crabAndDarwiniaHistory,
-                                    isFetchingClaimParams: true
-                                }
-                            })
-                            ClaimTokenFromD2E({
-                                networkPrefix: config.D2E_NETWORK_PREFIX,
-                                mmrIndex: item.mmr_index,
-                                mmrRoot: item.mmr_root,
-                                mmrSignatures: item.signatures,
-                                blockNumber: item.block_num,
-                                blockHeaderStr: item.block_header,
-                                blockHash: item.block_hash,
-                                historyMeta: historyMeta
-                            }, (result) => {
+                    }, true, () => item.signatures && !item.tx ? isErc20 ? <Button 
+                            className={styles.hashBtn}
+                            onClick={async () => {
                                 this.setState({
                                     crabAndDarwiniaHistory: {
                                         ...this.state.crabAndDarwiniaHistory,
-                                        isFetchingClaimParams: false
+                                        isFetchingClaimParams: true
                                     }
-                                })
+                                });
+                                const { signatures, mmr_root, mmr_index, block_header, block_hash, block_num } = item;
+                                const mptProof = await getMPTProof(block_hash, config.PROOF_ADDRESS);
+                                const { peaks, siblings } = await getMMRProof(block_num, mmr_index, block_hash);
 
-                                this.setModalHash(result);
-                                this.setModalShow(true);
-                            } , () => {
+                                try {
+                                    const tx = await claimErc20Token({
+                                        signatures,
+                                        mmr_root,
+                                        mmr_index,
+                                        block_header,
+                                        peaks,
+                                        siblings,
+                                        eventsProofStr: mptProof.toHex(),
+                                    });
+
+                                    this.setModalHash(tx.transactionHash);
+                                    this.setModalShow(true);
+                                } catch(error) {
+                                    console.warn('%c [ error ]-1647', 'font-size:13px; background:pink; color:#bf2c9f;', error.message);
+                                } finally {
+                                    this.setState({
+                                        crabAndDarwiniaHistory: {
+                                            ...this.state.crabAndDarwiniaHistory,
+                                            isFetchingClaimParams: false
+                                        }
+                                    });
+                                }
+                            }}
+                        >{t('crosschain:Claim')}</Button> : 
+                        <Button variant="outline-purple"
+                            disabled={this.state.crabAndDarwiniaHistory.isFetchingClaimParams}
+                            className={styles.hashBtn}
+                            onClick={() => {
                                 this.setState({
                                     crabAndDarwiniaHistory: {
                                         ...this.state.crabAndDarwiniaHistory,
-                                        isFetchingClaimParams: false
+                                        isFetchingClaimParams: true
                                     }
                                 })
-                            }, t);
-                        }} >{t('crosschain:Claim')}</Button> : null
-                    )}
+                                ClaimTokenFromD2E({
+                                    networkPrefix: config.D2E_NETWORK_PREFIX,
+                                    mmrIndex: item.mmr_index,
+                                    mmrRoot: item.mmr_root,
+                                    mmrSignatures: item.signatures,
+                                    blockNumber: item.block_num,
+                                    blockHeaderStr: item.block_header,
+                                    blockHash: item.block_hash,
+                                    historyMeta: historyMeta
+                                }, (result) => {
+                                    this.setState({
+                                        crabAndDarwiniaHistory: {
+                                            ...this.state.crabAndDarwiniaHistory,
+                                            isFetchingClaimParams: false
+                                        }
+                                    })
+
+                                    this.setModalHash(result);
+                                    this.setModalShow(true);
+                                } , () => {
+                                    this.setState({
+                                        crabAndDarwiniaHistory: {
+                                            ...this.state.crabAndDarwiniaHistory,
+                                            isFetchingClaimParams: false
+                                        }
+                                    })
+                                }, t);
+                            }} >{t('crosschain:Claim')}</Button> : null
+                        )
+                    }
                 </div>)
             }) : null}
         </>
@@ -1843,9 +1894,16 @@ class CrossChain extends Component {
 
                 <Erc20Token show={this.state.isRegisterTokenModalDisplay}
                     networkType={this.state.networkType}
-                    onHide={(token) => {
+                    onHide={async (token) => {
                         if(token) {
-                            this.setState({ erc20Token: token });
+                            const { source, balance } = token;
+                            const { networkType } = this.state;
+                            const currentAccount = await getMetamaskActiveAccount();
+                            const isAllowanceIssuing = await hasApproved(source, currentAccount, balance.toString(), networkType);
+
+                            this.setState({ erc20Token: token, isAllowanceIssuing });
+                        } else {
+                            this.setState({ isAllowanceIssuing: false });
                         }
 
                         this.setState({isRegisterTokenModalDisplay: false});

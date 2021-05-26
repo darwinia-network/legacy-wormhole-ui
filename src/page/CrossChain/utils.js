@@ -430,7 +430,16 @@ export const formToast = (text) => {
 }
 
 export function formatBalance(bn = Web3.utils.toBN(0), unit = 'gwei') {
-    if (bn.eqn(0)) return '0';
+    if (bn.eqn(0)) {
+        return '0';
+    }
+    
+    const dec = +unit;
+
+    if(typeof dec === 'number' && !isNaN(dec)) {
+        unit = getUnitFromValue(dec);
+    }
+
     return Web3.utils.fromWei(bn, unit).toString();
 }
 
@@ -841,7 +850,7 @@ export async function darwiniaToEthereumAppendRootAndVerifyProof(account, {
     eventsProofStr
 }, callback) {
     let web3js = new Web3(window.ethereum || window.web3.currentProvider);
-    const contract = new web3js.eth.Contract(DarwiniaToEthereumTokenIssuingABI, config.DARWINIA_ETHEREUM_TOKEN_ISSUING);
+    const contract = new web3js.eth.Contract(DarwiniaToEthereumTokenIssuingABI, config.DARWINIA_ETHEREUM_TOKEN_ISSUING); // TODO: 
 
     // bytes memory message,
     // bytes[] memory signatures,
@@ -939,4 +948,13 @@ export async function isNetworkMatch(expectNetworkId) {
     const networkId = await web3.eth.net.getId();
 
     return expectNetworkId === networkId;
+}
+
+export function getUnitFromValue(num) {
+    const pow = Math.pow(10, num).toString();
+    const [unit] = Object.entries(Web3.utils.unitMap).find(
+        ([_, value]) => value === pow
+    );
+
+    return unit;
 }

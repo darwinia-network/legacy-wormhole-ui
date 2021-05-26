@@ -2,7 +2,7 @@ import contractMap from "@metamask/contract-metadata";
 import erc20ABI from "human-standard-token-abi";
 import Web3 from "web3";
 import tokenABI from "../../CrossChain/tokenABI.json";
-import { config } from "../utils";
+import { config, getUnitFromValue } from "../utils";
 
 const DEFAULT_SYMBOL = "";
 const DEFAULT_DECIMALS = "0";
@@ -191,4 +191,10 @@ export const tokenInfoGetter = ((cacheFirst = true) => {
 
 export function getTokenName(name, symbol) {
     return typeof name === "undefined" ? symbol : `${name} (${symbol})`;
+}
+
+export async function getUnitFromAddress(address) {
+    const { decimals } = await getSymbolAndDecimals(address);
+
+    return getUnitFromValue(+decimals);
 }
