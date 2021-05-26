@@ -45,7 +45,7 @@ export default function HistoryRecord({ history }) {
                 const isDeposit = item.currency?.toUpperCase() === "DEPOSIT";
                 let depositInfo = JSON.parse(item.deposit || "{}");
 
-                if (item.is_crosschain) {
+                if (item.isCrossChain) {
                     if (item.is_relayed) {
                         step = 3;
                     }
@@ -57,7 +57,10 @@ export default function HistoryRecord({ history }) {
                 }
 
                 return (
-                    <div className="history-item" key={item.block_hash || item.tx || item.block_timestamp}>
+                    <div
+                        className="history-item"
+                        key={item.block_hash || item.tx || item.block_timestamp}
+                    >
                         <div>
                             <h3>{t("crosschain:Time")}</h3>
                             <p>
@@ -78,22 +81,41 @@ export default function HistoryRecord({ history }) {
                             </p>
                         </div>
 
-                        {isDeposit ? (
+                        {isDeposit || item.isErc20 ? (
                             <>
                                 <div>
                                     <h3>{t("crosschain:Asset")}</h3>
-                                    <p>
-                                        {t("crosschain:Deposit ID")}:{" "}
-                                        {depositInfo.deposit_id}
-                                    </p>
+                                    {item.isErc20 ? (
+                                        <p>ERC-20</p>
+                                    ) : (
+                                        <p>
+                                            {t("crosschain:Deposit ID")}:{" "}
+                                            {depositInfo.deposit_id}
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div>
                                     <h3>{t("crosschain:Detail")}</h3>
-                                    <DepositHistoryDetail
-                                        amount={item.amount}
-                                        deposit={depositInfo}
-                                    />
+                                    {item.isErc20 ? (
+                                        <p>
+                                            {formatBalance(
+                                                Web3.utils.toBN(item.amount),
+                                                "ether"
+                                            )}{" "}
+                                            {item.symbol} &#40;
+                                            {t("crosschain:Time")}:{" "}
+                                            {dayjs
+                                                .unix(item.block_timestamp)
+                                                .format("YYYY/MM/DD")}
+                                            &#41;
+                                        </p>
+                                    ) : (
+                                        <DepositHistoryDetail
+                                            amount={item.amount}
+                                            deposit={depositInfo}
+                                        />
+                                    )}
                                 </div>
                             </>
                         ) : (
@@ -111,7 +133,11 @@ export default function HistoryRecord({ history }) {
 
                         <div>
                             <h3>{t("crosschain:Destination account")}</h3>
-                            <p>{item.target?.startsWith('0x') ? item.target : encodeAddress("0x" + item.target, 18)}</p>
+                            <p>
+                                {item.target?.startsWith("0x")
+                                    ? item.target
+                                    : encodeAddress("0x" + item.target, 18)}
+                            </p>
                         </div>
 
                         <div className="line"></div>
@@ -130,7 +156,7 @@ export default function HistoryRecord({ history }) {
                                     chain: "darwinia",
                                 },
                             }}
-                            hasRelay={item.is_crosschain}
+                            hasRelay={item.isCrossChain}
                         />
                     </div>
                 );
@@ -161,7 +187,7 @@ function DepositHistoryDetail({ amount, deposit }) {
 function getProgress(current, threshold, isStyle = true) {
     const className = current >= threshold ? "" : "inactive";
 
-    return isStyle ? styles[className] : textTransform(className, 'capitalize');
+    return isStyle ? styles[className] : textTransform(className, "capitalize");
 }
 
 function getExplorerUrl(hash, networkType) {

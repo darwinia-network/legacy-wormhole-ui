@@ -684,16 +684,15 @@ class CrossChain extends Component {
 
                 const erc20TransferInfo = getErc20TokenLockRecords({ sender: address, row: 200, page: 0 });
 
-                Promise.all([ethereumGenesisInfo, ethereumToDarwiniaCrossChainInfo, erc20TransferInfo]).then(([genesisHistory, crosschainHistory, erc20CrossChain]) => {
-                    this.setState({
-                        history: [...(crosschainHistory.concat(erc20CrossChain.list)).map((item) => {
-                            item.is_crosschain = true;
-                            return item;
-                        }), ...genesisHistory]
+                Promise.all([ethereumGenesisInfo, ethereumToDarwiniaCrossChainInfo, erc20TransferInfo])
+                    .then(([genesisHistory, crosschainHistory, erc20CrossChain]) => this.getSymbolMap(erc20CrossChain.list).then(symbolMap => [genesisHistory, crosschainHistory, erc20CrossChain, symbolMap]))
+                    .then(([genesisHistory, crosschainHistory, erc20CrossChain, symbolMap]) => {
+                        this.setState({
+                            history: [...(crosschainHistory.concat(erc20CrossChain.list.map(item => ({...item, isErc20: true, symbol: symbolMap[item.source]})))).map((item) => ({ ...item, isCrossChain: true })), ...genesisHistory]
+                        })
+                    }).catch((error) => {
+                        console.log('get history error', error);
                     })
-                }).catch((error) => {
-                    console.log('get history error', error);
-                })
                 break;
             case "tron":
                 address = (window.tronWeb && window.tronWeb.address.toHex(account[networkType]))
@@ -758,13 +757,7 @@ class CrossChain extends Component {
 
                 try {
                     const { list, best, MMRRoot } = await getErc20BurnsRecords({ page: 0, row: 200 });
-                    const sources = _.uniq(list.map(item => item.source));
-                    const data = await Promise.all(sources.map(async source => { 
-                        const { symbol } = await getSymbolAndDecimals(source)
-
-                        return { [source] : symbol };
-                    }));
-                    const symbolMap = data.reduce((acc, cur) => ({ ...acc, ...cur }), { });
+                    const symbolMap = this.getSymbolMap(list);
 
                     this.setState({
                         erc20History: list.map(({ source, ...others }) => {
@@ -784,6 +777,17 @@ class CrossChain extends Component {
             default:
                 break;
         }
+    }
+
+    getSymbolMap = async (list) => { 
+        const sources = _.uniq(list.map(item => item.source));
+        const data = await Promise.all(sources.map(async source => { 
+            const { symbol } = await getSymbolAndDecimals(source)
+
+            return { [source] : symbol };
+        }));
+
+        return data.reduce((acc, cur) => ({ ...acc, ...cur }), { });
     }
 
     goBack = (status = 1) => {
