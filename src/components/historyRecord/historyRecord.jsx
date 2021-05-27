@@ -214,9 +214,7 @@ function TransferProgress({
     step,
     hash,
     hasRelay = false,
-    relayButton = null,
 }) {
-    const RelayButton = relayButton && relayButton();
     const { t } = useTranslation();
 
     return (
@@ -295,7 +293,6 @@ function TransferProgress({
                 {hasRelay ? (
                     <div className={`${getProgress(step, 3)}`}>
                         <p>{t(`crosschain:ChainRelay Confirmed`)}</p>
-                        {RelayButton ? RelayButton : null}
                     </div>
                 ) : null}
                 <div className={`${getProgress(step, 4)}`}>

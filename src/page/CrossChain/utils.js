@@ -528,7 +528,7 @@ export const getCringGenesisSwapInfo = async (params, cb, failedcb) => {
 }
 
 export const getEthereumBankDeposit = async (params, cb, failedcb) => {
-    const json = await wxRequest(params, `https://www.evolution.land.l2me.com/api/bank/gringotts`)
+    const json = await wxRequest(params, `${config.EVOLUTION_LAND_DOMAIN}/api/bank/gringotts`)
     if (json.code === 0) {
         if (!json.data.list || json.data.list.length === 0) {
             cb && cb([])
@@ -550,7 +550,7 @@ export const getErc20BurnsRecords = async ({ row, page, sender }) => {
         const {
             data: { data },
         } = await axios.get(
-            "https://api.darwinia.network.l2me.com/api/ethereumIssuing/burns",
+            `${config.DAPP_API}/api/ethereumIssuing/burns`,
             { params: { sender, row, page } }
         );
         return data;
@@ -576,7 +576,7 @@ export const getErc20TokenLockRecords = async ({ sender, row, page }) => {
         const {
             data: { data },
         } = await axios.get(
-            "https://api.darwinia.network.l2me.com/api/ethereumBacking/tokenlock",
+            `${config.DAPP_API}/api/ethereumBacking/tokenlock`,
             { params: { sender, row, page } }
         );
 
