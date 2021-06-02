@@ -12,7 +12,7 @@ import {
     getCringGenesisSwapInfo, redeemToken, redeemDeposit, checkIssuingAllowance, approveRingToIssuing, getEthereumBankDeposit,
     getEthereumToDarwiniaCrossChainInfo, getEthereumToDarwiniaCrossChainFee, crossChainFromDarwiniaToEthereum, getDarwiniaToEthereumCrossChainFee,
     getDarwiniaToEthereumGenesisSwapInfo, substrateAddressToPublicKey, ClaimTokenFromD2E, getMetamaskActiveAccount,
-    getErc20BurnsRecords, getErc20TokenLockRecords, getMMRProof, getMPTProof
+    getErc20BurnsRecords, getErc20TokenLockRecords, getMMRProof, getMPTProof, isNetworkConsistent
 } from './utils'
 import { canCrossSendToDvm, crossSendErc20FromEthToDvm, crossSendErc20FromDvmToEth, canCrossSendToEth, claimErc20Token } from './erc20/token';
 import { InputRightWrap } from '../../components/InputRightWrap'
@@ -341,74 +341,80 @@ class CrossChain extends Component {
                 }, t);
                 break;
             case 'darwinia':
-                this.setState({
-                    history: null,
-                    account: {
-                        ...account,
-                        isReady: false,
-                    },
-                    status
-                }, () => {
-                    connect(networkType, (_networkType, _account, subscribe) => {
-                        let initAccount = ''
-
-                        // this.querySubscribe && this.querySubscribe();
-                        // this.querySubscribe = subscribe;
-                        const searchQuery = this.useQuery();
-                        const addressParams = searchQuery.get('address')
-
-                        if (addressParams && _.find(_account, {address: addressParams})) {
-                            initAccount = addressParams;
-                        } else if (this.state.account[_networkType] && _.find(_account, {address: this.state.account[_networkType]})) {
-                            initAccount = this.state.account[_networkType]
-                        } else if (Array.isArray(_account) && _account.length > 0) {
-                            initAccount = _account[0].address
-                        } else if (Array.isArray(_account) && _account.length === 0) {
-                            initAccount = ''
-                        } else {
-                            initAccount = _account
-                        }
-
+                isNetworkConsistent(config.DVM_NETWORK_ID).then((isExpected) => { 
+                    if(isExpected) {
                         this.setState({
                             history: null,
                             account: {
                                 ...account,
-                                [_networkType]: initAccount,
-                                [`${_networkType}List`]: _account,
                                 isReady: false,
                             },
-                            crabAndDarwiniaHistory: {
-                                ...this.state.crabAndDarwiniaHistory,
-                                isManual: !initAccount,
-                                address: ''
-                            }
-                        }, async () => {
-                            if (this.state.account[_networkType]) {
-                                if (status === 4) {
-                                    this.queryClaims()
-                                    return;
+                            status
+                        }, () => {
+                            connect(networkType, (_networkType, _account, subscribe) => {
+                                let initAccount = ''
+
+                                // this.querySubscribe && this.querySubscribe();
+                                // this.querySubscribe = subscribe;
+                                const searchQuery = this.useQuery();
+                                const addressParams = searchQuery.get('address')
+
+                                if (addressParams && _.find(_account, {address: addressParams})) {
+                                    initAccount = addressParams;
+                                } else if (this.state.account[_networkType] && _.find(_account, {address: this.state.account[_networkType]})) {
+                                    initAccount = this.state.account[_networkType]
+                                } else if (Array.isArray(_account) && _account.length > 0) {
+                                    initAccount = _account[0].address
+                                } else if (Array.isArray(_account) && _account.length === 0) {
+                                    initAccount = ''
+                                } else {
+                                    initAccount = _account
                                 }
 
-                                const balances = await getTokenBalance(networkType, this.state.account[networkType]);
-                                const crossChainFee = await getDarwiniaToEthereumCrossChainFee();
                                 this.setState({
-                                    ringBalance: Web3.utils.toBN(balances[0]),
-                                    ktonBalance: Web3.utils.toBN(balances[1]),
-                                    crossChainFee: Web3.utils.toBN(crossChainFee),
+                                    history: null,
                                     account: {
-                                        ...this.state.account,
-                                        isReady: true
+                                        ...account,
+                                        [_networkType]: initAccount,
+                                        [`${_networkType}List`]: _account,
+                                        isReady: false,
+                                    },
+                                    crabAndDarwiniaHistory: {
+                                        ...this.state.crabAndDarwiniaHistory,
+                                        isManual: !initAccount,
+                                        address: ''
+                                    }
+                                }, async () => {
+                                    if (this.state.account[_networkType]) {
+                                        if (status === 4) {
+                                            this.queryClaims()
+                                            return;
+                                        }
+
+                                        const balances = await getTokenBalance(networkType, this.state.account[networkType]);
+                                        const crossChainFee = await getDarwiniaToEthereumCrossChainFee();
+                                        this.setState({
+                                            ringBalance: Web3.utils.toBN(balances[0]),
+                                            ktonBalance: Web3.utils.toBN(balances[1]),
+                                            crossChainFee: Web3.utils.toBN(crossChainFee),
+                                            account: {
+                                                ...this.state.account,
+                                                isReady: true
+                                            }
+                                        })
+                                    } else {
+                                        if (status === 4) {
+                                            this.queryClaims()
+                                            return;
+                                        }
                                     }
                                 })
-                            } else {
-                                if (status === 4) {
-                                    this.queryClaims()
-                                    return;
-                                }
-                            }
+                            }, t);
                         })
-                    }, t);
-                })
+                    } else {
+                        formToast(t('Ethereum network type does not match, please switch to {{network}} network in metamask.', { network: config.NETWORK_NAME }));
+                    }
+                });
                 break;
             default:
                 break;
@@ -443,7 +449,7 @@ class CrossChain extends Component {
 
         if(tokenType === 'erc20') {
             getMetamaskActiveAccount().then(currentAccount => {
-               return canCrossSendToEth(erc20Token.address, currentAccount, crossChainBalance).then(result => { 
+               return canCrossSendToEth(erc20Token, currentAccount).then(result => { 
                     if(typeof result === 'string'){
                         this.setState({erc20TokenTransferState: { approveTxHash: result }})
                     } else {
@@ -459,7 +465,15 @@ class CrossChain extends Component {
                }).then((transferTxHash) => { 
                     const { erc20TokenTransferState } = this.state;
 
-                    this.setState({ erc20TokenTransferState: { ...erc20TokenTransferState, transferTxHash }, isApproving: false });
+                    this.setState({
+                        erc20TokenTransferState: {
+                            ...erc20TokenTransferState,
+                            transferTxHash,
+                        },
+                        isApproving: false,
+                        crossChainBalance: Web3.utils.toBN(0),
+                        crossChainBalanceText: '',
+                    });
                }).catch(err => {
                     formToast(t(err.message, { network: config.IS_DEV ? "Pangolin" : "Darwinia"}));
                     this.setState({ erc20TokenTransferState: null });
@@ -516,7 +530,7 @@ class CrossChain extends Component {
         if(tokenType === 'erc20') {
             this.setState({ isApproving: true, erc20TokenTransferState: null });
 
-            canCrossSendToDvm(erc20Token.address, account.eth, crossChainBalance).then(result => { 
+            canCrossSendToDvm(erc20Token, account.eth).then(result => { 
                 if(typeof result === 'string'){
                     this.setState({erc20TokenTransferState: { approveTxHash: result }})
                 } else {
@@ -532,7 +546,15 @@ class CrossChain extends Component {
             }).then((transferTxHash) => { 
                 const { erc20TokenTransferState } = this.state;
 
-                this.setState({ erc20TokenTransferState: { ...erc20TokenTransferState, transferTxHash }, isApproving: false });
+                this.setState({ 
+                    erc20TokenTransferState: {
+                        ...erc20TokenTransferState,
+                        transferTxHash 
+                    },
+                    isApproving: false,
+                    crossChainBalanceText: '',
+                    crossChainBalance: Web3.utils.toBN(0) 
+                });
             }).catch(error => { 
                 console.warn(
                     "%c [ error ]-499",
@@ -1896,14 +1918,13 @@ class CrossChain extends Component {
                     networkType={this.state.networkType}
                     onHide={async (token) => {
                         if(token) {
-                            const { source, balance } = token;
                             const { networkType } = this.state;
                             const currentAccount = await getMetamaskActiveAccount();
-                            const isAllowanceIssuing = await hasApproved(source, currentAccount, balance.toString(), networkType);
+                            const isAllowanceIssuing = await hasApproved(token, currentAccount, networkType);
 
                             this.setState({ erc20Token: token, isAllowanceIssuing });
                         } else {
-                            this.setState({ isAllowanceIssuing: false });
+                            this.setState({ isAllowanceIssuing: false, erc20token: null });
                         }
 
                         this.setState({isRegisterTokenModalDisplay: false});

@@ -205,7 +205,7 @@ export const getSymbolType = async (address) => {
 const loopQuery = (url) => {
     return fromFetch(url, { selector: (response) => response.json() }).pipe(
         map(({ data }) => {
-            if (!data) {
+            if (!data || !data.mmr_root || !data.signatures) {
                 const msg = `The ${url} api has no result, refetch it after 5 seconds`;
 
                 // console.info(msg);
@@ -389,22 +389,21 @@ export const confirmRegister = async (proof) => {
 
 export const claimErc20Token = confirmRegister;
 
-export async function canCrossSendToDvm(tokenAddress, currentAccount, amount) {
-    return canCrossSend(tokenAddress, currentAccount, amount, "eth");
+export async function canCrossSendToDvm(token, currentAccount) {
+    return canCrossSend(token, currentAccount, "eth");
 }
 
-async function canCrossSend(tokenAddress, currentAccount, amount, networkType) {
-    const abi = networkType === "eth" ? Erc20ABI : TokenABI;
-    const contractAddress =
-        networkType === "eth"
-            ? config.E2D_BACKING_ADDRESS
-            : config.MAPPING_FACTORY_ADDRESS;
-    const contract = new web3.eth.Contract(abi, tokenAddress);
-    const isAllowanceEnough = await hasApproved(tokenAddress, currentAccount, amount, networkType); 
+export async function canCrossSendToEth(token, currentAccount) {
+    return canCrossSend(token, currentAccount, "darwinia");
+}
+
+async function canCrossSend(token, currentAccount, networkType) {
+    const isAllowanceEnough = await hasApproved(token, currentAccount, networkType); 
 
     if (isAllowanceEnough) {
         return true;
     } else {
+        const { contract, contractAddress } = getContractWithAddressByNetwork(token, networkType);
         const tx = await contract.methods
             .approve(
                 contractAddress,
@@ -416,14 +415,22 @@ async function canCrossSend(tokenAddress, currentAccount, amount, networkType) {
     }
 }
 
-export async function hasApproved(tokenAddress, currentAccount, amount, networkType) {
+function getContractWithAddressByNetwork(token, networkType) {
+    const { address, source } = token;
     const abi = networkType === "eth" ? Erc20ABI : TokenABI;
     const contractAddress =
         networkType === "eth"
             ? config.E2D_BACKING_ADDRESS
             : config.MAPPING_FACTORY_ADDRESS;
-    const contract = new web3.eth.Contract(abi, tokenAddress);
-    const unit = await getUnitFromAddress(tokenAddress);
+    const contract = new web3.eth.Contract(abi, networkType === 'eth' ? source : address);
+
+    return { contract, contractAddress };
+}
+
+export async function hasApproved(token, currentAccount, networkType) {
+    const { source, balance: amount } = token;
+    const { contract, contractAddress } = getContractWithAddressByNetwork(token, networkType);
+    const unit = await getUnitFromAddress(source);
     const allowance = await contract.methods
         .allowance(currentAccount, contractAddress)
         .call();
@@ -451,10 +458,6 @@ export async function crossSendErc20FromEthToDvm(
         .send({ from: currentAccount });
 
     return tx.transactionHash;
-}
-
-export async function canCrossSendToEth(tokenAddress, currentAccount, amount) {
-    return canCrossSend(tokenAddress, currentAccount, amount, "darwinia");
 }
 
 export async function crossSendErc20FromDvmToEth(

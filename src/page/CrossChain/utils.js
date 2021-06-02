@@ -124,6 +124,17 @@ function connectEth(accountsChangedCallback, t) {
     }
 }
 
+export async function isNetworkConsistent(expectedNetworkId, id) {
+    id = Web3.utils.isHexStrict(id) ? parseInt(id, 16).toString() : id;
+    // id 1: eth mainnet 3: ropsten 4: rinkeby 5: goerli 42: kovan  43: pangolin 44: crab
+    const actualId = !!id
+      ? await Promise.resolve(id)
+      : await window.ethereum.request({ method: 'net_version' });
+    const expect =  parseInt(expectedNetworkId, Web3.utils.isHexStrict(expectedNetworkId) ? 16: 10).toString();
+
+    return expect === actualId;
+}
+
 function connectTron(accountsChangedCallback, t) {
     if (typeof window.tronWeb !== 'undefined') {
         if (!(window.tronWeb && window.tronWeb.ready)) {
