@@ -1,19 +1,20 @@
 import React, { Component } from "react";
-import { Button, Form, Spinner, Dropdown, ButtonGroup, Modal, Col } from 'react-bootstrap'
+import { Button, Form, Spinner, Dropdown, ButtonGroup, Modal, Col, Alert } from 'react-bootstrap'
 import { withRouter } from 'react-router-dom';
 
 import 'react-toastify/dist/ReactToastify.css';
 import dayjs from 'dayjs';
 import Web3 from 'web3';
 import _ from 'lodash';
-import { encodeAddress } from '@polkadot/util-crypto';
 import {
     connect, formToast, config, formatBalance, getBuildInGenesisInfo,
     getTokenBalance, buildInGenesis, textTransform, remove0x, convertSS58Address, isMiddleScreen,
     getCringGenesisSwapInfo, redeemToken, redeemDeposit, checkIssuingAllowance, approveRingToIssuing, getEthereumBankDeposit,
     getEthereumToDarwiniaCrossChainInfo, getEthereumToDarwiniaCrossChainFee, crossChainFromDarwiniaToEthereum, getDarwiniaToEthereumCrossChainFee,
-    getDarwiniaToEthereumGenesisSwapInfo, substrateAddressToPublicKey, ClaimTokenFromD2E
+    getDarwiniaToEthereumGenesisSwapInfo, substrateAddressToPublicKey, ClaimTokenFromD2E, getMetamaskActiveAccount,
+    getErc20BurnsRecords, getErc20TokenLockRecords, getMMRProof, getMPTProof, isNetworkConsistent
 } from './utils'
+import { canCrossSendToDvm, crossSendErc20FromEthToDvm, crossSendErc20FromDvmToEth, canCrossSendToEth, claimErc20Token } from './erc20/token';
 import { InputRightWrap } from '../../components/InputRightWrap'
 import InputWrapWithCheck from '../../components/InputWrapWithCheck'
 import FormTip from '../../components/FormTip'
@@ -33,43 +34,18 @@ import labelTitleLogo from './img/label-title-logo.png';
 
 import stepStartIcon from './img/tx-step-start-icon.svg';
 
-import stepEthereumIcon from './img/tx-step-eth-icon.svg';
-import stepTronIcon from './img/tx-step-tron-icon.svg';
-import stepDarwiniaIcon from './img/tx-step-darwinia-icon.svg';
-import stepCrabIcon from './img/tx-step-crab-icon.svg';
-import stepRelayIcon from './img/tx-step-relay-icon.svg';
-
-import stepInactiveEthereumIcon from './img/tx-step-eth-inactive-icon.svg';
-import stepInactiveTronIcon from './img/tx-step-tron-inactive-icon.svg';
-import stepInactiveDarwiniaIcon from './img/tx-step-darwinia-inactive-icon.svg';
-import stepInactiveCrabIcon from './img/tx-step-crab-inactive-icon.svg';
-import stepInactiveRelayIcon from './img/tx-step-relay-inactive-icon.svg';
-
 import roadmapStatus0 from './img/roadmap-status-0.svg';
 import roadmapStatusActive0 from './img/roadmap-status-0-active.svg';
 import roadmapStatus1 from './img/roadmap-status-1.svg';
 import roadmapStatus2 from './img/roadmap-status-2.svg';
 
 import chainMap from '../Wrapper/chain';
-
-const txProgressIcon = {
-    stepStartIcon,
-
-    stepEthIcon: stepEthereumIcon,
-    stepInactiveEthIcon: stepInactiveEthereumIcon,
-
-    stepDarwiniaIcon,
-    stepInactiveDarwiniaIcon,
-
-    stepTronIcon,
-    stepInactiveTronIcon,
-
-    stepCrabIcon,
-    stepInactiveCrabIcon,
-
-    stepRelayIcon,
-    stepInactiveRelayIcon
-}
+import Erc20Token from '../../components/erc20/erc20TokenComponent'
+import AssetControl from "../../components/controls/assetControl";
+import { txProgressIcon } from './icons';
+import HistoryRecord from "../../components/historyRecord/historyRecord";
+import { getSymbolAndDecimals } from './erc20/token-util';
+import { decodeUint256, hasApproved } from './erc20/token';
 
 class CrossChain extends Component {
     constructor(props, context) {
@@ -118,7 +94,11 @@ class CrossChain extends Component {
                 isManual: false,
                 address: '',
                 isFetchingClaimParams: false
-            }
+            },
+            accountValidation: null,
+            isRegisterTokenModalDisplay: false,
+            erc20Token: {},
+            erc20TokenTransferState: null,
         }
         this.querySubscribe = null
     }
@@ -256,11 +236,9 @@ class CrossChain extends Component {
 
         switch (networkType) {
             case 'eth':
-                connect(networkType, (_networkType, _account, subscribe) => {
+                connect(networkType, (_networkType, _account) => {
                     let initAccount = ''
 
-                    // this.querySubscribe && this.querySubscribe();
-                    // this.querySubscribe = subscribe;
                     if (Array.isArray(_account) && _account.length > 0) {
                         initAccount = _account[0].address
                     } else if (Array.isArray(_account) && _account.length === 0) {
@@ -279,7 +257,6 @@ class CrossChain extends Component {
                             crossChainFee: Web3.utils.toBN(0),
                         }
                     }, async () => {
-
                         if (this.state.account[_networkType]) {
                             this.setState({
                                 status: status
@@ -307,17 +284,13 @@ class CrossChain extends Component {
 
                             const ethereumDeposits = await getEthereumDeposits(this.state.account[networkType]) || [];
 
-                            console.log('ethereumDeposits', ethereumDeposits)
                             this.setState({
                                 ringBalance: Web3.utils.toBN(balances[0]),
                                 ktonBalance: Web3.utils.toBN(balances[1]),
                                 isAllowanceIssuing: isAllowance,
                                 ethereumDeposits: ethereumDeposits,
                                 currentDepositID: ethereumDeposits.length > 0 ? ethereumDeposits[0].deposit_id : null,
-                                crossChainFee: Web3.utils.toBN(crossChainFee)
-                            })
-
-                            this.setState({
+                                crossChainFee: Web3.utils.toBN(crossChainFee),
                                 account: {
                                     ...this.state.account,
                                     isReady: true
@@ -368,74 +341,80 @@ class CrossChain extends Component {
                 }, t);
                 break;
             case 'darwinia':
-                this.setState({
-                    history: null,
-                    account: {
-                        ...account,
-                        isReady: false,
-                    },
-                    status
-                }, () => {
-                    connect(networkType, (_networkType, _account, subscribe) => {
-                        let initAccount = ''
-
-                        // this.querySubscribe && this.querySubscribe();
-                        // this.querySubscribe = subscribe;
-                        const searchQuery = this.useQuery();
-                        const addressParams = searchQuery.get('address')
-
-                        if (addressParams && _.find(_account, {address: addressParams})) {
-                            initAccount = addressParams;
-                        } else if (this.state.account[_networkType] && _.find(_account, {address: this.state.account[_networkType]})) {
-                            initAccount = this.state.account[_networkType]
-                        } else if (Array.isArray(_account) && _account.length > 0) {
-                            initAccount = _account[0].address
-                        } else if (Array.isArray(_account) && _account.length === 0) {
-                            initAccount = ''
-                        } else {
-                            initAccount = _account
-                        }
-
+                isNetworkConsistent(config.DVM_NETWORK_ID).then((isExpected) => { 
+                    if(isExpected) {
                         this.setState({
                             history: null,
                             account: {
                                 ...account,
-                                [_networkType]: initAccount,
-                                [`${_networkType}List`]: _account,
                                 isReady: false,
                             },
-                            crabAndDarwiniaHistory: {
-                                ...this.state.crabAndDarwiniaHistory,
-                                isManual: !initAccount,
-                                address: ''
-                            }
-                        }, async () => {
-                            if (this.state.account[_networkType]) {
-                                if (status === 4) {
-                                    this.queryClaims()
-                                    return;
+                            status
+                        }, () => {
+                            connect(networkType, (_networkType, _account, subscribe) => {
+                                let initAccount = ''
+
+                                // this.querySubscribe && this.querySubscribe();
+                                // this.querySubscribe = subscribe;
+                                const searchQuery = this.useQuery();
+                                const addressParams = searchQuery.get('address')
+
+                                if (addressParams && _.find(_account, {address: addressParams})) {
+                                    initAccount = addressParams;
+                                } else if (this.state.account[_networkType] && _.find(_account, {address: this.state.account[_networkType]})) {
+                                    initAccount = this.state.account[_networkType]
+                                } else if (Array.isArray(_account) && _account.length > 0) {
+                                    initAccount = _account[0].address
+                                } else if (Array.isArray(_account) && _account.length === 0) {
+                                    initAccount = ''
+                                } else {
+                                    initAccount = _account
                                 }
 
-                                const balances = await getTokenBalance(networkType, this.state.account[networkType]);
-                                const crossChainFee = await getDarwiniaToEthereumCrossChainFee();
                                 this.setState({
-                                    ringBalance: Web3.utils.toBN(balances[0]),
-                                    ktonBalance: Web3.utils.toBN(balances[1]),
-                                    crossChainFee: Web3.utils.toBN(crossChainFee),
+                                    history: null,
                                     account: {
-                                        ...this.state.account,
-                                        isReady: true
+                                        ...account,
+                                        [_networkType]: initAccount,
+                                        [`${_networkType}List`]: _account,
+                                        isReady: false,
+                                    },
+                                    crabAndDarwiniaHistory: {
+                                        ...this.state.crabAndDarwiniaHistory,
+                                        isManual: !initAccount,
+                                        address: ''
+                                    }
+                                }, async () => {
+                                    if (this.state.account[_networkType]) {
+                                        if (status === 4) {
+                                            this.queryClaims()
+                                            return;
+                                        }
+
+                                        const balances = await getTokenBalance(networkType, this.state.account[networkType]);
+                                        const crossChainFee = await getDarwiniaToEthereumCrossChainFee();
+                                        this.setState({
+                                            ringBalance: Web3.utils.toBN(balances[0]),
+                                            ktonBalance: Web3.utils.toBN(balances[1]),
+                                            crossChainFee: Web3.utils.toBN(crossChainFee),
+                                            account: {
+                                                ...this.state.account,
+                                                isReady: true
+                                            }
+                                        })
+                                    } else {
+                                        if (status === 4) {
+                                            this.queryClaims()
+                                            return;
+                                        }
                                     }
                                 })
-                            } else {
-                                if (status === 4) {
-                                    this.queryClaims()
-                                    return;
-                                }
-                            }
+                            }, t);
                         })
-                    }, t);
-                })
+                    } else {
+                        formToast(t('Ethereum network type does not match, please switch to {{network}} network in metamask.', { network: config.NETWORK_NAME }));
+                    }
+                });
                 break;
             default:
                 break;
@@ -461,20 +440,57 @@ class CrossChain extends Component {
     }
 
     crossChainFromDarwiniaToEthereum = () => {
-        const { networkType, account, recipientAddress, crossChainBalance, crossChainKtonBalance } = this.state;
+        const { networkType, account, recipientAddress, crossChainBalance, crossChainKtonBalance, tokenType, erc20Token } = this.state;
         const { t } = this.props;
 
-        if (!this.checkFormDarwiniaToEthereum('gwei')) return;
-        crossChainFromDarwiniaToEthereum(account[networkType], {
-            to: recipientAddress,
-            ring: crossChainBalance,
-            kton: crossChainKtonBalance
-        }, (hash) => {
-            this.setState({
-                txhash: hash,
-                status: 3
-            })
-        }, t)
+        if (!this.checkFormDarwiniaToEthereum('gwei')) {
+            return;
+        }
+
+        if(tokenType === 'erc20') {
+            getMetamaskActiveAccount().then(currentAccount => {
+               return canCrossSendToEth(erc20Token, currentAccount).then(result => { 
+                    if(typeof result === 'string'){
+                        this.setState({erc20TokenTransferState: { approveTxHash: result }})
+                    } else {
+                        this.setState({erc20TokenTransferState: { }});
+                    }
+
+                    return crossSendErc20FromDvmToEth(
+                        erc20Token.address,
+                        recipientAddress, 
+                        crossChainBalance,
+                        currentAccount
+                    );
+               }).then((transferTxHash) => { 
+                    const { erc20TokenTransferState } = this.state;
+
+                    this.setState({
+                        erc20TokenTransferState: {
+                            ...erc20TokenTransferState,
+                            transferTxHash,
+                        },
+                        isApproving: false,
+                        crossChainBalance: Web3.utils.toBN(0),
+                        crossChainBalanceText: '',
+                    });
+               }).catch(err => {
+                    formToast(t(err.message, { network: config.IS_DEV ? "Pangolin" : "Darwinia"}));
+                    this.setState({ erc20TokenTransferState: null });
+                });
+            });
+        } else {
+            crossChainFromDarwiniaToEthereum(account[networkType], {
+                to: recipientAddress,
+                ring: crossChainBalance,
+                kton: crossChainKtonBalance
+            }, (hash) => {
+                this.setState({
+                    txhash: hash,
+                    status: 3
+                })
+            }, t)
+        }
     }
 
     redeemToken = () => {
@@ -509,21 +525,59 @@ class CrossChain extends Component {
     }
 
     approveRingToIssuing = () => {
-        const { networkType, account } = this.state;
+        const { networkType, account, tokenType, erc20Token, darwiniaAddress, crossChainBalance } = this.state;
 
-        approveRingToIssuing(account[networkType], () => {
-            this.setState({
-                isApproving: true
-            })
-        }, async () => {
-            if (!this.state.isAllowanceIssuing) {
-                const isAllowance = await checkIssuingAllowance(account[networkType]);
-                this.setState({
+        if(tokenType === 'erc20') {
+            this.setState({ isApproving: true, erc20TokenTransferState: null });
+
+            canCrossSendToDvm(erc20Token, account.eth).then(result => { 
+                if(typeof result === 'string'){
+                    this.setState({erc20TokenTransferState: { approveTxHash: result }})
+                } else {
+                    this.setState({erc20TokenTransferState: { }});
+                }
+
+                return crossSendErc20FromEthToDvm(
+                    erc20Token.address,
+                    darwiniaAddress,
+                    crossChainBalance,
+                    account.eth
+                );
+            }).then((transferTxHash) => { 
+                const { erc20TokenTransferState } = this.state;
+
+                this.setState({ 
+                    erc20TokenTransferState: {
+                        ...erc20TokenTransferState,
+                        transferTxHash 
+                    },
                     isApproving: false,
-                    isAllowanceIssuing: isAllowance
+                    crossChainBalanceText: '',
+                    crossChainBalance: Web3.utils.toBN(0) 
+                });
+            }).catch(error => { 
+                console.warn(
+                    "%c [ error ]-499",
+                    "font-size:13px; background:pink; color:#bf2c9f;",
+                    error.message
+                );
+                this.setState({ isApproving: false, erc20TokenTransferState: null });               
+            });
+        } else {
+            approveRingToIssuing(account[networkType], () => {
+                this.setState({
+                    isApproving: true
                 })
-            }
-        })
+            }, async () => {
+                if (!this.state.isAllowanceIssuing) {
+                    const isAllowance = await checkIssuingAllowance(account[networkType]);
+                    this.setState({
+                        isApproving: false,
+                        isAllowanceIssuing: isAllowance
+                    })
+                }
+            })
+        }
     }
 
     checkForm = (unit = 'ether') => {
@@ -566,7 +620,7 @@ class CrossChain extends Component {
 
     checkFormDarwiniaToEthereum = (unit = 'ether') => {
         const { crossChainBalance, crossChainKtonBalance, crossChainBalanceText, recipientAddress,
-            crossChainKtonBalanceText, ringBalance, ktonBalance, crossChainFee } = this.state;
+            crossChainKtonBalanceText, ringBalance, ktonBalance, crossChainFee, tokenType, erc20Token } = this.state;
 
         const { t } = this.props;
 
@@ -589,9 +643,16 @@ class CrossChain extends Component {
             return false
         }
 
-        if ((crossChainBalance.add(crossChainFee).add(Web3.utils.toBN(2000000000))).gt(ringBalance)) {
-            formToast(t(`crosschain:The amount exceeds the account available balance`))
-            return false
+        if(tokenType !== 'erc20') {
+            if ((crossChainBalance.add(crossChainFee).add(Web3.utils.toBN(2000000000))).gt(ringBalance)) {
+                formToast(t(`crosschain:The amount exceeds the account available balance`))
+                return false
+            }
+        } else {
+            if(crossChainBalance.gt(erc20Token.balance)) {
+                formToast(t(`crosschain:The amount exceeds the account available balance`))
+                return false;
+            }
         }
 
         if (crossChainKtonBalance.gt(ktonBalance)) {
@@ -621,7 +682,7 @@ class CrossChain extends Component {
         switch (networkType) {
             case "eth":
                 address = account[networkType]
-                let ethereumGenesisInfo = new Promise((resolve, reject) => {
+                const ethereumGenesisInfo = new Promise((resolve, reject) => {
                     getBuildInGenesisInfo({
                         query: { address: address },
                         method: "get"
@@ -632,7 +693,7 @@ class CrossChain extends Component {
                     });
                 })
 
-                let ethereumToDarwiniaCrosschainInfo = new Promise((resolve, reject) => {
+                const ethereumToDarwiniaCrossChainInfo = new Promise((resolve, reject) => {
                     getEthereumToDarwiniaCrossChainInfo({
                         query: { address: address },
                         method: "get"
@@ -643,16 +704,17 @@ class CrossChain extends Component {
                     });
                 })
 
-                Promise.all([ethereumGenesisInfo, ethereumToDarwiniaCrosschainInfo]).then(([genesisHistory, crosschainHistory]) => {
-                    this.setState({
-                        history: [...crosschainHistory.map((item) => {
-                            item.is_crosschain = true;
-                            return item;
-                        }), ...genesisHistory]
+                const erc20TransferInfo = getErc20TokenLockRecords({ sender: address, row: 200, page: 0 });
+
+                Promise.all([ethereumGenesisInfo, ethereumToDarwiniaCrossChainInfo, erc20TransferInfo])
+                    .then(([genesisHistory, crosschainHistory, erc20CrossChain]) => this.getSymbolMap(erc20CrossChain.list).then(symbolMap => [genesisHistory, crosschainHistory, erc20CrossChain, symbolMap]))
+                    .then(([genesisHistory, crosschainHistory, erc20CrossChain, symbolMap]) => {
+                        this.setState({
+                            history: [...(crosschainHistory.concat(erc20CrossChain.list.map(item => ({...item, isErc20: true, symbol: symbolMap[item.source]})))).map((item) => ({ ...item, isCrossChain: true })), ...genesisHistory]
+                        })
+                    }).catch((error) => {
+                        console.log('get history error', error);
                     })
-                }).catch((error) => {
-                    console.log('get history error', error);
-                })
                 break;
             case "tron":
                 address = (window.tronWeb && window.tronWeb.address.toHex(account[networkType]))
@@ -715,10 +777,39 @@ class CrossChain extends Component {
                     })
                 }
 
+                try {
+                    const { list, best, MMRRoot } = await getErc20BurnsRecords({ page: 0, row: 200 });
+                    const symbolMap = await this.getSymbolMap(list);
+
+                    this.setState({
+                        erc20History: list.map(({ source, ...others }) => {
+
+                            return { ...others, source, symbol: symbolMap[source] }
+                        }),
+                        erc20HistoryMeta: { best, mmrRoot: MMRRoot } 
+                    });
+                } catch (error) {
+                    this.setState({
+                        erc20History: [],
+                        erc20HistoryMeta: {},
+                    });
+                }
+
                 break;
             default:
                 break;
         }
+    }
+
+    getSymbolMap = async (list) => { 
+        const sources = _.uniq(list.map(item => item.source));
+        const data = await Promise.all(sources.map(async source => { 
+            const { symbol } = await getSymbolAndDecimals(source)
+
+            return { [source] : symbol };
+        }));
+
+        return data.reduce((acc, cur) => ({ ...acc, ...cur }), { });
     }
 
     goBack = (status = 1) => {
@@ -869,195 +960,266 @@ class CrossChain extends Component {
         networkType, account, t, tokenType , crossChainBalanceText, crossChainKtonBalanceText, currentDepositID, ethereumDeposits, crossChainFee,
         darwiniaAddress, ringBalance, ktonBalance, isApproving, isAllowanceIssuing, middleScreen, recipientAddress
     }) => {
+        const onAssetChange = (event) =>  {
+            const key = 'tokenType';
+
+            this.setValue(key, event, null, () => {
+                this.setState({
+                    crossChainBalanceText: "",
+                });
+            });
+        };
+
         switch (networkType) {
             case 'eth':
                 let isSufficientFee = ringBalance.gte(crossChainFee);
 
                 return (
-                    <>
-                        <div className={styles.formBox}>
-                            <div className={`${styles.networkBox} claims-network-box`}>
-                                <Form.Group controlId="darwinaAddressGroup">
-                                    <Form.Label>{t('crosschain:Please enter the destination account of Darwinia mainnet')} <a href={this.renderHelpUrl()} target="_blank"
-                                        rel="noopener noreferrer"><img alt=""
-                                            className={styles.labelIcon} src={helpLogo} /></a> </Form.Label>
-                                    <Form.Control type="text" autoComplete="off" placeholder={t('crosschain:Darwinia Network account')} value={darwiniaAddress}
-                                        onChange={(value) => this.setValue('darwiniaAddress', value, null)} />
-                                    <Form.Text className="text-muted">
-                                        {t('crosschain:Please be sure to fill in the real Darwinia mainnet account, and keep the account recovery files such as mnemonic properly.')}
-                                    </Form.Text>
+                    <div className={styles.formBox}>
+                        <div className={`${styles.networkBox} claims-network-box`}>
+                            <Form.Group controlId="darwinaAddressGroup">
+                                <AssetControl onChange={onAssetChange} tokenType={tokenType} displayDeposit></AssetControl> 
+                                {
+                                    tokenType === 'erc20' ? (
+                                        <>
+                                            <Form.Label>{t('crosschain:ERC-20 Token')}</Form.Label>
+                                            <Form.Control 
+                                                value={this.state.erc20Token?.name || this.state.erc20Token?.symbol || ''}
+                                                onClick={() => this.setState({
+                                                    isRegisterTokenModalDisplay: true
+                                                })}
+                                                onChange={() => { }}
+                                                placeholder={t('crosschain:Select a token')}>
+                                            </Form.Control>
+                                        </> 
+                                    ): null
+                                }
 
-                                    <Form.Label>{t('crosschain:Asset Types')}</Form.Label>
-                                    <Form.Control as="select" value={tokenType}
-                                        onChange={(value) => this.setValue('tokenType', value, null, () => {
+                                <Form.Label>
+                                    {t(tokenType === 'erc20' ? 'crosschain:Please enter Ethereum account or DVM account' : 'crosschain:Please enter the destination account of Darwinia mainnet')}
+                                    <a href={this.renderHelpUrl()} target="_blank" rel="noopener noreferrer">
+                                        <img alt="" className={styles.labelIcon} src={helpLogo} />
+                                    </a>
+                                </Form.Label>
+                                <Form.Control 
+                                    type="text" 
+                                    autoComplete="off"
+                                    isInvalid={this.state.accountValidation} 
+                                    placeholder={t( tokenType === 'erc20' ? 'crosschain:Ethereum account or DVM account': 'crosschain:Darwinia Network account')}
+                                    value={darwiniaAddress}
+                                    onChange={(value) => {
+                                        const address = value.target.value;
+
+                                        if(tokenType !== 'erc20') {
+                                            const ss58Address = convertSS58Address(address);
+
                                             this.setState({
-                                                crossChainBalanceText: ''
-                                            })
-                                        })}>
-                                        <option value="ring">RING</option>
-                                        <option value="kton">KTON</option>
-                                        <option value="deposit">{t('crosschain:Deposit')}</option>
-                                    </Form.Control>
-
-                                    {tokenType === 'ring' ?
-                                        <>
-                                            <Form.Label>{t('crosschain:Amount')}</Form.Label>
-                                            <InputRightWrap text={t('crosschain:MAX')} onClick={
-                                                () => {
-                                                    this.setValue('crossChainBalance', { target: { value: formatBalance(ringBalance.gt(crossChainFee) ? ringBalance.sub(crossChainFee) : Web3.utils.toBN(0), 'ether') } }, this.toWeiBNMiddleware, this.setRingBalanceText)
-                                                }
-                                            }>
-                                                <Form.Control type="number" placeholder={`${t('crosschain:Balance')} : ${formatBalance(this.state[`${tokenType}Balance`], 'ether')}`}
-                                                    autoComplete="off"
-                                                    value={crossChainBalanceText}
-                                                    onChange={(value) => this.setValue('crossChainBalance', value, this.toWeiBNMiddleware, this.setRingBalanceText)} />
-                                            </InputRightWrap>
-                                        </>
-                                        : null}
-
-                                    {tokenType === 'kton' ?
-                                        <>
-                                            <Form.Label>{t('crosschain:Amount')}</Form.Label>
-                                            <InputRightWrap text={t('crosschain:MAX')} onClick={
-                                                () => {
-                                                    this.setValue('crossChainBalance', { target: { value: formatBalance(this.state[`${tokenType}Balance`], 'ether') } }, this.toWeiBNMiddleware, this.setRingBalanceText)
-                                                }
-                                            }>
-                                                <Form.Control type="number" placeholder={`${t('crosschain:Balance')} : ${formatBalance(this.state[`${tokenType}Balance`], 'ether')}`}
-                                                    autoComplete="off"
-                                                    value={crossChainBalanceText}
-                                                    onChange={(value) => this.setValue('crossChainBalance', value, this.toWeiBNMiddleware, this.setRingBalanceText)} />
-                                            </InputRightWrap>
-                                        </>
-                                        : null}
-
-                                    {tokenType === 'deposit' ?
-                                        <>
-                                            <Form.Label>{t('crosschain:Select Deposit')}</Form.Label>
-
-                                            <Dropdown as={ButtonGroup} className={styles.reactSelect} onSelect={(eventKey) => {
-                                                this.setState({
-                                                    currentDepositID: eventKey
-                                                })
-                                            }}>
-                                                {/* {!ethereumDeposits || ethereumDeposits.length === 0 ?
-                                            <Dropdown.Toggle id="ethereum-deposit">{t('No Deposits')}</Dropdown.Toggle>
-                                            : null
-                                        } */}
-                                                <Dropdown.Toggle as="div" className={styles.reactSelectToggle} id="ethereum-deposit-toggle">
-                                                    {this.renderDepositItem(this.getDepositByID(currentDepositID))}
-                                                </Dropdown.Toggle>
-                                                <Dropdown.Menu className="super-colors">
-                                                    {ethereumDeposits && ethereumDeposits.length > 0 && ethereumDeposits.map((item) => {
-                                                        return <Dropdown.Item active={item.deposit_id === currentDepositID} key={item.deposit_id} eventKey={item.deposit_id}>{this.renderDepositItem(item)}</Dropdown.Item>
-                                                    })}
-                                                </Dropdown.Menu>
-                                            </Dropdown>
-                                            {/* <Form.Control as="select" value={currentDepositID}
-                                        onChange={(value) => this.setValue('currentDepositID', value, null, () => {
-
-                                        })}>
-                                        {!ethereumDeposits || ethereumDeposits.length === 0 ?
-                                            <option value="">{t('No Deposits')}</option>
-                                            : null
+                                                accountValidation: !!address ? !!ss58Address ? null : { msg: "crosschain:This address is not {{type}} smart account"} : null,
+                                            });
+                                        } else {
+                                            this.setState({
+                                                accountValidation: !!address ? Web3.utils.isAddress(address) ? null : { msg: "crosschain:This address is not Ethereum account or DVM account"} : null,
+                                            });
                                         }
-                                        {ethereumDeposits && ethereumDeposits.length > 0 && ethereumDeposits.map((item) => {
-                                            return <option key={item.deposit_id} value={item.deposit_id}>{this.renderDepositItem(item)}</option>
-                                        })}
-                                    </Form.Control> */}
-                                        </>
-                                        : null}
-                                    {tokenType === 'ring' || tokenType === 'kton' ? <Form.Text muted className={`${styles.feeTip} ${isSufficientFee ? '' : 'text-muted'}`}>
-                                        {t(`crosschain:Crosschain transfer fee. {{fee}} RING. (Account Balance. {{ring}} RING)`, {
-                                            fee: formatBalance(crossChainFee, 'ether').toString(),
-                                            ring: formatBalance(this.state[`ringBalance`], 'ether').toString()
-                                        })}
-                                    </Form.Text> : null}
-                                </Form.Group>
 
-                                <div className={styles.buttonBox}>
-                                    {isAllowanceIssuing || tokenType === 'deposit' ?
-                                        <Button disabled={!isSufficientFee && (tokenType !== 'deposit')} variant="color" onClick={this.redeemToken}>{t('crosschain:Submit')}</Button> :
-                                        <Button disabled={isApproving} variant="color" onClick={this.approveRingToIssuing}>{isApproving ? t('crosschain:Approving') : t('crosschain:Approve')}</Button>
-                                    }
-                                    <Button variant="outline-purple" onClick={() => this.goBack(1)}>{t('crosschain:Back')}</Button>
-                                </div>
+                                        this.setValue('darwiniaAddress', value, null);
+                                    }} />
+                                <Form.Control.Feedback type="invalid">
+                                    {t(this.state.accountValidation?.msg, { type: config.NETWORK_NAME })}
+                                </Form.Control.Feedback>
+                                {
+                                    !this.state.accountValidation && (<Form.Text className="text-muted">
+                                        {t(tokenType === 'erc20' ? 'crosschain:Please be sure to fill in the real Ethereum account or DVM account, and keep the account recovery files such as mnemonic properly.' : 'crosschain:Please be sure to fill in the real Darwinia mainnet account, and keep the account recovery files such as mnemonic properly.')}
+                                    </Form.Text>)
+                                }
+                                
+
+                                {tokenType === 'ring' ?
+                                    <>
+                                        <Form.Label>{t('crosschain:Amount')}</Form.Label>
+                                        <InputRightWrap text={t('crosschain:MAX')} onClick={
+                                            () => {
+                                                this.setValue('crossChainBalance', { target: { value: formatBalance(ringBalance.gt(crossChainFee) ? ringBalance.sub(crossChainFee) : Web3.utils.toBN(0), 'ether') } }, this.toWeiBNMiddleware, this.setRingBalanceText)
+                                            }
+                                        }>
+                                            <Form.Control type="number" placeholder={`${t('crosschain:Balance')} : ${formatBalance(this.state[`${tokenType}Balance`], 'ether')}`}
+                                                autoComplete="off"
+                                                value={crossChainBalanceText}
+                                                onChange={(value) => this.setValue('crossChainBalance', value, this.toWeiBNMiddleware, this.setRingBalanceText)} />
+                                        </InputRightWrap>
+                                    </>
+                                    : null}
+
+                                {tokenType === 'erc20' ?
+                                    <>
+                                        <Form.Label>{t('crosschain:Amount')}</Form.Label>
+                                        <InputRightWrap text={t('crosschain:MAX')} onClick={
+                                            () => {
+                                                this.setValue('crossChainBalance', { target: { value: formatBalance(this.state.erc20Token?.balance, this.state.erc20Token?.decimals)} }, this.toWeiBNMiddleware, this.setRingBalanceText)
+                                            }
+                                        }>
+                                            <Form.Control type="number" placeholder={`${t('crosschain:Balance')} : ${formatBalance(this.state.erc20Token?.balance, this.state.erc20Token?.decimals)}`}
+                                                autoComplete="off"
+                                                value={crossChainBalanceText}
+                                                onChange={(value) => this.setValue('crossChainBalance', value, this.toWeiBNMiddleware, this.setRingBalanceText)} />
+                                        </InputRightWrap>
+                                    </>
+                                    : null}
+
+                                {tokenType === 'kton' ?
+                                    <>
+                                        <Form.Label>{t('crosschain:Amount')}</Form.Label>
+                                        <InputRightWrap text={t('crosschain:MAX')} onClick={
+                                            () => {
+                                                this.setValue('crossChainBalance', { target: { value: formatBalance(this.state[`${tokenType}Balance`], 'ether') } }, this.toWeiBNMiddleware, this.setRingBalanceText)
+                                            }
+                                        }>
+                                            <Form.Control type="number" placeholder={`${t('crosschain:Balance')} : ${formatBalance(this.state[`${tokenType}Balance`], 'ether')}`}
+                                                autoComplete="off"
+                                                value={crossChainBalanceText}
+                                                onChange={(value) => this.setValue('crossChainBalance', value, this.toWeiBNMiddleware, this.setRingBalanceText)} />
+                                        </InputRightWrap>
+                                    </>
+                                    : null}
+
+                                {tokenType === 'deposit' ?
+                                    <>
+                                        <Form.Label>{t('crosschain:Select Deposit')}</Form.Label>
+
+                                        <Dropdown as={ButtonGroup} className={styles.reactSelect} onSelect={(eventKey) => {
+                                            this.setState({
+                                                currentDepositID: eventKey
+                                            })
+                                        }}>
+                                            <Dropdown.Toggle as="div" className={styles.reactSelectToggle} id="ethereum-deposit-toggle">
+                                                {this.renderDepositItem(this.getDepositByID(currentDepositID))}
+                                            </Dropdown.Toggle>
+                                            <Dropdown.Menu className="super-colors">
+                                                {ethereumDeposits && ethereumDeposits.length > 0 && ethereumDeposits.map((item) => {
+                                                    return <Dropdown.Item active={item.deposit_id === currentDepositID} key={item.deposit_id} eventKey={item.deposit_id}>{this.renderDepositItem(item)}</Dropdown.Item>
+                                                })}
+                                            </Dropdown.Menu>
+                                        </Dropdown>
+                                    </>
+                                    : null}
+                                {tokenType === 'ring' || tokenType === 'kton' ? <Form.Text muted className={`${styles.feeTip} ${isSufficientFee ? '' : 'text-muted'}`}>
+                                    {t(`crosschain:Crosschain transfer fee. {{fee}} RING. (Account Balance. {{ring}} RING)`, {
+                                        fee: formatBalance(crossChainFee, 'ether').toString(),
+                                        ring: formatBalance(this.state[`ringBalance`], 'ether').toString()
+                                    })}
+                                </Form.Text> : null}
+                            </Form.Group>
+
+                            <div className={styles.buttonBox}>
+                                {isAllowanceIssuing || tokenType === 'deposit' ?
+                                    <Button disabled={(tokenType !== 'erc20' && !isSufficientFee && (tokenType !== 'deposit')) || isApproving} variant="color" onClick={() => {
+                                        if(tokenType === 'erc20') {
+                                            this.approveRingToIssuing();
+                                        } else {
+                                            this.redeemToken();
+                                        }
+                                    }}>{t('crosschain:Submit')}</Button> :
+                                    <Button disabled={isApproving} variant="color" onClick={this.approveRingToIssuing}>{isApproving ? t('crosschain:Approving') : t('crosschain:Approve')}</Button>
+                                }
+                                <Button variant="outline-purple" onClick={() => this.goBack(1)}>{t('crosschain:Back')}</Button>
                             </div>
                         </div>
-                    </>
+                    </div>
                 )
-                break;
                 case 'darwinia':
                     isSufficientFee = ringBalance.gte(crossChainFee);
                     return (
                         <div className={styles.formBox}>
                             <div className={`${styles.networkBox} claims-network-box`}>
-                                <Form.Group controlId="darwinaAddressGroup" className={styles.formInputBox}>
-                                    <Form.Label>{t('crosschain:Please select Darwinia mainnet sender account')} <a href={this.renderHelpUrl()} target="_blank"
-                                        rel="noopener noreferrer"><img alt=""
-                                            className={styles.labelIcon} src={helpLogo} /></a> </Form.Label>
-                                    <Form.Control as="select" value={account[networkType]}
-                                        onChange={(value) => this.setCurrentAccount('darwinia', value, async (account) => {
-                                            const balances = await getTokenBalance('darwinia', account);
+                                <Form.Group controlId="darwiniaAddressGroup" className={styles.formInputBox}>
+                                    <AssetControl onChange={onAssetChange} tokenType={tokenType}></AssetControl> 
+                                    {
+                                        tokenType === 'erc20' ? (<>
+                                                <Form.Label>{t('crosschain:ERC-20 Token')}</Form.Label>
+                                                <Form.Control value={this.state.erc20Token?.name || this.state.erc20Token?.symbol || ''} 
+                                                    onChange={() => { }}
+                                                    onClick={() => this.setState({
+                                                        isRegisterTokenModalDisplay: true
+                                                    })}
+                                                    placeholder={t('crosschain:Select a token')} 
+                                                />
 
-                                            this.setState({
-                                                ringBalance: Web3.utils.toBN(balances[0]),
-                                                ktonBalance: Web3.utils.toBN(balances[1]),
-                                                darwiniaAddress: convertSS58Address(account)
-                                            })
-                                        })}>
-                                        {account[`${networkType}List`]?.map((item, index) => {
-                                            return <option key={item.address} value={item.address}>{convertSS58Address(item.address, middleScreen)} - {item.meta.name}</option>
-                                        })
-                                        }
-                                    </Form.Control>
+                                                <Form.Label>{t('crosschain:Amount')}</Form.Label>
+                                                <InputRightWrap text={t('crosschain:MAX')} 
+                                                    onClick={
+                                                        () => {
+                                                            this.setValue('crossChainBalance', { target: { value: formatBalance(this.state.erc20Token.balance, this.state.erc20Token?.decimals)} }, this.toWeiBNMiddleware, this.setRingBalanceText)
+                                                        }
+                                                    }
+                                                >
+                                                    <Form.Control type="number" placeholder={`${t('crosschain:Balance')} : ${formatBalance(this.state.erc20Token?.balance, this.state.erc20Token?.decimals)}`}
+                                                        autoComplete="off"
+                                                        value={crossChainBalanceText}
+                                                        onChange={(value) => this.setValue('crossChainBalance', value, this.toWeiBNMiddleware, this.setRingBalanceText)} />
+                                                </InputRightWrap>
+                                        </>) : (
+                                            <>
+
+                                                <Form.Label>{t('crosschain:Token for cross-chain transfer', { token: 'RING' })}</Form.Label>
+                                                <InputWrapWithCheck text={t('crosschain:MAX')} onClick={
+                                                        () => {
+                                                            this.setValue('crossChainBalance', { target: { value: formatBalance(ringBalance.gte(Web3.utils.toBN(2000000000).add(crossChainFee)) ? ringBalance.sub(Web3.utils.toBN(2000000000)).sub(crossChainFee) : Web3.utils.toBN(0), 'gwei') } }, (value) => this.toWeiBNMiddleware(value, 'gwei'), this.setRingBalanceText)
+                                                        }
+                                                    } label="RING" inputText={crossChainBalanceText} placeholder={`${t('crosschain:Balance')} : ${formatBalance(ringBalance, 'gwei')} RING`}  onChange={(value) => this.setValue('crossChainBalance', value, (value) => this.toWeiBNMiddleware(value, 'gwei'), this.setRingBalanceText)}
+                                                    defaultIsDisable={false} 
+                                                />
+
+                                                <InputWrapWithCheck text={t('crosschain:MAX')} 
+                                                    onClick={
+                                                        () => {
+                                                            this.setValue('crossChainKtonBalance', { target: { value: formatBalance(ktonBalance, 'gwei') } }, (value) => this.toWeiBNMiddleware(value, 'gwei'), this.setKtonBalanceText)
+                                                        }
+                                                    }
+                                                    label="KTON"
+                                                    inputText={crossChainKtonBalanceText}
+                                                    placeholder={`${t('crosschain:Balance')} : ${formatBalance(ktonBalance, 'gwei')} KTON`}
+                                                    onChange={(value) => this.setValue('crossChainKtonBalance', value, (value) => this.toWeiBNMiddleware(value, 'gwei'), this.setKtonBalanceText)}
+                                                    defaultIsDisable={true}
+                                                />
+
+                                                <Form.Text muted className={`${styles.feeTip} ${isSufficientFee ? '' : 'text-muted'}`}>
+                                                    {t(`crosschain:Crosschain transfer fee. {{fee}} RING. (Account Balance. {{ring}} RING)`, {
+                                                        fee: formatBalance(crossChainFee, 'gwei').toString(),
+                                                        ring: formatBalance(this.state[`ringBalance`], 'gwei').toString()
+                                                    })}
+                                                </Form.Text>
+
+                                                <Form.Label>
+                                                    {t('crosschain:Please select Darwinia mainnet sender account')}
+                                                    <a href={this.renderHelpUrl()} target="_blank" rel="noopener noreferrer">
+                                                        <img alt="" className={styles.labelIcon} src={helpLogo} />
+                                                    </a>
+                                                </Form.Label>
+                                                <Form.Control as="select" value={account[networkType]}
+                                                    onChange={(value) => this.setCurrentAccount('darwinia', value, async (account) => {
+                                                        const balances = await getTokenBalance('darwinia', account);
+
+                                                        this.setState({
+                                                            ringBalance: Web3.utils.toBN(balances[0]),
+                                                            ktonBalance: Web3.utils.toBN(balances[1]),
+                                                            darwiniaAddress: convertSS58Address(account)
+                                                        })
+                                                    })}>
+                                                    {
+                                                        account[`${networkType}List`]?.map((item, index) => ( 
+                                                            <option key={item.address} value={item.address}>{convertSS58Address(item.address, middleScreen)} - {item.meta.name}</option>
+                                                        ))
+                                                    }
+                                                </Form.Control>
+                                            </>
+                                        )
+                                    }
 
                                     <Form.Label>{t('crosschain:Please enter the destination account of Ethereum Network')}</Form.Label>
                                     <Form.Control type="text" autoComplete="off" placeholder={t('crosschain:Ethereum account')} value={recipientAddress}
                                         onChange={(value) => this.setValue('recipientAddress', value, null)} />
                                     <Form.Text className="text-muted">
                                         {t('crosschain:Please make sure to fill in an Ethereum network account that does not belong to the exchange')}
-                                    </Form.Text>
-
-                                    <Form.Label>{t('crosschain:Token for cross-chain transfer', { token: 'RING' })}</Form.Label>
-                                    <InputWrapWithCheck text={t('crosschain:MAX')} onClick={
-                                        () => {
-                                            this.setValue('crossChainBalance', { target: { value: formatBalance(ringBalance.gte(Web3.utils.toBN(2000000000).add(crossChainFee)) ? ringBalance.sub(Web3.utils.toBN(2000000000)).sub(crossChainFee) : Web3.utils.toBN(0), 'gwei') } }, (value) => this.toWeiBNMiddleware(value, 'gwei'), this.setRingBalanceText)
-                                        }
-                                    } label="RING" inputText={crossChainBalanceText} placeholder={`${t('crosschain:Balance')} : ${formatBalance(ringBalance, 'gwei')} RING`}  onChange={(value) => this.setValue('crossChainBalance', value, (value) => this.toWeiBNMiddleware(value, 'gwei'), this.setRingBalanceText)}
-                                    defaultIsDisable={false}>
-                                        {/* <Form.Control type="number" value={crossChainBalanceText}
-                                            autoComplete="off"
-                                            placeholder={`${t('crosschain:Balance')} : ${formatBalance(ringBalance, 'gwei')} RING`}
-                                            onChange={(value) => this.setValue('crossChainBalance', value, (value) => this.toWeiBNMiddleware(value, 'gwei'), this.setRingBalanceText)} /> */}
-                                    </InputWrapWithCheck>
-                                    {/* <Form.Text className="text-muted">
-                                        {t('crosschain:Note：Please keep at least {{fee}} as extrinsic fee', {
-                                            fee: '2 RING'
-                                        })}
-                                    </Form.Text> */}
-
-                                    {/* <Form.Label>{t('crosschain:{{token}} Amount', { token: 'KTON' })}</Form.Label> */}
-                                    <InputWrapWithCheck text={t('crosschain:MAX')} onClick={
-                                        () => {
-                                            this.setValue('crossChainKtonBalance', { target: { value: formatBalance(ktonBalance, 'gwei') } }, (value) => this.toWeiBNMiddleware(value, 'gwei'), this.setKtonBalanceText)
-                                        }
-                                    } label="KTON"
-                                    inputText={crossChainKtonBalanceText}
-                                    placeholder={`${t('crosschain:Balance')} : ${formatBalance(ktonBalance, 'gwei')} KTON`}
-                                    onChange={(value) => this.setValue('crossChainKtonBalance', value, (value) => this.toWeiBNMiddleware(value, 'gwei'), this.setKtonBalanceText)}
-                                    defaultIsDisable={true}>
-                                        {/* <Form.Control type="number" value={crossChainKtonBalanceText}
-                                            autoComplete="off"
-                                            placeholder={`${t('crosschain:Balance')} : ${formatBalance(ktonBalance, 'gwei')} KTON`}
-                                            onChange={(value) => this.setValue('crossChainKtonBalance', value, (value) => this.toWeiBNMiddleware(value, 'gwei'), this.setKtonBalanceText)} /> */}
-                                    </InputWrapWithCheck>
-
-                                    <Form.Text muted className={`${styles.feeTip} ${isSufficientFee ? '' : 'text-muted'}`}>
-                                        {t(`crosschain:Crosschain transfer fee. {{fee}} RING. (Account Balance. {{ring}} RING)`, {
-                                            fee: formatBalance(crossChainFee, 'gwei').toString(),
-                                            ring: formatBalance(this.state[`ringBalance`], 'gwei').toString()
-                                        })}
                                     </Form.Text>
 
                                     <FormTip text={[
@@ -1072,7 +1234,6 @@ class CrossChain extends Component {
                             </div>
                         </div>
                     );
-                break;
             case 'crab':
                 return (
                     <div className={styles.formBox}>
@@ -1124,10 +1285,8 @@ class CrossChain extends Component {
                         </div>
                     </div>
                 );
-                break;
             default:
                 return null;
-                break;
         }
     }
 
@@ -1174,10 +1333,10 @@ class CrossChain extends Component {
                                         to: parseChain(networkType[1])
                                     })
                                 })}>
-                                <option value="eth-darwinia">Ethereum -> Darwinia MainNet</option>
-                                <option value="darwinia-eth">Darwinia MainNet -> Ethereum</option>
-                                <option value="tron-darwinia">Tron -> Darwinia MainNet</option>
-                                <option value="crab-darwinia">Darwinia Crab -> Darwinia MainNet</option>
+                                <option value="eth-darwinia">Ethereum -&gt; Darwinia MainNet</option>
+                                <option value="darwinia-eth">Darwinia MainNet -&gt; Ethereum</option>
+                                <option value="tron-darwinia">Tron -&gt; Darwinia MainNet</option>
+                                <option value="crab-darwinia">Darwinia Crab -&gt; Darwinia MainNet</option>
                             </Form.Control>
                         </Form.Group>
                         <div className={styles.buttonBox}>
@@ -1335,56 +1494,11 @@ class CrossChain extends Component {
 
                         {networkType === 'crab' || networkType === 'darwinia' ?
                         <>
-                        <p>{convertSS58Address(account[networkType])}</p>
-                        <Form.Row>
-                            {crabAndDarwiniaHistory.isManual ?
-                                <Form.Group as={Col}>
-                                    <Form.Control onChange={(value) => this.setCurrentAccount(networkType, value, async (account) => {
-                                        const params = new URLSearchParams();
-                                        const {hash} = this.props.location;
-
-                                        if (account) {
-                                            params.append("address", account)
-                                        } else {
-                                            params.delete("address")
-                                        }
-                                        this.props.history.replace({hash: hash, search: params.toString()})
-
-                                        this.queryClaims()
-                                    })} type="text" placeholder={t('crosschain:Please input the Darwinia address to be queried')} />
-                                </Form.Group>
-                                :
-                                <Form.Group as={Col} controlId="darwinaAddressGroup">
-                                    <Form.Control as="select" value={account[networkType]}
-                                    onChange={(value) => this.setCurrentAccount(networkType, value, async (account) => {
-                                        // const balances = await getTokenBalance('crab', account);
-                                        // this.setState({
-                                        //     ringBalance: Web3.utils.toBN(balances[0]),
-                                        //     darwiniaAddress: convertSS58Address(account)
-                                        // })
-                                        const params = new URLSearchParams();
-                                        const {hash} = this.props.location;
-
-                                        if (account) {
-                                            params.append("address", account)
-                                        } else {
-                                            params.delete("address")
-                                        }
-                                        this.props.history.replace({hash: hash, search: params.toString()})
-
-                                        this.queryClaims()
-                                    })}>
-                                    {account[`${networkType}List`]?.map((item, index) => {
-                                        return <option key={item.address} value={item.address}>{convertSS58Address(item.address, middleScreen)} - {item.meta.name}</option>
-                                    })
-                                    }
-                                </Form.Control>
-                                </Form.Group>}
-
-                                <Form.Group>
-                                    <Button variant="primary" onClick={() => {
-                                        if(crabAndDarwiniaHistory.isManual) {
-                                            account[`${networkType}List`][0] && this.setCurrentAccount(networkType, {target: {value: account[`${networkType}List`][0].address}}, async (account) => {
+                            <p>{convertSS58Address(account[networkType])}</p>
+                            <Form.Row>
+                                {crabAndDarwiniaHistory.isManual ?
+                                    <Form.Group as={Col}>
+                                        <Form.Control onChange={(value) => this.setCurrentAccount(networkType, value, async (account) => {
                                                 const params = new URLSearchParams();
                                                 const {hash} = this.props.location;
 
@@ -1396,21 +1510,65 @@ class CrossChain extends Component {
                                                 this.props.history.replace({hash: hash, search: params.toString()})
 
                                                 this.queryClaims()
-                                            })
+                                            })}
+                                            type="text" placeholder={t('crosschain:Please input the Darwinia address to be queried')} />
+                                    </Form.Group> :
+                                    <Form.Group as={Col} controlId="darwinaAddressGroup">
+                                        <Form.Control as="select" value={account[networkType]}
+                                            onChange={(value) => this.setCurrentAccount(networkType, value, async (account) => {
+                                                // const balances = await getTokenBalance('crab', account);
+                                                // this.setState({
+                                                //     ringBalance: Web3.utils.toBN(balances[0]),
+                                                //     darwiniaAddress: convertSS58Address(account)
+                                                // })
+                                                const params = new URLSearchParams();
+                                                const {hash} = this.props.location;
+
+                                                if (account) {
+                                                    params.append("address", account)
+                                                } else {
+                                                    params.delete("address")
+                                                }
+                                                this.props.history.replace({hash: hash, search: params.toString()})
+
+                                                this.queryClaims()
+                                            })}>
+                                                {account[`${networkType}List`]?.map((item, index) => {
+                                                    return <option key={item.address} value={item.address}>{convertSS58Address(item.address, middleScreen)} - {item.meta.name}</option>
+                                                })}
+                                        </Form.Control>
+                                    </Form.Group>}
+
+                                    <Form.Group>
+                                        <Button variant="primary" onClick={() => {
+                                            if(crabAndDarwiniaHistory.isManual) {
+                                                account[`${networkType}List`][0] && this.setCurrentAccount(networkType, {target: {value: account[`${networkType}List`][0].address}}, async (account) => {
+                                                    const params = new URLSearchParams();
+                                                    const {hash} = this.props.location;
+
+                                                    if (account) {
+                                                        params.append("address", account)
+                                                    } else {
+                                                        params.delete("address")
+                                                    }
+                                                    this.props.history.replace({hash: hash, search: params.toString()})
+
+                                                    this.queryClaims()
+                                                })
+                                            }
+                                            this.setState({crabAndDarwiniaHistory: {
+                                                ...this.state.crabAndDarwiniaHistory,
+                                                isManual: !crabAndDarwiniaHistory.isManual,
+                                                address: ''
+                                            }})
                                         }
-                                        this.setState({crabAndDarwiniaHistory: {
-                                            ...this.state.crabAndDarwiniaHistory,
-                                            isManual: !crabAndDarwiniaHistory.isManual,
-                                            address: ''
-                                        }})
-                                    }
-                                    }>{crabAndDarwiniaHistory.isManual ? t('crosschain:Extension') : t('crosschain:Manual')}</Button>
-                                </Form.Group>
-                        </Form.Row>
+                                        }>{crabAndDarwiniaHistory.isManual ? t('crosschain:Extension') : t('crosschain:Manual')}</Button>
+                                    </Form.Group>
+                            </Form.Row>
                         </> : <p>{account[networkType]}</p>}
                     </div>
-                    {networkType === 'eth' || networkType === 'tron' ? this.renderEthereumTronHistory(history) : null}
-                    {networkType === 'darwinia' ? this.renderDarwiniaToEthereumHistory(history) : null}
+                    {networkType === 'eth' || networkType === 'tron' ? <HistoryRecord history={history} /> : null}
+                    {networkType === 'darwinia' ? this.d2eHistory() : null}
                     {networkType === 'crab' ? this.renderCrabHistory(history) : null}
 
                     <div className={styles.buttonBox}>
@@ -1421,95 +1579,39 @@ class CrossChain extends Component {
         )
     }
 
-    renderEthereumTronHistory = (history) => {
+    d2eHistory() {
         const { t } = this.props;
-        return <>
-            {!history ?
+        const { history, historyMeta, erc20HistoryMeta, erc20History } = this.state;
+        
+        return (<>
+            {!history || !erc20History ?
                 <div className="d-flex flex-wrap justify-content-center pb-4">
                     <Spinner animation="border" />
                 </div>
                 : null}
-            {history && history.length === 0 ?
+            {history && history.length === 0 && erc20History && erc20History.length === 0 ?
                 <div className={styles.historyEmpty}>
                     <p>{t('crosschain:No Cross-chain transfer history')}</p>
                 </div>
                 : null}
-            {history ? history.map((item) => {
-                let step = 2;
-                const isDeposit = item.currency.toUpperCase() === 'DEPOSIT';
-                let depositInfo = JSON.parse(item.deposit || '{}');
-
-                if (item.is_crosschain) {
-                    if (item.is_relayed) {
-                        step = 3;
-                    }
-                    if (item.is_relayed && item.darwinia_tx !== "") {
-                        step = 4;
-                    }
-                } else {
-                    step = 4;
-                }
-
-                return (<div className={styles.historyItem} key={item.block_hash}>
-                    <div>
-                        <h3>{t('crosschain:Time')}</h3>
-                        <p>{dayjs.unix(item.block_timestamp).format('YYYY-MM-DD HH:mm:ss ZZ')}</p>
-                    </div>
-                    <div>
-                        <h3>{t('crosschain:Cross-chain direction')}</h3>
-                        <p>{textTransform(parseChain(item.chain), 'capitalize')} -> Darwinia MainNet</p>
-                    </div>
-                    {isDeposit ?
-                        <>
-                            <div>
-                                <h3>{t('crosschain:Asset')}</h3>
-                                <p>{t('crosschain:Deposit ID')}: {depositInfo.deposit_id}</p>
-                            </div>
-                            <div>
-                                <h3>{t('crosschain:Detail')}</h3>
-                                {this.renderDepositHistoryDetail(item.amount, depositInfo)}
-                            </div>
-                        </> :
-                        <div>
-                            <h3>{t('crosschain:Amount')}</h3>
-                            <p>{formatBalance(Web3.utils.toBN(item.amount), 'ether')} {item.currency.toUpperCase()}</p>
-                        </div>
-                    }
-                    <div>
-                        <h3>{t('crosschain:Destination account')}</h3>
-                        <p>{encodeAddress('0x' + item.target, 18)}</p>
-                    </div>
-                    <div className={styles.line}></div>
-                    {this.renderTransferProgress(item.chain, 'darwinia', step, {
-                        from: {
-                            tx: item.tx,
-                            chain: item.chain
-                        },
-                        to: {
-                            tx: item.darwinia_tx,
-                            chain: 'darwinia'
-                        }
-                    }, item.is_crosschain)}
-                </div>)
-            }) : null}
-        </>
+            {this.renderDarwiniaToEthereumHistory(
+                history,
+                historyMeta,
+                item => `${formatBalance(Web3.utils.toBN(item.ring_value), 'gwei')} RING ${item.kton_value !== '0' ? (' / ' + formatBalance(Web3.utils.toBN(item.kton_value), 'gwei') + ' KTON'): "" }`
+            )}
+            {this.renderDarwiniaToEthereumHistory(
+                erc20History,
+                erc20HistoryMeta,
+                item => `${formatBalance(decodeUint256(item.value), 'ether')} ${item.symbol}`,
+                true
+            )}
+        </>);
     }
-
-    renderDarwiniaToEthereumHistory = (history) => {
+    
+    renderDarwiniaToEthereumHistory = (history, historyMeta, getAmountFn, isErc20 = false) => {
         const { t } = this.props;
-        const { historyMeta } = this.state;
 
         return <>
-            {!history ?
-                <div className="d-flex flex-wrap justify-content-center pb-4">
-                    <Spinner animation="border" />
-                </div>
-                : null}
-            {history && history.length === 0 ?
-                <div className={styles.historyEmpty}>
-                    <p>{t('crosschain:No Cross-chain transfer history')}</p>
-                </div>
-                : null}
             {history ? history.map((item) => {
                 let step = 2;
 
@@ -1527,11 +1629,11 @@ class CrossChain extends Component {
                     </div>
                     <div>
                         <h3>{t('crosschain:Cross-chain direction')}</h3>
-                        <p>Darwinia Mainnet -> Ethereum</p>
+                        <p>{isErc20 ? 'DVM' : 'Darwinia Mainnet'} -&gt; Ethereum</p>
                     </div>
                     <div>
                         <h3>{t('crosschain:Amount')}</h3>
-                        <p>{formatBalance(Web3.utils.toBN(item.ring_value), 'gwei')} RING{item.kton_value != '0' ? (' / ' + formatBalance(Web3.utils.toBN(item.kton_value), 'gwei') + ' KTON'): "" }</p>
+                        <p>{getAmountFn(item)}</p>
                     </div>
                     <div>
                         <h3>{t('crosschain:Destination account')}</h3>
@@ -1547,43 +1649,84 @@ class CrossChain extends Component {
                             tx: item.tx,
                             chain: 'eth'
                         },
-                    }, true, () =>
-                    item.signatures && !item.tx ? <Button variant="outline-purple" disabled={this.state.crabAndDarwiniaHistory.isFetchingClaimParams} className={styles.hashBtn} onClick={() => {
-                            this.setState({
-                                crabAndDarwiniaHistory: {
-                                    ...this.state.crabAndDarwiniaHistory,
-                                    isFetchingClaimParams: true
-                                }
-                            })
-                            ClaimTokenFromD2E({
-                                networkPrefix: config.D2E_NETWORK_PREFIX,
-                                mmrIndex: item.mmr_index,
-                                mmrRoot: item.mmr_root,
-                                mmrSignatures: item.signatures,
-                                blockNumber: item.block_num,
-                                blockHeaderStr: item.block_header,
-                                blockHash: item.block_hash,
-                                historyMeta: historyMeta
-                            }, (result) => {
+                    }, true, () => item.signatures && !item.tx ? isErc20 ? <Button 
+                            className={styles.hashBtn}
+                            onClick={async () => {
                                 this.setState({
                                     crabAndDarwiniaHistory: {
                                         ...this.state.crabAndDarwiniaHistory,
-                                        isFetchingClaimParams: false
+                                        isFetchingClaimParams: true
                                     }
-                                })
+                                });
+                                const { signatures, mmr_root, mmr_index, block_header, block_hash, block_num } = item;
+                                const mptProof = await getMPTProof(block_hash, config.PROOF_ADDRESS);
+                                const { peaks, siblings } = await getMMRProof(block_num, mmr_index, block_hash);
 
-                                this.setModalHash(result);
-                                this.setModalShow(true);
-                            } , () => {
+                                try {
+                                    const tx = await claimErc20Token({
+                                        signatures,
+                                        mmr_root,
+                                        mmr_index,
+                                        block_header,
+                                        peaks,
+                                        siblings,
+                                        eventsProofStr: mptProof.toHex(),
+                                    });
+
+                                    this.setModalHash(tx.transactionHash);
+                                    this.setModalShow(true);
+                                } catch(error) {
+                                    console.warn('%c [ error ]-1647', 'font-size:13px; background:pink; color:#bf2c9f;', error.message);
+                                } finally {
+                                    this.setState({
+                                        crabAndDarwiniaHistory: {
+                                            ...this.state.crabAndDarwiniaHistory,
+                                            isFetchingClaimParams: false
+                                        }
+                                    });
+                                }
+                            }}
+                        >{t('crosschain:Claim')}</Button> : 
+                        <Button variant="outline-purple"
+                            disabled={this.state.crabAndDarwiniaHistory.isFetchingClaimParams}
+                            className={styles.hashBtn}
+                            onClick={() => {
                                 this.setState({
                                     crabAndDarwiniaHistory: {
                                         ...this.state.crabAndDarwiniaHistory,
-                                        isFetchingClaimParams: false
+                                        isFetchingClaimParams: true
                                     }
                                 })
-                            }, t);
-                        }} >{t('crosschain:Claim')}</Button> : null
-                    )}
+                                ClaimTokenFromD2E({
+                                    networkPrefix: config.D2E_NETWORK_PREFIX,
+                                    mmrIndex: item.mmr_index,
+                                    mmrRoot: item.mmr_root,
+                                    mmrSignatures: item.signatures,
+                                    blockNumber: item.block_num,
+                                    blockHeaderStr: item.block_header,
+                                    blockHash: item.block_hash,
+                                    historyMeta: historyMeta
+                                }, (result) => {
+                                    this.setState({
+                                        crabAndDarwiniaHistory: {
+                                            ...this.state.crabAndDarwiniaHistory,
+                                            isFetchingClaimParams: false
+                                        }
+                                    })
+
+                                    this.setModalHash(result);
+                                    this.setModalShow(true);
+                                } , () => {
+                                    this.setState({
+                                        crabAndDarwiniaHistory: {
+                                            ...this.state.crabAndDarwiniaHistory,
+                                            isFetchingClaimParams: false
+                                        }
+                                    })
+                                }, t);
+                            }} >{t('crosschain:Claim')}</Button> : null
+                        )
+                    }
                 </div>)
             }) : null}
         </>
@@ -1610,11 +1753,11 @@ class CrossChain extends Component {
                     </div>
                     <div>
                         <h3>{t('crosschain:Cross-chain direction')}</h3>
-                        <p>{textTransform(parseChain('crab'), 'capitalize')} -> Darwinia MainNet</p>
+                        <p>{textTransform(parseChain('crab'), 'capitalize')} -&gt; Darwinia MainNet</p>
                     </div>
                     <div>
                         <h3>{t('crosschain:Amount')}</h3>
-                        <p>{formatBalance(Web3.utils.toBN(item.amount), 'gwei')} CRING -> {formatBalance(Web3.utils.toBN(item.amount).divn(100), 'gwei')} RING</p>
+                        <p>{formatBalance(Web3.utils.toBN(item.amount), 'gwei')} CRING -&gt; {formatBalance(Web3.utils.toBN(item.amount).divn(100), 'gwei')} RING</p>
                     </div>
                     <div>
                         <h3>{t('crosschain:Destination account')}</h3>
@@ -1740,6 +1883,7 @@ class CrossChain extends Component {
     render() {
         const { status, d2eModalData } = this.state
         const { t } = this.props
+
         return (
             <div>
                 <div className={styles.claimBox}>
@@ -1768,7 +1912,46 @@ class CrossChain extends Component {
                     <Modal.Footer>
                         <Button variant="purple" onClick={() => this.setModalShow(false)}>{t('crosschain:Close')}</Button>
                     </Modal.Footer>
-                    </Modal>
+                </Modal>
+
+                <Erc20Token show={this.state.isRegisterTokenModalDisplay}
+                    networkType={this.state.networkType}
+                    onHide={async (token) => {
+                        if(token) {
+                            const { networkType } = this.state;
+                            const currentAccount = await getMetamaskActiveAccount();
+                            const isAllowanceIssuing = await hasApproved(token, currentAccount, networkType);
+
+                            this.setState({ erc20Token: token, isAllowanceIssuing });
+                        } else {
+                            this.setState({ isAllowanceIssuing: false, erc20token: null });
+                        }
+
+                        this.setState({isRegisterTokenModalDisplay: false});
+                    }} />
+                
+                <Alert show={!!this.state.erc20TokenTransferState} 
+                    onClose={() => this.setState({ erc20TokenTransferState: null })}
+                    variant={this.state.erc20TokenTransferState?.transferTxHash ? 'success' : 'info'} 
+                    dismissible
+                    style={{position: 'fixed', top: '54px', right: '10px', maxWidth: '500px', zIndex: 99 }}
+                >
+                    <Alert.Heading>
+                        <div style={{display: 'flex', alignItems: 'center', gap: '5px'}}>
+                            {t('crosschain:Transfer State')}
+                            {
+                                this.state.erc20TokenTransferState && !this.state.erc20TokenTransferState.transferTxHash &&
+                                <span style={{fontSize: 10, marginLeft: 10}}>
+                                    <Spinner animation="border" size="sm" variant="danger" />
+                                </span>
+                            }
+                        </div>
+                    </Alert.Heading>
+                        
+                    {this.state.erc20TokenTransferState?.approveTxHash && (<p>{t('crosschain:Approve transaction hash - {{hash}}', { hash: this.state.erc20TokenTransferState?.approveTxHash })}</p>)}
+                    {this.state.erc20TokenTransferState?.transferTxHash && (<p>{t('crosschain:Transfer transaction hash - {{hash}}', { hash: this.state.erc20TokenTransferState?.transferTxHash })}</p>)}
+                </Alert>
+
             </div>
         );
     }

@@ -42,6 +42,7 @@
     "Phase 3":"阶段3: 多向跨链",
     "Cross-chain swaps at this stage will arrive immediately (network delays may occur), and support two-way or multi-way swaps.":"此阶段的跨链兑换，RING/CRING立即到账（可能存在一定的网络延迟），且支持双向兑换或多项兑换。",
     "Please be sure to fill in the real Darwinia mainnet account, and keep the account recovery files such as mnemonic properly.":"请务必填写真实的 Darwinia 主网账号，并妥善保管助记词等账号恢复文件。",
+    "Please be sure to fill in the real Ethereum account or DVM account, and keep the account recovery files such as mnemonic properly.":"请务必填写真实的 Ethereum 账号或者 DVM 账号，并妥善保管助记词等账号恢复文件。",
     "Cross-chain transfer token":"跨链转账通证",
     "MAX":"全部",
     "Amount": "数量",
@@ -51,6 +52,9 @@
     "Cross-chain direction":"跨链流向",
     "Destination account":"接收账号",
     "Please enter the destination account of Darwinia mainnet":"请输入 Darwinia 主网接收账号",
+    "Please enter Ethereum account or DVM account": "请输入以太坊账号或DVM账号",
+    "This address is not Ethereum account or DVM account": "此账号不是以太坊账号或DVM账号",
+    "Ethereum account or DVM account": "以太坊账号或DVM账号",
     "Please select Darwinia mainnet destination account":"请选择Darwinia 主网接收账号",
     "Please select Darwinia mainnet sender account":"请选择「 Darwinia 主网 」发送账号",
     "Darwinia Network account":"Darwinia 主网账号",
@@ -123,7 +127,20 @@
     "d2e crosschain gas tip 2": "· 每笔以太坊网络的「领取交易」预计消耗 600000 Gas。",
     "Extension": "从插件获取",
     "Manual": "手动输入",
-    "Please input the Darwinia address to be queried": "输入需要查询的 Darwinia 账号"
+    "Please input the Darwinia address to be queried": "输入需要查询的 Darwinia 账号",
+    "Search name or paste address": "搜索Token的名称或合约地址",
+    "Select a token": "请选择token",
+    "Tips After submit the registration, please wait for the {{type}} network to return the result, click [Upcoming] to view the progress.": "提示：提交注册后，请等待 {{type}} 网络完成，点击【即将完成】查看进度",
+    "Register": "注册",
+    "Upcoming": "即将完成",
+    "Token Contract Address": "token 合约地址",
+    "Tips After {{type}} network returns the result, click [Confirm] to complete the token registration.": "当 {{type}} 返回结果后，请点击确认按钮完成注册。",
+    "This address is not {{type}} smart account": "此地址不是 {{type}} 网络智能账号地址",
+    "This token has been registered.": "此Token已经注册完成",
+    "This token is being registered, switch to upcoming tab to view the register status.": "此Token正在注册中，您可以切换到【即将完成】中查看注册状态",
+    "Transfer State": "当前状态",
+    "Approve transaction hash - {{hash}}": "授权 Hash：{{hash}}",
+    "Transfer transaction hash - {{hash}}": "交易 Hash：{{hash}}"
   },
   "crosschain_ethtron": {
     "claim": "跨链转账",
@@ -139,11 +156,15 @@
   },
   "common": {
     "Ethereum network type does not match": "以太坊网络类型不匹配",
+    "Ethereum network type does not match, please switch to {{network}} network in metamask.": "以太坊网络类型不匹配，请在metamask中切换至{{network}}网络。",
     "TRON network type does not match": "波场网络类型不匹配",
     "Please install MetaMask first": "请解锁MetaMask",
     "Please unlock TronLink first": "请解锁TronLink",
     "Please install TronLink first": "请安装TronLink",
     "Please install Polkadot Extension": "请安装Polkadot插件",
-    "Polkadot Extension has no account": "Polkadot插件内无账号"
+    "Polkadot Extension has no account": "Polkadot插件内无账号",
+    "Confirm": "确定",
+    "Submit": "确定",
+    "Manage": "管理"
   }
 }

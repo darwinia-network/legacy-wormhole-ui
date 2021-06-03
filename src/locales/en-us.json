@@ -45,6 +45,7 @@
     "Phase 3":"Phase 3: Multi-way cross-chain swap",
     "Cross-chain swaps at this stage will arrive immediately (network delays may occur), and support two-way or multi-way swaps.":"Cross-chain swaps at this stage will arrive immediately (network delays may occur), and support two-way or multi-way swaps.",
     "Please be sure to fill in the real Darwinia mainnet account, and keep the account recovery files such as mnemonic properly.":"Please be sure to fill in the real Darwinia mainnet account, and keep the account recovery files such as mnemonic properly.",
+    "Please be sure to fill in the real Ethereum account or DVM account, and keep the account recovery files such as mnemonic properly.":"Please be sure to fill in the real Ethereum account or DVM account, and keep the account recovery files such as mnemonic properly.",
     "Cross-chain transfer token":"Cross-chain transfer token",
     "MAX":"MAX",
     "Amount": "Amount",
@@ -54,6 +55,9 @@
     "Cross-chain direction":"Cross-chain direction",
     "Destination account":"Destination account",
     "Please enter the destination account of Darwinia mainnet":"Please enter the destination account of Darwinia mainnet",
+    "Please enter Ethereum account or DVM account": "Please enter Ethereum account or DVM account",
+    "Ethereum account or DVM account": "Ethereum account or DVM account",
+    "This address is not Ethereum account or DVM account": "This address is not Ethereum account or DVM account",
     "Please select Darwinia mainnet destination account":"Please enter the account of Darwinia Network",
     "Please select Darwinia mainnet sender account":"Please select the account of Darwinia Network",
     "Darwinia Network account":"Darwinia Network account",
@@ -123,7 +127,20 @@
     "The amount exceeds the account available balance": "The amount exceeds the account available balance",
     "The entered recipient account is incorrect": "The entered recipient account is incorrect",
     "d2e crosschain gas tip 1": "· Please initiate a claim transaction of the Ethereum network in the \"Cross-chain transfer history\".",
-    "d2e crosschain gas tip 2": "· Each claim transaction of Ethereum is estimated to use 600,000 Gas."
+    "d2e crosschain gas tip 2": "· Each claim transaction of Ethereum is estimated to use 600,000 Gas.",
+    "Search name or paste address": "Search name or paste address",
+    "Select a token": "Select a token",
+    "Tips After submit the registration, please wait for the {{type}} network to return the result, click [Upcoming] to view the progress.": "Tips: After submit the registration, please wait for the {{type}} network to return the result, click [Upcoming] to view the progress.",
+    "Register": "Register",
+    "Upcoming": "Upcoming",
+    "Token Contract Address": "Token Contract Address",
+    "Tips After {{type}} network returns the result, click [Confirm] to complete the token registration.": "Tips: After {{type}} network returns the result, click [Confirm] to complete the token registration.",
+    "This address is not {{type}} smart account": "This address is not {{type}} smart account",
+    "This token has been registered.": "This token has been registered.",
+    "This token has been registered, switch to upcoming tab to view the register status.": "This token has been registered, switch to upcoming tab to view the register status.",
+    "Transfer State": "Transfer State",
+    "Approve transaction hash - {{hash}}": "Approve transaction hash: {{hash}}",
+    "Transfer transaction hash - {{hash}}": "Transfer transaction hash: {{hash}}"
   },
   "crosschain_ethtron": {
     "claim": "Cross-chain Transfer",
@@ -139,11 +156,15 @@
   },
   "common": {
     "Ethereum network type does not match": "Ethereum network type does not match",
+    "Ethereum network type does not match, please switch to {{network}} network in metamask.": "Ethereum network type does not match, please switch to {{network}} network in metamask.",
     "TRON network type does not match": "TRON network type does not match",
     "Please install MetaMask first": "Please install MetaMask first",
     "Please unlock TronLink first": "Please unlock TronLink first",
     "Please install TronLink first": "Please install TronLink first",
     "Please install Polkadot Extension": "Please install Polkadot Extension",
-    "Polkadot Extension has no account": "Polkadot Extension has no account"
+    "Polkadot Extension has no account": "Polkadot Extension has no account",
+    "Confirm": "Confirm",
+    "Submit": "Submit",
+    "Manage": "Manage"
   }
 }

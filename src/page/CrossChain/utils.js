@@ -1,10 +1,10 @@
 import { toast } from "react-toastify";
-import { web3Accounts, web3Enable, web3FromAddress, web3ListRpcProviders, web3UseRpcProvider } from '@polkadot/extension-dapp';
+import { web3Accounts, web3Enable, web3FromAddress } from '@polkadot/extension-dapp';
 
 import axios from 'axios';
 import ConfigJson from './config';
 import Web3 from 'web3';
-import { checkAddress, decodeAddress, encodeAddress, setSS58Format } from '@polkadot/util-crypto';
+import { checkAddress, decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BN from 'bn.js';
 import _ from 'lodash';
 import TokenABI from './tokenABI';
@@ -51,7 +51,7 @@ export async function checkIssuingAllowance(from, amount) {
 
     const erc20Contract = new web3js.eth.Contract(TokenABI, config.RING_ETH_ADDRESS)
     const allowanceAmount = await erc20Contract.methods.allowance(from, config.ETHEREUM_DARWINIA_ISSUING).call()
-    console.log('checkIssuingAllowance-amount', allowanceAmount.toString());
+
     return !Web3.utils.toBN(allowanceAmount).lt(Web3.utils.toBN(amount || '10000000000000000000000000'))
 }
 
@@ -97,25 +97,18 @@ export async function getDarwiniaToEthereumCrossChainFee() {
 function connectEth(accountsChangedCallback, t) {
     if (typeof window.ethereum !== 'undefined' || typeof window.web3 !== 'undefined') {
         let web3js = new Web3(window.ethereum || window.web3.currentProvider);
-        let subscribe = null;
+
         if (window.ethereum) {
             window.ethereum.enable()
                 .then(async (account) => {
                     const networkid = await web3js.eth.net.getId()
-                    if (config.ETHEREUM_NETWORK != networkid) {
+                    if (config.ETHEREUM_NETWORK !== networkid) {
                         formToast(t('common:Ethereum network type does not match'));
                         return;
                     }
-                    // if (window.ethereum.on) {
-                    //     subscribe = window.ethereum.on('accountsChanged', (accounts) => {
-                    //         if (accounts.length > 0) {
-                    //             accountsChangedCallback && accountsChangedCallback('eth', accounts[0].toLowerCase());
-                    //         }
-                    //     })
-                    // }
 
                     if (account.length > 0) {
-                        accountsChangedCallback && accountsChangedCallback('eth', account[0].toLowerCase(), subscribe);
+                        accountsChangedCallback && accountsChangedCallback('eth', account[0].toLowerCase());
                     }
                 })
                 .catch(console.error)
@@ -131,6 +124,17 @@ function connectEth(accountsChangedCallback, t) {
     }
 }
 
+export async function isNetworkConsistent(expectedNetworkId, id) {
+    id = Web3.utils.isHexStrict(id) ? parseInt(id, 16).toString() : id;
+    // id 1: eth mainnet 3: ropsten 4: rinkeby 5: goerli 42: kovan  43: pangolin 44: crab
+    const actualId = !!id
+      ? await Promise.resolve(id)
+      : await window.ethereum.request({ method: 'net_version' });
+    const expect =  parseInt(expectedNetworkId, Web3.utils.isHexStrict(expectedNetworkId) ? 16: 10).toString();
+
+    return expect === actualId;
+}
+
 function connectTron(accountsChangedCallback, t) {
     if (typeof window.tronWeb !== 'undefined') {
         if (!(window.tronWeb && window.tronWeb.ready)) {
@@ -138,7 +142,7 @@ function connectTron(accountsChangedCallback, t) {
             return
         }
         if (window.tronWeb.fullNode && window.tronWeb.fullNode.host) {
-            if (window.tronWeb.fullNode.host.indexOf(config.TRON_NETWORK_SYMBOL) == -1) {
+            if (window.tronWeb.fullNode.host.indexOf(config.TRON_NETWORK_SYMBOL) === -1) {
                 formToast(t('common:TRON network type does not match'));
                 return
             }
@@ -160,8 +164,10 @@ function connectTron(accountsChangedCallback, t) {
     }
 }
 
-async function connectNodeProvider(wss, type = 'darwinia') {
+export async function connectNodeProvider(wss, type = 'darwinia') {
     try{
+        // !FIXME: If wss change, it will not connect to the new node with the provider.
+        // Maybe the logic here is disconnect with the old node first then connect to new node.
         if (!window.darwiniaApi) {
             const provider = new WsProvider(wss);
             // Create the API and wait until ready
@@ -264,15 +270,19 @@ async function buildInGenesisTron(account, params, callback) {
     })
 }
 
+export function toShortAccount(address, length = 8) {
+    return  address.substr(0, length) + '...' +address.substr(address.length - length, length)
+}
+
 export function convertSS58Address(text, isShort = false) {
     if(!text) {
         return '';
     }
     try {
         let address = encodeAddress(text, config.S58_PREFIX)
-        const length = 8
+        
         if(isShort) {
-            address = address.substr(0, length) + '...' +address.substr(address.length - length, length)
+            address = toShortAccount(text);
         }
         return address
     } catch (error) {
@@ -431,7 +441,16 @@ export const formToast = (text) => {
 }
 
 export function formatBalance(bn = Web3.utils.toBN(0), unit = 'gwei') {
-    if (bn.eqn(0)) return '0';
+    if (bn.eqn(0)) {
+        return '0';
+    }
+    
+    const dec = +unit;
+
+    if(typeof dec === 'number' && !isNaN(dec)) {
+        unit = getUnitFromValue(dec);
+    }
+
     return Web3.utils.fromWei(bn, unit).toString();
 }
 
@@ -447,14 +466,11 @@ export const wxRequest = async (params = {}, url) => {
                 'Content-Type': params.method === 'FORM' ? 'application/x-www-form-urlencoded' : 'application/json;charset=UTF-8;',
             }
         }).then(function (data) {
-            if (data && data.data) {
-                console.log(`fetchData url: ${url}`, data.data);
-            }
             resolve(data.data)
         })
-            .catch(function (error) {
-                console.log(error);
-            })
+        .catch(function (error) {
+            console.log(error);
+        })
     })
 }
 
@@ -523,23 +539,69 @@ export const getCringGenesisSwapInfo = async (params, cb, failedcb) => {
 }
 
 export const getEthereumBankDeposit = async (params, cb, failedcb) => {
-    let json = await wxRequest(params, `${config.EVOLUTION_LAND_DOMAIN}/api/bank/gringotts`)
+    const json = await wxRequest(params, `${config.EVOLUTION_LAND_DOMAIN}/api/bank/gringotts`)
     if (json.code === 0) {
         if (!json.data.list || json.data.list.length === 0) {
             cb && cb([])
             return;
         }
         const depositsOnChain = await getEthereumBankDepositByAddress(params.query.address);
-        const r = _.filter(json.data.list, (item) => {
-            console.log(item)
-            return depositsOnChain.includes(item.deposit_id.toString());
-        });
+        const r = _.filter(json.data.list, (item) => depositsOnChain.includes(item.deposit_id.toString()));
 
         cb && cb(r)
     } else {
         failedcb && failedcb()
     }
 }
+
+export const getErc20BurnsRecords = async ({ row, page, sender }) => {
+    sender = !!sender ? sender : await getMetamaskActiveAccount();
+
+    try {
+        const {
+            data: { data },
+        } = await axios.get(
+            `${config.DAPP_API}/api/ethereumIssuing/burns`,
+            { params: { sender, row, page } }
+        );
+        return data;
+    } catch (err) {
+        console.warn(
+            "%c [ err ]-546",
+            "font-size:13px; background:pink; color:#bf2c9f;",
+            err
+        );
+
+        return [];
+    }
+
+};
+
+/**
+ * Record { extrinsic_index: string; account_id: string; block_num: number; block_hash: string; backing: string; source: string; target: string; sender: string; recipient: string;
+ * value: string; block_timestamp: number; mmr_index: number; mmr_root: string; signatures: string; block_header: string; tx: string; } 
+ * @returns {MMRRoot: string; best: number; count: number; implName: string; list: Record[]}
+ */
+export const getErc20TokenLockRecords = async ({ sender, row, page }) => {
+    try {
+        const {
+            data: { data },
+        } = await axios.get(
+            `${config.DAPP_API}/api/ethereumBacking/tokenlock`,
+            { params: { sender, row, page } }
+        );
+
+        return data;
+    } catch (err) {
+        console.warn(
+            "%c [ err ]-558",
+            "font-size:13px; background:pink; color:#bf2c9f;",
+            err
+        );
+
+        return [];
+    }
+};;
 
 export function getTokenBalanceEth(account = '') {
     try {
@@ -551,7 +613,6 @@ export function getTokenBalanceEth(account = '') {
         const ringBalance = new Promise((resolve, reject) => {
             try {
                 ringContract.methods.balanceOf(account).call().then((result) => {
-                    console.log('ring:', result);
                     resolve(result);
                 })
             } catch (error) {
@@ -562,7 +623,6 @@ export function getTokenBalanceEth(account = '') {
         const ktonBalance = new Promise((resolve, reject) => {
             try {
                 ktonContract.methods.balanceOf(account).call().then((result) => {
-                    console.log('kton:', result);
                     resolve(result);
                 })
             } catch (error) {
@@ -686,9 +746,9 @@ export function encodeBlockHeader(blockHeaderStr) {
     });
 }
 
-export async function getMPTProof(hash = '') {
+export async function getMPTProof(hash = '', proofAddress = '0xf8860dda3d08046cf2706b92bf7202eaae7a79191c90e76297e0895605b8b457') {
     if(window.darwiniaApi) {
-        const proof = await window.darwiniaApi.rpc.state.getReadProof(['0xf8860dda3d08046cf2706b92bf7202eaae7a79191c90e76297e0895605b8b457'], hash);
+        const proof = await window.darwiniaApi.rpc.state.getReadProof([proofAddress], hash);
         const registry = new TypeRegistry();
 
         return registry.createType('Vec<Bytes>',proof.proof.toJSON());
@@ -700,28 +760,18 @@ function trimSpace(s){
 }
 
 export async function getMMRProof(blockNumber, mmrBlockNumber, blockHash) {
-    console.log('getMMRProof', {blockNumber, mmrBlockNumber, blockHash})
     if(window.darwiniaApi) {
-        console.log(blockNumber, mmrBlockNumber)
         const proof = await window.darwiniaApi.rpc.headerMMR.genProof(blockNumber, mmrBlockNumber);
-        console.log(proof)
         const proofStr = proof.proof.substring(1, proof.proof.length - 1);
-
         const proofHexStr = proofStr.split(',').map((item) => {
             return remove0x(trimSpace(item))
         });
-
         const encodeProof = proofHexStr.join('');
-
-        console.log(blockNumber, proof.mmrSize.toString(), encodeProof, blockHash )
-
         const mmrProof = [
             // eslint-disable-next-line no-undef
             blockNumber, proof.mmrSize, hexToU8a('0x' + encodeProof), hexToU8a(blockHash)
         ]
-
         const mmrProofConverted = convert(...mmrProof);
-        console.log(mmrProofConverted)
 
         // parse wasm ouput
         const [mmrSize, peaksStr, siblingsStr] = mmrProofConverted.split('|');
@@ -736,7 +786,7 @@ export async function getMMRProof(blockNumber, mmrBlockNumber, blockHash) {
     }
 }
 
-function encodeMMRRootMessage(networkPrefix, methodID, mmrIndex, mmrRoot) {
+export function encodeMMRRootMessage(networkPrefix, methodID, mmrIndex, mmrRoot) {
     const registry = new TypeRegistry();
     return registry.createType('{"prefix": "Vec<u8>", "methodID": "[u8; 4; methodID]", "index": "Compact<u32>", "root": "H256"}', {
         prefix: networkPrefix,
@@ -755,16 +805,6 @@ export async function ClaimTokenFromD2E({ networkPrefix, mmrIndex, mmrRoot, mmrS
                 const blockHeader = encodeBlockHeader(blockHeaderStr);
                 const mmrProof = await getMMRProof(blockNumber, historyMeta.best, blockHash);
                 const eventsProof = await getMPTProof(blockHash);
-
-                console.log('ClaimTokenFromD2E - darwiniaToEthereumVerifyProof', {
-                    root: '0x' + historyMeta.mmrRoot,
-                    MMRIndex: historyMeta.best,
-                    blockNumber: blockNumber,
-                    blockHeader: blockHeader.toHex(),
-                    peaks: mmrProof.peaks,
-                    siblings: mmrProof.siblings,
-                    eventsProofStr: eventsProof.toHex()
-                })
 
                 darwiniaToEthereumVerifyProof(_account, {
                     root: '0x' + historyMeta.mmrRoot,
@@ -786,18 +826,6 @@ export async function ClaimTokenFromD2E({ networkPrefix, mmrIndex, mmrRoot, mmrS
                 const blockHeader = encodeBlockHeader(blockHeaderStr);
                 const mmrProof = await getMMRProof(blockNumber, mmrIndex, blockHash);
                 const eventsProof = await getMPTProof(blockHash);
-
-                console.log('ClaimTokenFromD2E - darwiniaToEthereumAppendRootAndVerifyProof', {
-                    message: mmrRootMessage.toHex(),
-                    signatures: mmrSignatures.split(','),
-                    root: mmrRoot,
-                    MMRIndex: mmrIndex,
-                    blockNumber: blockNumber,
-                    blockHeader: blockHeader.toHex(),
-                    peaks: mmrProof.peaks,
-                    siblings: mmrProof.siblings,
-                    eventsProofStr: eventsProof.toHex()
-                })
 
                 darwiniaToEthereumAppendRootAndVerifyProof(_account, {
                     message: mmrRootMessage.toHex(),
@@ -833,7 +861,7 @@ export async function darwiniaToEthereumAppendRootAndVerifyProof(account, {
     eventsProofStr
 }, callback) {
     let web3js = new Web3(window.ethereum || window.web3.currentProvider);
-    const contract = new web3js.eth.Contract(DarwiniaToEthereumTokenIssuingABI, config.DARWINIA_ETHEREUM_TOKEN_ISSUING);
+    const contract = new web3js.eth.Contract(DarwiniaToEthereumTokenIssuingABI, config.DARWINIA_ETHEREUM_TOKEN_ISSUING); // TODO: 
 
     // bytes memory message,
     // bytes[] memory signatures,
@@ -895,4 +923,49 @@ export async function darwiniaToEthereumVerifyProof(account, {
         })
 }
 
+export function isMetamaskInstalled() {
+    return (
+        typeof window.ethereum !== "undefined" ||
+        typeof window.web3 !== "undefined"
+    );
+}
 
+/**
+ * 
+ * @returns {Promise<string>} - current active account in metamask;
+ */
+export async function getMetamaskActiveAccount() {
+    if (!isMetamaskInstalled) {
+        return;
+    }
+
+    await window.ethereum.request({ method: "eth_requestAccounts" });
+
+    const accounts = await window.ethereum.request({
+        method: "eth_accounts",
+    });
+    
+    // metamask just return the active account now, so the result array contains only one account;
+    return accounts[0];
+}
+
+/**
+ * 
+ * @param {number} expectNetworkId  - network id
+ * @returns {Promise<boolean>} is acutal network id match with expected.
+ */
+export async function isNetworkMatch(expectNetworkId) {
+    const web3 = new Web3(window.ethereum || window.web3.currentProvider);
+    const networkId = await web3.eth.net.getId();
+
+    return expectNetworkId === networkId;
+}
+
+export function getUnitFromValue(num) {
+    const pow = Math.pow(10, num).toString();
+    const [unit] = Object.entries(Web3.utils.unitMap).find(
+        ([_, value]) => value === pow
+    );
+
+    return unit;
+}
