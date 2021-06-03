@@ -10,6 +10,7 @@
     "SUBSCAN_API": "https://pangolin.subscan.io",
     "DAPP_API": "https://api.darwinia.network.l2me.com",
     "ETHERSCAN_DOMAIN": {
+      "name": "Ropsten",
       "en": "https://ropsten.etherscan.io",
       "zh": "https://ropsten.etherscan.io",
       "rpc": "wss://ropsten.infura.io/ws/v3/5350449ccd2349afa007061e62ee1409"
@@ -46,6 +47,7 @@
     "SUBSCAN_API": "https://darwinia.subscan.io",
     "DAPP_API": "https://api.darwinia.network",
     "ETHERSCAN_DOMAIN": {
+      "name": "Ethereum",
       "en": "https://etherscan.io",
       "zh": "https://cn.etherscan.com",
       "rpc": "wss://mainnet.infura.io/ws/v3/5350449ccd2349afa007061e62ee1409"
