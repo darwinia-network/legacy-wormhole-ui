@@ -341,7 +341,7 @@ class CrossChain extends Component {
                 }, t);
                 break;
             case 'darwinia':
-                isNetworkConsistent(config.DVM_NETWORK_ID).then((isExpected) => { 
+                isNetworkConsistent(status === 2 ? config.DVM_NETWORK_ID : config.ETHEREUM_NETWORK).then((isExpected) => { 
                     if(isExpected) {
                         this.setState({
                             history: null,
@@ -412,7 +412,7 @@ class CrossChain extends Component {
                             }, t);
                         })
                     } else {
-                        formToast(t('Ethereum network type does not match, please switch to {{network}} network in metamask.', { network: config.NETWORK_NAME }));
+                        formToast(t('Ethereum network type does not match, please switch to {{network}} network in metamask.', { network: status === 2 ? config.NETWORK_NAME : config.ETHERSCAN_DOMAIN.name }));
                     }
                 });
                 break;
