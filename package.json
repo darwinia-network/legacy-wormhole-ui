@@ -7,7 +7,7 @@
     "@babel/node": "^7.12.10",
     "@babel/polyfill": "^7.12.1",
     "@babel/preset-env": "^7.12.11",
-    "@darwinia/types": "^1.1.0-alpha.18",
+    "@darwinia/types": "^1.1.0-alpha.23",
     "@metamask/contract-metadata": "^1.25.0",
     "@metamask/jazzicon": "^2.0.0",
     "@polkadot/api": "^4.1.1",
