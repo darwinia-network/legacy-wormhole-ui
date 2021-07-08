@@ -26,12 +26,9 @@ import {
 
 const config = configJson[process.env.REACT_APP_CHAIN];
 const { backingContract, mappingContract, web3 } = (() => {
-  // eslint-disable-next-line @typescript-eslint/no-shadow
   const web3 = new Web3(window.ethereum || window.web3.currentProvider);
-  // eslint-disable-next-line @typescript-eslint/no-shadow
   const backingContract = new web3.eth.Contract(transferBridgeABI, config.E2D_BACKING_ADDRESS);
   const web3Darwinia = new Web3(config.DARWINIA_PROVIDER);
-  // eslint-disable-next-line @typescript-eslint/no-shadow
   const mappingContract = new web3Darwinia.eth.Contract(mappingTokenABI, config.MAPPING_FACTORY_ADDRESS);
 
   return {
@@ -273,7 +270,6 @@ export const getTokenRegisterStatus = async (address, isEth = true) => {
   let contract = backingContract;
 
   if (!isEth) {
-    // eslint-disable-next-line @typescript-eslint/no-shadow
     const web3 = new Web3(config.ETHERSCAN_DOMAIN.rpc);
 
     contract = new web3.eth.Contract(transferBridgeABI, config.E2D_BACKING_ADDRESS);
@@ -399,7 +395,6 @@ export async function crossSendErc20FromDvmToEth(tokenAddress, recipientAddress,
   const isMatch = await isNetworkMatch(config.DVM_NETWORK_ID);
 
   if (isMatch) {
-    // eslint-disable-next-line @typescript-eslint/no-shadow
     const web3 = new Web3(window.ethereum || window.currentProvider);
     const contract = new web3.eth.Contract(mappingTokenABI, config.MAPPING_FACTORY_ADDRESS);
     const tx = await contract.methods
@@ -420,7 +415,6 @@ export async function crossSendErc20FromDvmToEth(tokenAddress, recipientAddress,
 export function decodeUint256(source) {
   const bytes = Web3.utils.hexToBytes(source);
   const hex = Web3.utils.bytesToHex(bytes.reverse());
-  // eslint-disable-next-line @typescript-eslint/no-shadow
   const web3 = new Web3(config.ETHERSCAN_DOMAIN.rpc);
   const result = web3.eth.abi.decodeParameter('uint256', hex);
 

@@ -180,7 +180,6 @@ class Claims extends Component {
   };
 
   changeLng = (lng) => {
-    // eslint-disable-next-line @typescript-eslint/no-shadow
     const { i18n } = this.props;
     i18n.changeLanguage(i18n.language.indexOf('en') > -1 ? 'zh-cn' : 'en-us');
     localStorage.setItem('lng', lng);

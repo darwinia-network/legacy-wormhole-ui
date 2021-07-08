@@ -1,12 +1,13 @@
 const path = require('path');
+const rewireTypescript = require('./rewire-ts');
 
 module.exports = function override(config, env) {
   const wasmExtensionRegExp = /\.wasm$/;
 
   config.resolve.extensions.push('.wasm');
 
-  config.module.rules.forEach(rule => {
-    (rule.oneOf || []).forEach(oneOf => {
+  config.module.rules.forEach((rule) => {
+    (rule.oneOf || []).forEach((oneOf) => {
       if (oneOf.loader && oneOf.loader.indexOf('file-loader') >= 0) {
         // make file-loader ignore WASM files
         oneOf.exclude.push(wasmExtensionRegExp);
@@ -17,10 +18,12 @@ module.exports = function override(config, env) {
   // add a dedicated loader for WASM
   config.module.rules.push({
     test: wasmExtensionRegExp,
-    type: "javascript/auto",
+    type: 'javascript/auto',
     include: path.resolve(__dirname, 'src'),
-    use: [{ loader: require.resolve('wasm-loader'), options: {} }]
+    use: [{ loader: require.resolve('wasm-loader'), options: {} }],
   });
+
+  config = rewireTypescript(config, env);
 
   return config;
 };

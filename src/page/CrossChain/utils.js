@@ -989,7 +989,6 @@ export async function isNetworkMatch(expectNetworkId) {
 
 export function getUnitFromValue(num) {
   const pow = Math.pow(10, num).toString();
-  // eslint-disable-next-line @typescript-eslint/no-shadow
   const [unit] = Object.entries(Web3.utils.unitMap).find(([_, value]) => value === pow);
 
   return unit;

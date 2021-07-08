@@ -1,5 +1,5 @@
 {
-  "name": "darwinia-claims",
+  "name": "darwinia-claim",
   "version": "0.1.0",
   "private": false,
   "dependencies": {
@@ -47,7 +47,7 @@
     "build_production": "CI=false REACT_APP_CHAIN=production react-app-rewired build",
     "test": "react-app-rewired test",
     "eject": "react-app-rewired eject",
-    "lint": "eslint ./src -c .eslintrc.js --fix",
+    "lint": "eslint ./src -c .eslintrc.js --ext .jsx,js,ts,tsx --fix",
     "format": "prettier ./src/**/*.tsx  --write",
     "stylelint": "stylelint \"src/**/*.scss\" --config stylelint.config.js",
     "changelog": "conventional-changelog -p eslint -i CHANGELOG.md -s",
@@ -69,13 +69,20 @@
     "not op_mini all"
   ],
   "devDependencies": {
+    "@commitlint/cli": "^12.1.4",
+    "@commitlint/config-angular": "^12.1.4",
+    "@commitlint/config-conventional": "^12.1.4",
     "@darwinia/lints": "^1.0.0",
+    "@types/react": "^17.0.14",
     "@typescript-eslint/eslint-plugin": "^4.28.2",
     "@typescript-eslint/parser": "^4.28.2",
+    "customize-cra": "^1.0.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-jsdoc": "^35.4.1",
     "eslint-plugin-prettier": "^3.4.0",
+    "husky": "4.2.3",
     "prettier": "^2.3.2",
+    "pretty-quick": "^3.1.1",
     "react-app-rewired": "^2.1.8",
     "stylelint": "^13.13.1",
     "stylelint-config-prettier": "^8.0.2",

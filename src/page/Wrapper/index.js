@@ -383,7 +383,6 @@ class Wrapper extends Component {
       ];
       const pCenter = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2];
 
-      // eslint-disable-next-line @typescript-eslint/no-shadow
       const theta = Math.atan2(center2[1] - center1[1], center2[0] - center1[0]) * (180 / Math.PI);
 
       const translateY = -8;
@@ -476,7 +475,6 @@ class Wrapper extends Component {
       const p0 = line.getPointAtLength(lineLength / 2);
       const p1 = line.getPointAtLength(lineLength / 2 - 2);
       const p2 = line.getPointAtLength(lineLength / 2 + 2);
-      // eslint-disable-next-line @typescript-eslint/no-shadow
       const theta = Math.atan2(p2.y - p1.y, p2.x - p1.x) * (180 / Math.PI);
       slotPath.push(
         <defs key={`mask-path-${element[0]}-${element[1]}`}>
@@ -583,7 +581,6 @@ class Wrapper extends Component {
   };
 
   changeLng = (lng) => {
-    // eslint-disable-next-line @typescript-eslint/no-shadow
     const { i18n } = this.props;
     i18n.changeLanguage(i18n.language.indexOf('en') > -1 ? 'zh-cn' : 'en-us');
     localStorage.setItem('lng', lng);

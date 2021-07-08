@@ -1,4 +1,17 @@
 {
-  "extends": "@darwinia/lints/tsconfig"
+  "extends": "@darwinia/lints/tsconfig",
+  "compilerOptions": {
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react",
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src"]
 }
-
