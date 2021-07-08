@@ -1,16 +1,17 @@
-.box{
-    text-align: left;
-    background: #F4F4F5;
-    padding: 20px;
-    p {
-        margin: 0;
-        font-size: 12px;
-        color: #302B3C;
-    }
+.box {
+  text-align: left;
+  background: #f4f4f5;
+  padding: 20px;
+
+  p {
+    margin: 0;
+    font-size: 12px;
+    color: #302b3c;
+  }
 }
 
 @media (max-width: 575px) {
-    .box{
-        padding: 15px;
-    }
+  .box {
+    padding: 15px;
+  }
 }

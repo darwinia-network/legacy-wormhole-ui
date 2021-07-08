@@ -1,5 +1,3 @@
-import InputRightWrap from './InputRightWrap'
+import InputRightWrap from './InputRightWrap';
 
-export {
-    InputRightWrap
-}
+export { InputRightWrap };

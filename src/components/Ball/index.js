@@ -1,5 +1,3 @@
-import Ball from './Ball'
+import Ball from './Ball';
 
-export {
-    Ball
-}
+export { Ball };

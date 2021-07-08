@@ -1,3 +1,3 @@
-import FormTip from './FormTip'
+import FormTip from './FormTip';
 
 export default FormTip;

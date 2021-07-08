@@ -1,36 +1,36 @@
-.box{
-    text-align: center;
-    position: relative;
-    display: flex;
-    &>div:first-child{
-        flex-basis: 60px;
-    }
+.box {
+  text-align: center;
+  position: relative;
+  display: flex;
+
+  & > div:first-child {
+    flex-basis: 60px;
+  }
 }
 
 .box + .box {
-    margin-top: 25px;
+  margin-top: 25px;
 }
 
 .maxbox {
-    position: absolute;
-    right: 0px;
-    cursor: pointer;
-    font-weight: normal;
-    height: 38px;
-    padding-left: 25px;
-    padding-right: 25px;
-    vertical-align: bottom;
-    display: flex;
-    align-items: center;
-    border-left: 1px solid #000;
+  position: absolute;
+  right: 0;
+  cursor: pointer;
+  font-weight: normal;
+  height: 38px;
+  padding-left: 25px;
+  padding-right: 25px;
+  vertical-align: bottom;
+  display: flex;
+  align-items: center;
+  border-left: 1px solid #000000;
 }
 
-.max{
-    color: #000000;
-    font-size: 14px;
+.max {
+  color: #000000;
+  font-size: 14px;
 }
 
-.disabled{
-    opacity: 0.3 !important;
+.disabled {
+  opacity: 0.3 !important;
 }
-

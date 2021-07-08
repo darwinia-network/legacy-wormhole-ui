@@ -4,8 +4,8 @@ export const darwiniaType = {
     accountId: 'AccountId',
     signer: 'Signer',
     stake: 'Balance',
-    term: 'BlockNumber'
+    term: 'BlockNumber',
   },
   MMRRoot: 'Hash',
-  EcdsaAddress: 'EthereumAddress'
-}
+  EcdsaAddress: 'EthereumAddress',
+};

@@ -1,5 +1,3 @@
-import GradientHeading from './GradientHeading'
+import GradientHeading from './GradientHeading';
 
-export {
-    GradientHeading
-}
+export { GradientHeading };

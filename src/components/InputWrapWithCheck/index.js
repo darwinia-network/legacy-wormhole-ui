@@ -1,3 +1,3 @@
-import InputWrapWithCheck from './InputWrapWithCheck'
+import InputWrapWithCheck from './InputWrapWithCheck';
 
 export default InputWrapWithCheck;

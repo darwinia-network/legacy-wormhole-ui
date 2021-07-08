@@ -1,0 +1,4 @@
+{
+  "extends": "@darwinia/lints/tsconfig"
+}
+
