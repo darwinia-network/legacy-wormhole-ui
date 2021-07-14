@@ -2007,22 +2007,22 @@
   resolved "https://registry.yarnpkg.com/@csstools/normalize.css/-/normalize.css-10.1.0.tgz#f0950bba18819512d42f7197e56c518aa491cf18"
   integrity sha512-ij4wRiunFfaJxjB0BdrYHIH8FxBJpOwNPhhAcunlmPdXudL1WQV1qoP9un6JsEBAgQH+7UXyyjh0g7jTxXK6tg==
 
-"@darwinia/types-known@^1.1.0-alpha.23":
-  version "1.1.0-alpha.23"
-  resolved "https://registry.yarnpkg.com/@darwinia/types-known/-/types-known-1.1.0-alpha.23.tgz#7e3008b86d696726a95989b135f161725ec69452"
-  integrity sha512-vNcZHM/N8fm4EnKD/LaKzgAKSozhTVu6sfsBoeaPUOpEM/D+JqmncoUCuMm5mvx84LzSnip5hEZiL70E4xYbTg==
+"@darwinia/types-known@^1.1.5":
+  version "1.1.5"
+  resolved "https://registry.yarnpkg.com/@darwinia/types-known/-/types-known-1.1.5.tgz#e06cc81cf4939b2df019c3085010da6aa2c5d206"
+  integrity sha512-5YCFfoLlqGuMRUXbQ270PTOcF+9svA6Lu26kCfvuCeB8Xv7ZOQtauxttVHfjrx/Yk/14bqof3R9l94CEm6306g==
   dependencies:
     "@babel/runtime" "^7.9.6"
     "@polkadot/types" "4.0.4-5"
     "@polkadot/util" "6.0.5"
     bn.js "^5.1.2"
 
-"@darwinia/types@^1.1.0-alpha.23":
-  version "1.1.0-alpha.23"
-  resolved "https://registry.yarnpkg.com/@darwinia/types/-/types-1.1.0-alpha.23.tgz#abad4832b79f34e81a4e6902ee2294b2031afc06"
-  integrity sha512-ouWNOUJzVR1QBnmB/4cPql0GY3N69zC2DYB2eG7h0yAW77ZUq4RDj7lnwGqnzWUhC2X8E8C/UZGPG3NRgJqoKQ==
+"@darwinia/types@^1.1.5":
+  version "1.1.5"
+  resolved "https://registry.yarnpkg.com/@darwinia/types/-/types-1.1.5.tgz#e04048868f8fc5c42af2658d37dc26de806e1041"
+  integrity sha512-p+73nAQP7YKrovSDyWmagRhpgFuYFOlvr6mPoXn/j90mr2C//rzG1VqPCTM7A14Xch9iAV+Lhef2/7wMH6+9Lg==
   dependencies:
-    "@darwinia/types-known" "^1.1.0-alpha.23"
+    "@darwinia/types-known" "^1.1.5"
 
 "@hapi/address@2.x.x":
   version "2.1.4"
