@@ -55,6 +55,6 @@
     "D2E_NETWORK_PREFIX": "Darwinia",
     "DARWINIA_ETHEREUM_RELAY":"0x5cde5Aafeb8E06Ce9e4F94c2406d3B6CB7098E49",
     "DARWINIA_ETHEREUM_TOKEN_ISSUING":"0x5f44dd8e59f56aa04fe54e95cc690560ae706b18",
-    "DARWINIA_ETHEREUM_FROM_WSS": "wss://rpc.darwinia.network"
+    "DARWINIA_ETHEREUM_FROM_WSS": "wss://rpc-for-wormhole-temp.darwinia.network"
   }
 }
