@@ -125,6 +125,10 @@ function connectEth(accountsChangedCallback, t) {
 }
 
 export async function isNetworkConsistent(expectedNetworkId, id) {
+    if (config.IS_PROD) {
+        return true;
+    }
+    
     id = Web3.utils.isHexStrict(id) ? parseInt(id, 16).toString() : id;
     // id 1: eth mainnet 3: ropsten 4: rinkeby 5: goerli 42: kovan  43: pangolin 44: crab
     const actualId = !!id
