@@ -5,12 +5,12 @@ set -xe
 
 echo "VERCEL_ENV: $VERCEL_ENV"
 
-npm i
+yarn install
 
 if [[ "$VERCEL_ENV" == "production" ]] ; then
-  npm run build_production
+  yarn build_production
 else
-  npm run build_dev
+  yarn build_dev
 fi
 
 
