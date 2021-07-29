@@ -686,9 +686,10 @@ export function encodeBlockHeader(blockHeaderStr) {
     });
 }
 
-export async function getMPTProof(hash = '') {
+export async function getMPTProof(blockNumber, hash = '') {
     if(window.darwiniaApi) {
-        const proof = await window.darwiniaApi.rpc.state.getReadProof(['0xf8860dda3d08046cf2706b92bf7202eaae7a79191c90e76297e0895605b8b457'], hash);
+        const storageKey = getMatchedDarwiniaToEthereumLockEventsStorageKey(blockNumber);
+        const proof = await window.darwiniaApi.rpc.state.getReadProof([storageKey], hash);
         const registry = new TypeRegistry();
 
         return registry.createType('Vec<Bytes>',proof.proof.toJSON());
@@ -754,7 +755,7 @@ export async function ClaimTokenFromD2E({ networkPrefix, mmrIndex, mmrRoot, mmrS
 
                 const blockHeader = encodeBlockHeader(blockHeaderStr);
                 const mmrProof = await getMMRProof(blockNumber, historyMeta.best, blockHash);
-                const eventsProof = await getMPTProof(blockHash);
+                const eventsProof = await getMPTProof(blockNumber, blockHash);
 
                 console.log('ClaimTokenFromD2E - darwiniaToEthereumVerifyProof', {
                     root: '0x' + historyMeta.mmrRoot,
@@ -785,7 +786,7 @@ export async function ClaimTokenFromD2E({ networkPrefix, mmrIndex, mmrRoot, mmrS
                 const mmrRootMessage = encodeMMRRootMessage(networkPrefix, '0x479fbdf9', mmrIndex, mmrRoot);
                 const blockHeader = encodeBlockHeader(blockHeaderStr);
                 const mmrProof = await getMMRProof(blockNumber, mmrIndex, blockHash);
-                const eventsProof = await getMPTProof(blockHash);
+                const eventsProof = await getMPTProof(blockNumber, blockHash);
 
                 console.log('ClaimTokenFromD2E - darwiniaToEthereumAppendRootAndVerifyProof', {
                     message: mmrRootMessage.toHex(),
@@ -895,4 +896,10 @@ export async function darwiniaToEthereumVerifyProof(account, {
         })
 }
 
+export function getMatchedDarwiniaToEthereumLockEventsStorageKey(blockNumber) {
+    const matchedStorageKey = config.DARWINIA_ETHEREUM_LOCKEVENTS_STORAGEKEY.find(keyItem =>
+        (keyItem.min <= blockNumber) && (keyItem.max >= blockNumber || keyItem.max === null)
+    );
 
+    return matchedStorageKey?.key;
+}

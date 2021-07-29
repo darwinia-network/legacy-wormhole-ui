@@ -26,7 +26,14 @@
     "D2E_NETWORK_PREFIX": "Pangolin",
     "DARWINIA_ETHEREUM_RELAY":"0xD35Bb6F1bc1C84b53E0995c1830454AB7C4147f1",
     "DARWINIA_ETHEREUM_TOKEN_ISSUING":"0x98fAE9274562FE131e2CF5771ebFB0bB232aFd25",
-    "DARWINIA_ETHEREUM_FROM_WSS": "wss://pangolin-rpc.darwinia.network"
+    "DARWINIA_ETHEREUM_FROM_WSS": "wss://pangolin-rpc.darwinia.network",
+    "DARWINIA_ETHEREUM_LOCKEVENTS_STORAGEKEY": [
+      {
+        "min": 0,
+        "max": null,
+        "key": "0x50ea63d9616704561328b9e0febe21cfae7a79191c90e76297e0895605b8b457"
+      }
+    ]
   },
   "production": {
     "ETHEREUM_NETWORK": 1,
@@ -55,6 +62,18 @@
     "D2E_NETWORK_PREFIX": "Darwinia",
     "DARWINIA_ETHEREUM_RELAY":"0x5cde5Aafeb8E06Ce9e4F94c2406d3B6CB7098E49",
     "DARWINIA_ETHEREUM_TOKEN_ISSUING":"0x5f44dd8e59f56aa04fe54e95cc690560ae706b18",
-    "DARWINIA_ETHEREUM_FROM_WSS": "wss://rpc.darwinia.network"
+    "DARWINIA_ETHEREUM_FROM_WSS": "wss://rpc.darwinia.network",
+    "DARWINIA_ETHEREUM_LOCKEVENTS_STORAGEKEY": [
+      {
+        "min": 0,
+        "max": 4344274,
+        "key": "0xf8860dda3d08046cf2706b92bf7202eaae7a79191c90e76297e0895605b8b457"
+      },
+      {
+        "min": 4344275,
+        "max": null,
+        "key": "0x50ea63d9616704561328b9e0febe21cfae7a79191c90e76297e0895605b8b457"
+      }
+    ]
   }
 }
