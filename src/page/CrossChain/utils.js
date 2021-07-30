@@ -128,7 +128,6 @@ export async function isNetworkConsistent(expectedNetworkId, id) {
     if (config.IS_PROD) {
         return true;
     }
-    
     id = Web3.utils.isHexStrict(id) ? parseInt(id, 16).toString() : id;
     // id 1: eth mainnet 3: ropsten 4: rinkeby 5: goerli 42: kovan  43: pangolin 44: crab
     const actualId = !!id
@@ -284,7 +283,7 @@ export function convertSS58Address(text, isShort = false) {
     }
     try {
         let address = encodeAddress(text, config.S58_PREFIX)
-        
+
         if(isShort) {
             address = toShortAccount(text);
         }
@@ -448,7 +447,7 @@ export function formatBalance(bn = Web3.utils.toBN(0), unit = 'gwei') {
     if (bn.eqn(0)) {
         return '0';
     }
-    
+
     const dec = +unit;
 
     if(typeof dec === 'number' && !isNaN(dec)) {
@@ -583,7 +582,7 @@ export const getErc20BurnsRecords = async ({ row, page, sender }) => {
 
 /**
  * Record { extrinsic_index: string; account_id: string; block_num: number; block_hash: string; backing: string; source: string; target: string; sender: string; recipient: string;
- * value: string; block_timestamp: number; mmr_index: number; mmr_root: string; signatures: string; block_header: string; tx: string; } 
+ * value: string; block_timestamp: number; mmr_index: number; mmr_root: string; signatures: string; block_header: string; tx: string; }
  * @returns {MMRRoot: string; best: number; count: number; implName: string; list: Record[]}
  */
 export const getErc20TokenLockRecords = async ({ sender, row, page }) => {
@@ -808,7 +807,8 @@ export async function ClaimTokenFromD2E({ networkPrefix, mmrIndex, mmrRoot, mmrS
 
                 const blockHeader = encodeBlockHeader(blockHeaderStr);
                 const mmrProof = await getMMRProof(blockNumber, historyMeta.best, blockHash);
-                const eventsProof = await getMPTProof(blockHash);
+                const storageKey = getMatchedDarwiniaToEthereumLockEventsStorageKey(blockNumber);
+                const eventsProof = await getMPTProof(blockHash, storageKey);
 
                 darwiniaToEthereumVerifyProof(_account, {
                     root: '0x' + historyMeta.mmrRoot,
@@ -829,7 +829,8 @@ export async function ClaimTokenFromD2E({ networkPrefix, mmrIndex, mmrRoot, mmrS
                 const mmrRootMessage = encodeMMRRootMessage(networkPrefix, '0x479fbdf9', mmrIndex, mmrRoot);
                 const blockHeader = encodeBlockHeader(blockHeaderStr);
                 const mmrProof = await getMMRProof(blockNumber, mmrIndex, blockHash);
-                const eventsProof = await getMPTProof(blockHash);
+                const storageKey = getMatchedDarwiniaToEthereumLockEventsStorageKey(blockNumber);
+                const eventsProof = await getMPTProof(blockHash, storageKey);
 
                 darwiniaToEthereumAppendRootAndVerifyProof(_account, {
                     message: mmrRootMessage.toHex(),
@@ -865,7 +866,7 @@ export async function darwiniaToEthereumAppendRootAndVerifyProof(account, {
     eventsProofStr
 }, callback) {
     let web3js = new Web3(window.ethereum || window.web3.currentProvider);
-    const contract = new web3js.eth.Contract(DarwiniaToEthereumTokenIssuingABI, config.DARWINIA_ETHEREUM_TOKEN_ISSUING); // TODO: 
+    const contract = new web3js.eth.Contract(DarwiniaToEthereumTokenIssuingABI, config.DARWINIA_ETHEREUM_TOKEN_ISSUING); // TODO:
 
     // bytes memory message,
     // bytes[] memory signatures,
@@ -935,7 +936,7 @@ export function isMetamaskInstalled() {
 }
 
 /**
- * 
+ *
  * @returns {Promise<string>} - current active account in metamask;
  */
 export async function getMetamaskActiveAccount() {
@@ -948,13 +949,13 @@ export async function getMetamaskActiveAccount() {
     const accounts = await window.ethereum.request({
         method: "eth_accounts",
     });
-    
+
     // metamask just return the active account now, so the result array contains only one account;
     return accounts[0];
 }
 
 /**
- * 
+ *
  * @param {number} expectNetworkId  - network id
  * @returns {Promise<boolean>} is acutal network id match with expected.
  */
@@ -972,4 +973,12 @@ export function getUnitFromValue(num) {
     );
 
     return unit;
+}
+
+export function getMatchedDarwiniaToEthereumLockEventsStorageKey(blockNumber) {
+    const matchedStorageKey = config.DARWINIA_ETHEREUM_LOCKEVENTS_STORAGEKEY.find(keyItem =>
+        (keyItem.min <= blockNumber) && (keyItem.max >= blockNumber || keyItem.max === null)
+    );
+
+    return matchedStorageKey?.key;
 }
