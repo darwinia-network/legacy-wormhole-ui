@@ -30,7 +30,7 @@ export const config = ConfigJson[process.env.REACT_APP_CHAIN];
  * @param {*} callback
  */
 export async function approveRingToIssuing(account, hashCallback, confirmCallback) {
-    let web3js = new Web3(window.ethereum || window.web3.currentProvider);
+    let web3js = new Web3(window.ethereum);
     const contract = new web3js.eth.Contract(TokenABI, config['RING_ETH_ADDRESS']);
 
     contract.methods.approve(config.ETHEREUM_DARWINIA_ISSUING, '100000000000000000000000000').send({ from: account }).on('transactionHash', (hash) => {
@@ -47,7 +47,7 @@ export async function approveRingToIssuing(account, hashCallback, confirmCallbac
  * @param {*} amount
  */
 export async function checkIssuingAllowance(from, amount) {
-    let web3js = new Web3(window.ethereum || window.web3.currentProvider);
+    let web3js = new Web3(window.ethereum);
 
     const erc20Contract = new web3js.eth.Contract(TokenABI, config.RING_ETH_ADDRESS)
     const allowanceAmount = await erc20Contract.methods.allowance(from, config.ETHEREUM_DARWINIA_ISSUING).call()
@@ -60,7 +60,7 @@ export async function checkIssuingAllowance(from, amount) {
  * @param {*} amount
  */
 export async function getEthereumBankDepositByAddress(from) {
-    let web3js = new Web3(window.ethereum || window.web3.currentProvider);
+    let web3js = new Web3(window.ethereum);
 
     const erc20Contract = new web3js.eth.Contract(BankABI, config.ETHEREUM_DARWINIA_BANK)
     const deposits = await erc20Contract.methods.getDepositIds(from).call()
@@ -72,7 +72,7 @@ export async function getEthereumBankDepositByAddress(from) {
  * @param {*} amount
  */
 export async function getEthereumToDarwiniaCrossChainFee() {
-    let web3js = new Web3(window.ethereum || window.web3.currentProvider);
+    let web3js = new Web3(window.ethereum);
 
     const erc20Contract = new web3js.eth.Contract(RegistryABI, config.REGISTRY_ETH_ADDRESS)
     const fee = await erc20Contract.methods.uintOf('0x55494e545f4252494447455f4645450000000000000000000000000000000000').call()
@@ -96,29 +96,21 @@ export async function getDarwiniaToEthereumCrossChainFee() {
 
 function connectEth(accountsChangedCallback, t) {
     if (typeof window.ethereum !== 'undefined' || typeof window.web3 !== 'undefined') {
-        let web3js = new Web3(window.ethereum || window.web3.currentProvider);
+        let web3js = new Web3(window.ethereum);
 
-        if (window.ethereum) {
-            window.ethereum.enable()
-                .then(async (account) => {
-                    const networkid = await web3js.eth.net.getId()
-                    if (config.ETHEREUM_NETWORK !== networkid) {
-                        formToast(t('common:Ethereum network type does not match'));
-                        return;
-                    }
+        window.ethereum.enable()
+            .then(async (account) => {
+                const networkid = await web3js.eth.net.getId()
+                if (config.ETHEREUM_NETWORK !== networkid) {
+                    formToast(t('common:Ethereum network type does not match'));
+                    return;
+                }
 
-                    if (account.length > 0) {
-                        accountsChangedCallback && accountsChangedCallback('eth', account[0].toLowerCase());
-                    }
-                })
-                .catch(console.error)
-        } else if (window.web3) {
-            web3js.eth.getAccounts().then(account => {
-                if (Array.isArray(account) && account.length) {
+                if (account.length > 0) {
                     accountsChangedCallback && accountsChangedCallback('eth', account[0].toLowerCase());
                 }
-            }).catch(console.error)
-        }
+            })
+            .catch(console.error)
     } else {
         formToast(t('common:Please install MetaMask first'));
     }
@@ -220,7 +212,7 @@ async function connectSubstrate(accountsChangedCallback, t, networkType) {
 }
 
 function buildInGenesisEth(account, params, callback) {
-    let web3js = new Web3(window.ethereum || window.web3.currentProvider);
+    let web3js = new Web3(window.ethereum);
     const contract = new web3js.eth.Contract(TokenABI, config[`${params.tokenType.toUpperCase()}_ETH_ADDRESS`]);
 
     contract.methods.transferFrom(account, config['ETHEREUM_DARWINIA_CROSSCHAIN'], params.value, params.toHex).send({ from: account }).on('transactionHash', (hash) => {
@@ -233,7 +225,7 @@ function buildInGenesisEth(account, params, callback) {
 }
 
 function redeemTokenEth(account, params, callback) {
-    let web3js = new Web3(window.ethereum || window.web3.currentProvider);
+    let web3js = new Web3(window.ethereum);
     const contract = new web3js.eth.Contract(TokenABI, config[`${params.tokenType.toUpperCase()}_ETH_ADDRESS`]);
 
     contract.methods.transferFrom(account, config['ETHEREUM_DARWINIA_ISSUING'], params.value, params.toHex).send({ from: account }).on('transactionHash', (hash) => {
@@ -246,7 +238,7 @@ function redeemTokenEth(account, params, callback) {
 }
 
 function redeemDepositEth(account, params, callback) {
-    let web3js = new Web3(window.ethereum || window.web3.currentProvider);
+    let web3js = new Web3(window.ethereum);
     const contract = new web3js.eth.Contract(BankABI, config[`ETHEREUM_DARWINIA_BANK`]);
 
     contract.methods.burnAndRedeem(params.depositID, params.toHex).send({ from: account }).on('transactionHash', (hash) => {
@@ -609,7 +601,7 @@ export const getErc20TokenLockRecords = async ({ sender, row, page }) => {
 export function getTokenBalanceEth(account = '') {
     try {
 
-        let web3js = new Web3(window.ethereum || window.web3.currentProvider);
+        let web3js = new Web3(window.ethereum);
         const ringContract = new web3js.eth.Contract(TokenABI, config.RING_ETH_ADDRESS);
         const ktonContract = new web3js.eth.Contract(TokenABI, config.KTON_ETH_ADDRESS);
 
@@ -865,7 +857,7 @@ export async function darwiniaToEthereumAppendRootAndVerifyProof(account, {
     siblings,
     eventsProofStr
 }, callback) {
-    let web3js = new Web3(window.ethereum || window.web3.currentProvider);
+    let web3js = new Web3(window.ethereum);
     const contract = new web3js.eth.Contract(DarwiniaToEthereumTokenIssuingABI, config.DARWINIA_ETHEREUM_TOKEN_ISSUING); // TODO:
 
     // bytes memory message,
@@ -903,7 +895,7 @@ export async function darwiniaToEthereumVerifyProof(account, {
     siblings,
     eventsProofStr
 }, callback) {
-    let web3js = new Web3(window.ethereum || window.web3.currentProvider);
+    let web3js = new Web3(window.ethereum);
     const contract = new web3js.eth.Contract(DarwiniaToEthereumTokenIssuingABI, config.DARWINIA_ETHEREUM_TOKEN_ISSUING);
 
     // bytes32 root,
@@ -929,10 +921,7 @@ export async function darwiniaToEthereumVerifyProof(account, {
 }
 
 export function isMetamaskInstalled() {
-    return (
-        typeof window.ethereum !== "undefined" ||
-        typeof window.web3 !== "undefined"
-    );
+    return typeof window.ethereum !== "undefined";
 }
 
 /**
@@ -960,7 +949,7 @@ export async function getMetamaskActiveAccount() {
  * @returns {Promise<boolean>} is acutal network id match with expected.
  */
 export async function isNetworkMatch(expectNetworkId) {
-    const web3 = new Web3(window.ethereum || window.web3.currentProvider);
+    const web3 = new Web3(window.ethereum);
     const networkId = await web3.eth.net.getId();
 
     return expectNetworkId === networkId;

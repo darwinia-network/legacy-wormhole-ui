@@ -37,7 +37,7 @@
     "rimraf": "^2.6.2",
     "rxjs": "^7.0.0",
     "tronweb": "^2.10.1",
-    "web3": "^1.2.6"
+    "web3": "^1.5.0"
   },
   "scripts": {
     "start_dev": "PORT=3036 REACT_APP_CHAIN=development react-app-rewired start",
