@@ -707,9 +707,8 @@ class CrossChain extends Component {
                 const promises = [ethereumGenesisInfo, ethereumToDarwiniaCrossChainInfo];
 
                 if (config.IS_DEV) {
-                    promises.push(getErc20TokenLockRecords({ sender: address, row: 200, page: 0 }))
-                }
-                Promise.all(promises)
+                    promises.push(getErc20TokenLockRecords({ sender: address, row: 200, page: 0 }));
+                    Promise.all(promises)
                     .then(([genesisHistory, crosschainHistory, erc20CrossChain]) => this.getSymbolMap(erc20CrossChain.list).then(symbolMap => [genesisHistory, crosschainHistory, erc20CrossChain, symbolMap]))
                     .then(([genesisHistory, crosschainHistory, erc20CrossChain, symbolMap]) => {
                         this.setState({
@@ -718,6 +717,16 @@ class CrossChain extends Component {
                     }).catch((error) => {
                         console.log('get history error', error);
                     })
+                } else {
+                    Promise.all(promises)
+                        .then(([genesisHistory, crosschainHistory]) => {
+                            this.setState({
+                                history: [...crosschainHistory.map((item) => ({ ...item, isCrossChain: true })), ...genesisHistory]
+                            })
+                        }).catch((error) => {
+                            console.log('get history error', error);
+                        })
+                }
                 break;
             case "tron":
                 address = (window.tronWeb && window.tronWeb.address.toHex(account[networkType]))
