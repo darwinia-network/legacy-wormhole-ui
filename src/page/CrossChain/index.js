@@ -704,9 +704,12 @@ class CrossChain extends Component {
                     });
                 })
 
-                const erc20TransferInfo = getErc20TokenLockRecords({ sender: address, row: 200, page: 0 });
+                const promises = [ethereumGenesisInfo, ethereumToDarwiniaCrossChainInfo];
 
-                Promise.all([ethereumGenesisInfo, ethereumToDarwiniaCrossChainInfo, erc20TransferInfo])
+                if (config.IS_DEV) {
+                    promises.push(getErc20TokenLockRecords({ sender: address, row: 200, page: 0 }))
+                }
+                Promise.all(promises)
                     .then(([genesisHistory, crosschainHistory, erc20CrossChain]) => this.getSymbolMap(erc20CrossChain.list).then(symbolMap => [genesisHistory, crosschainHistory, erc20CrossChain, symbolMap]))
                     .then(([genesisHistory, crosschainHistory, erc20CrossChain, symbolMap]) => {
                         this.setState({

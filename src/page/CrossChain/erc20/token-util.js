@@ -42,7 +42,7 @@ export function getContractAtAddress(tokenAddress) {
  * @returns {BN} balance of the account
  */
 export async function getTokenBalance(address, account, isEth = true) {
-    const web3 = new Web3(window.ethereum || window.web3.currentProvider);
+    const web3 = new Web3(window.ethereum);
     const abi = isEth ? erc20ABI : tokenABI;
     const contract = new web3.eth.Contract(abi, address);
 

@@ -13,32 +13,22 @@ function buf2hex(buffer) { // buffer is an ArrayBuffer
 export const config = ConfigJson[process.env.REACT_APP_CHAIN];
 
 function connectEth(accountsChangedCallback, t) {
-    if (typeof window.ethereum !== 'undefined' || typeof window.web3 !== 'undefined') {
-        let web3js = new Web3(window.ethereum || window.web3.currentProvider);
+    if (typeof window.ethereum !== 'undefined') {
+        window.ethereum.enable()
+            .then((account) => {
+                if (window.ethereum.on) {
+                    window.ethereum.on('accountsChanged', (accounts) => {
+                        if (accounts.length > 0) {
+                            accountsChangedCallback && accountsChangedCallback('eth', accounts[0].toLowerCase());
+                        }
+                    })
+                }
 
-        if (window.ethereum) {
-            window.ethereum.enable()
-                .then((account) => {
-                    if (window.ethereum.on) {
-                        window.ethereum.on('accountsChanged', (accounts) => {
-                            if (accounts.length > 0) {
-                                accountsChangedCallback && accountsChangedCallback('eth', accounts[0].toLowerCase());
-                            }
-                        })
-                    }
-
-                    if (account.length > 0) {
-                        accountsChangedCallback && accountsChangedCallback('eth', account[0].toLowerCase());
-                    }
-                })
-                .catch(console.error)
-        } else if (window.web3) {
-            web3js.eth.getAccounts().then(account => {
-                if (Array.isArray(account) && account.length) {
+                if (account.length > 0) {
                     accountsChangedCallback && accountsChangedCallback('eth', account[0].toLowerCase());
                 }
-            }).catch(console.error)
-        }
+            })
+            .catch(console.error)
     } else {
         formToast(t('common:Please install MetaMask first'));
     }
@@ -80,7 +70,7 @@ function combineFormatSignature(address, msg, sig) {
 }
 
 function signEth(account, text, signCallBack) {
-    let web3js = new Web3(window.ethereum || window.web3.currentProvider);
+    let web3js = new Web3(window.ethereum);
     const rawData = getRawData(text);
     web3js.eth.personal.sign(rawData, account)
         .then((signature) => {
